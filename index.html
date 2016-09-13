@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Badminton Demo</title>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r74/three.min.js'></script>
+		<script src='OrbitControls.js'></script>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+			.top {
+				position: absolute;
+				top: 1em;
+				left: 0;
+				right: 0;
+				text-align: center;
+			}
+		</style>
+		<script src='build/three.badminton.min.js'></script>
+	</head>
+	<body>
+		<div class='top'>
+			<div id='score'>[0:0]</div>
+			<a href='javascript:toggle()'>Start</a>
+			<a href='javascript:next()'>Next</a>
+		</div>
+		<script>
+			var camera, scene, renderer;
+			var controls;
+			var shuttle, court, game;
+			var robot1, robot2;
+			var ball1, ball2;
+			var clock;
+			var animated = false;
+			var delay = 5;
+			var touchable, raycaster, mouse, intersects;
+
+			init();
+			animate();
+
+			function init() {
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+				camera.position.set(-800, 300, 0);
+				scene.add(camera);
+				
+				var meter2unit = 100;
+				
+				shuttle = new THREE.Badminton.Shuttle(2.5, 5, 6.5);
+				shuttle.meter2unit = meter2unit;
+				scene.add(shuttle);
+				
+				court = new THREE.Badminton.Court(meter2unit);
+				court.shuttle = shuttle;
+				scene.add(court);
+				
+				var courtArea = court.getArea();
+				touchable = new THREE.Mesh(
+					new THREE.PlaneGeometry(courtArea.xMax - courtArea.xMin, courtArea.zMax - courtArea.zMin),
+					new THREE.MeshBasicMaterial({ colorWrite: false }));
+				touchable.rotation.x = -Math.PI / 2;
+				court.add(touchable);
+				
+				mouse = new THREE.Vector2();
+				raycaster = new THREE.Raycaster();
+				
+				game = new THREE.Badminton.Game(court, shuttle, 2);
+				game.onScoreChange = function () {
+					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
+				};
+				
+				clock = new THREE.Clock();
+				
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setClearColor(0x888888);
+
+				controls = new THREE.OrbitControls(camera, renderer.domElement);
+				
+				robot1 = new THREE.Badminton.Robot();
+				robot1.setLimits(court.getFirstArea1(0), true);
+				robot1.shuttle = shuttle;
+				robot1.rotation.y = Math.PI / 2;
+				robot1.onAfterImpact = function () {
+					this.setLimits(court.getArea1());
+					robot2.impactType = getRandomImpactType();
+					
+					var randomPosition = getRandomPosition(robot1.limits);
+					robot2.targetPosition.copy(randomPosition);
+					ball2.position.copy(randomPosition);
+				};
+				scene.add(robot1);
+				
+				robot2 = new THREE.Badminton.Robot();
+				robot2.setLimits(court.getFirstArea2(0), true);
+				robot2.shuttle = shuttle;
+				robot2.rotation.y = -Math.PI / 2;
+				robot2.onAfterImpact = function () {
+					this.setLimits(court.getArea2());
+				};
+				scene.add(robot2);
+				
+				ball1 = new THREE.Mesh(
+					new THREE.BoxGeometry(10, 10, 10),
+					new THREE.MeshNormalMaterial());
+				scene.add(ball1);
+				
+				ball2 = new THREE.Mesh(
+					new THREE.BoxGeometry(10, 10, 10),
+					new THREE.MeshNormalMaterial());
+				scene.add(ball2);
+				
+				var gui = new dat.GUI();
+				
+				gui.add(this, 'delay', 1, 30);
+				
+				addRobot(robot1, 'P1 (Player)');
+				addRobot(robot2, 'P2 (Computer)');
+				
+				function addRobot(robot, name) {
+					var f = gui.addFolder(name);
+					f.add(robot, 'healthPercent', 0, 100).listen();
+					f.add(robot, 'impactType', ['left', 'right', 'top', 'smash']).listen();
+					f.open();
+				}
+				
+				next();
+				
+				document.body.appendChild(renderer.domElement);
+				document.addEventListener('mousedown', onDocumentMouseDown, false);
+				document.addEventListener('mousemove', onDocumentMouseMove, false);
+				window.addEventListener('resize', onWindowResize, false);
+			}
+			
+			function getIntersectedPoint() {
+				if (intersects.length > 0) {
+					var point = court.worldToLocal(intersects[0].point);
+					if (point.x >= robot2.limits.xMin &&
+						point.x <= robot2.limits.xMax &&
+						point.z >= robot2.limits.zMin &&
+						point.z <= robot2.limits.zMax) return point;
+				}
+				return null;
+			}
+			
+			function onDocumentMouseDown(event) {
+				if (event.which === 1) {
+					var point = getIntersectedPoint();
+					if (point !== null) {
+						robot1.targetPosition.copy(point);
+						ball1.position.copy(point);
+					}
+				}
+			}
+			
+			function onDocumentMouseMove(event) {
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+				renderer.domElement.style.cursor = (getIntersectedPoint() === null) ? 'default' : 'pointer';
+			}
+			
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			function animate() {
+				var delta = clock.getDelta() / delay;
+				if (animated) {
+					shuttle.update(delta);
+					robot1.update(delta);
+					robot2.update(delta);
+					court.update(delta);
+					game.update(delta);
+				}
+				controls.update();
+				requestAnimationFrame(animate);
+				render();
+			}
+			
+			function render() {
+				raycaster.setFromCamera(mouse, camera);
+				intersects = raycaster.intersectObject(touchable);
+				renderer.render(scene, camera);
+			}
+
+			function toggle() {
+				animated = !animated;
+			}
+			
+			function getRandomImpactType() {
+				var random = Math.random();
+				if (random < 0.4)
+					return 'right';
+				else if (random < 0.8)
+					return 'left';
+				else if (random < 0.9)
+					return 'top';
+				else
+					return 'smash';
+			}
+			
+			function getRandomPosition(limits) {
+				return new THREE.Vector3(
+					limits.xMin + (limits.xMax - limits.xMin) * Math.random(),
+					0,
+					limits.zMin + (limits.zMax - limits.zMin) * Math.random());
+			}
+
+			function next() {
+				animated = false;
+				robot1.setLimits(court.getFirstArea1(game.lastWinnerScore), true);
+				robot1.reset();
+				robot2.setLimits(court.getFirstArea2(game.lastWinnerScore), true);
+				robot2.reset();
+				
+				robot1.impactType = robot2.impactType = 'right';
+				
+				var randomPosition1 = getRandomPosition(robot2.limits);
+				robot1.targetPosition.copy(randomPosition1);
+				ball1.position.copy(randomPosition1);
+				
+				var randomPosition2 = getRandomPosition(robot1.limits);
+				robot2.targetPosition.copy(randomPosition2);
+				ball2.position.copy(randomPosition2);
+				
+				var area = (game.lastWinner === 1) ?
+					court.getFirstArea1(game.score1) :
+					court.getFirstArea2(game.score2);
+				shuttle.rotation.set(0, 0, 0);
+				shuttle.position.set((area.xMin + area.xMax) / 2, 120, (area.zMin + area.zMax) / 2);
+				shuttle.position.x += 30 * (game.lastWinner === 1 ? 1 : -1);
+				shuttle.velocity.set(100 * (game.lastWinner === 1 ? 1 : -1), 200, 0);
+				game.nextScore();
+				
+				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
+			}
+		</script>
+	</body>
+</html>

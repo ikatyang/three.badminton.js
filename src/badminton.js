@@ -1,0 +1,6 @@
+import './badminton.plugin.js';
+
+export { Shuttle } from './badminton.shuttle.js';
+export { Robot } from './badminton.robot.js';
+export { Court } from './badminton.court.js';
+export { Game } from './badminton.game.js';
