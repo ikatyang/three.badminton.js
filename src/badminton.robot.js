@@ -121,7 +121,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	this.topLink = topLink;
 	this.topRacket = topRacket;
 	this.topImpactWidth = 0;
-	this.topImpactAngle = -Math.PI / 4;
+	this.topImpactAngle = -Math.PI / 15;
 	
 	this.impactClock = new THREE.Clock();
 	this.impactClock.start();
@@ -363,8 +363,19 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	},
 	
 	getTopImpactSpeed: function (impactHeight) {
-		// TODO
-		return Math.PI * 30;
+		var hit = this.shuttle.position.clone().setY(0);	//球現在的位置
+		var move = this.targetPosition.clone().sub(hit);
+		var x0 = move.clone().length();	//水平位移
+		var index = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
+
+		// 200->0, 300->1, 400->2, 500->3, 600->4, 670->5
+		index = Math.ceil(index / 100) - 2;
+		if(index < 0) index = 0;
+		for( ; index < this.topForceTable.length; index++){
+			if(this.topForceTable[index][0] > x0) break;	//找相應的水平位移
+		}
+		if(index !== 0) index--;
+		return Math.PI * this.topForceTable[index][1];
 	},
 	
 	getImpactParams: function (impactHeight) {
@@ -590,6 +601,44 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
       ]
     ],
 	
+	topForceTable: [
+		//水平距離, f
+		[432.837, 12],	//200 start
+		[508.317, 15],	//300 start
+		[612.811, 20],	//400 start
+		[697.075, 25],	//500 start
+		[767.586, 30],
+		[793.203, 32],	//600 start
+		[829.480, 35],	//670 start
+		[849.617, 37],
+		[860.173, 38],	//200 end (870)
+		[880.123, 40],
+		[925.701, 45],
+		[966.793, 50],	//300 end (970)
+		[1002.280, 55],
+		[1036.857, 60],
+		[1064.451, 65],	//400 end (1070)
+		[1091.885, 70],
+		[1118.193, 75],
+		[1140.245, 80],
+		[1160.976, 85],	//500 end (1170)
+		[1182.143, 90],
+		[1200.124, 95],
+		[1217.301, 100],
+		[1233.056, 105],
+		[1248.758, 110],
+		[1261.102, 115],	//600 end (1270)
+		[1274.775, 120],
+		[1287.784, 125],
+		[1298.189, 130],
+		[1309.880, 135],
+		[1321.354, 140],
+		[1329.665, 145],
+		[1333.054, 150],
+	],
+
+	topTableStart:[0, 1, 2, 3, 5, 6],	//和離網距離相應之最小力道在topForceTable中的index
+
 	onAfterImpact: function () {},
 	
 }), {
