@@ -1,3 +1,5 @@
+window.performance = window.performance || Date;
+
 if (THREE.Object3D.prototype.directionLocalToWorld === undefined) {
 	THREE.Object3D.prototype.directionLocalToWorld = function (direction) {
 		var origin = this.localToWorld(new THREE.Vector3(0, 0, 0));
