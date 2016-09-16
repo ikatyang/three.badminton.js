@@ -74,10 +74,10 @@ function ScoreBoard(width, height, depth, cardGap) {
 	loader.load('http://threejs.org/examples/fonts/gentilis_regular.typeface.json', function (font) {
 		
 		_this.frontCards = [
-			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], -planeAngle, true),
-			_this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], -planeAngle, true),
-			_this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], -planeAngle, true),
-			_this.frontCard2 = createCard('0', 1.0, ringPositions[6], -planeAngle, true),
+			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
+			_this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
+			_this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
+			_this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
 		];
 		
 		_this.backCards = [
@@ -105,13 +105,60 @@ function ScoreBoard(width, height, depth, cardGap) {
 			return card;
 		}
 	});
+	
+	this.speed = Math.PI * 2;
+	this.actions = [null, null, null, null];
 }
 
 ScoreBoard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: ScoreBoard,
 	
-	// TODO
+	setCardAction: function (cardNo, text, direction) {
+		var frontCard = this.frontCards[cardNo];
+		var backCard = this.backCards[cardNo];
+		var animateCard = this.animateCards[cardNo];
+		if (direction === 'next') {
+			animateCard.setText(text);
+			animateCard.rotation.x = backCard.rotation.x;
+			animateCard.visible = true;
+		} else {
+			animateCard.setText(frontCard.text);
+			animateCard.rotation.x = frontCard.rotation.x;
+			animateCard.visible = true;
+			frontCard.setText(text);
+		}
+		this.actions[cardNo] = {
+			text: text,
+			cardNo: cardNo,
+			direction: direction,
+			frontCard: frontCard,
+			backCard: backCard,
+			animateCard: animateCard,
+		};
+	},
+	
+	update: function (delta) {
+		for (var i = 0; i < this.actions.length; i++)
+			if (this.actions[i] !== null)
+				this.updateCard(delta, this.actions[i]);
+	},
+	
+	updateCard: function (delta, action) {
+		var targetCard = (action.direction === 'next') ? action.frontCard : action.backCard;
+		
+		var cardAngleDeltaFull = targetCard.rotation.x - action.animateCard.rotation.x;
+		var cardAngleDeltaPart = this.speed * delta * (cardAngleDeltaFull < 0 ? -1 : 1);
+		var cardAngleDelta = Math.abs(cardAngleDeltaFull) < Math.abs(cardAngleDeltaPart) ? cardAngleDeltaFull : cardAngleDeltaPart;
+		action.animateCard.rotation.x += cardAngleDelta;
+		
+		if (action.animateCard.rotation.x === targetCard.rotation.x) {
+			if (action.direction === 'next')
+				action.frontCard.setText(action.text);
+			action.animateCard.visible = false;
+			this.actions[action.cardNo] = null;
+		}
+	},
 	
 });
 
