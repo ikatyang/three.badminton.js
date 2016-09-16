@@ -71,7 +71,7 @@ function ScoreBoard(width, height, depth, cardGap) {
 	var _this = this;
 	
 	var loader = new THREE.FontLoader();
-	loader.load('http://threejs.org/examples/fonts/gentilis_regular.typeface.json', function (font) {
+	loader.load('https://ikatyang.github.io/three.badminton.js/fonts/gentilis_regular.typeface.json', function (font) {
 		
 		_this.frontCards = [
 			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
