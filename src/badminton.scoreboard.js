@@ -1,3 +1,5 @@
+import { ScoreBoardCard } from './badminton.scoreboardCard.js';
+
 function ScoreBoard(width, height, depth, cardGap) {
 
 	THREE.Object3D.call(this);
@@ -70,61 +72,44 @@ function ScoreBoard(width, height, depth, cardGap) {
 	
 	var loader = new THREE.FontLoader();
 	loader.load('http://threejs.org/examples/fonts/gentilis_regular.typeface.json', function (font) {
-	
-		_this.font = font;
 		
-		var card1 = _this._createCard('0', cardWidth, cardHeight);
-		card1.position.x = ringPositions[1];
-		card1.rotation.x = -planeAngle;
-		cardRings.add(card1);
+		_this.frontCards = [
+			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], -planeAngle, true),
+			_this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], -planeAngle, true),
+			_this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], -planeAngle, true),
+			_this.frontCard2 = createCard('0', 1.0, ringPositions[6], -planeAngle, true),
+		];
 		
-		var card2 = _this._createCard('0', cardWidth, cardHeight);
-		card2.position.x = ringPositions[6];
-		card2.rotation.x = -planeAngle;
-		cardRings.add(card2);
+		_this.backCards = [
+			_this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
+			_this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
+			_this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
+			_this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
+		];
 		
-		var smallCard1 = _this._createCard('0', cardWidth / 2, cardHeight / 2);
-		smallCard1.position.x = ringPositions[3];
-		smallCard1.rotation.x = -planeAngle;
-		cardRings.add(smallCard1);
+		_this.animateCards = [
+			_this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
+			_this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
+			_this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
+			_this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
+		];
 		
-		var smallCard2 = _this._createCard('0', cardWidth / 2, cardHeight / 2);
-		smallCard2.position.x = ringPositions[4];
-		smallCard2.rotation.x = -planeAngle;
-		cardRings.add(smallCard2);
+		function createCard(text, scale, posX, angle, visible) {
+			var card = new ScoreBoardCard(cardWidth * scale, cardHeight * scale, font);
+			card.setText(text);
+			card.position.x = posX;
+			card.rotation.x = angle;
+			card.visible = visible;
+			card.plane.position.y = -cardHeight * scale / 2 - cardGap;
+			cardRings.add(card);
+			return card;
+		}
 	});
 }
 
-ScoreBoard.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+ScoreBoard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: ScoreBoard,
-	
-	_createCard: function (text, width, height) {
-		var card = new THREE.Object3D();
-		var mesh = new THREE.Mesh(
-			new THREE.PlaneGeometry(width, height),
-			new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
-		mesh.position.y = -height / 2 - this.parameters.cardGap;
-		var text = new THREE.Mesh(
-			new THREE.TextGeometry(text, {
-				font: this.font,
-				height: 0.01,
-			}),
-			new THREE.MeshNormalMaterial());
-		text.geometry.computeBoundingBox();
-		var size = {
-			x: text.geometry.boundingBox.max.x - text.geometry.boundingBox.min.x,
-			y: text.geometry.boundingBox.max.y - text.geometry.boundingBox.min.y,
-		};
-		text.scale.set(width * 0.8 / size.x, height * 0.8 / size.y, 1);		
-		text.position.x = -0.5 * width * 0.9;
-		text.position.y = -0.5 * height * 0.9;
-		mesh.add(text);
-		card.add(mesh);
-		return card;
-	},
-	
-}), {
 	
 	// TODO
 	
