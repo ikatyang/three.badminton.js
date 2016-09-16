@@ -4,7 +4,7 @@
 		<title>Badminton Demo</title>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js'></script>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r74/three.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r77/three.min.js'></script>
 		<script src='OrbitControls.js'></script>
 		<style>
 			body {
@@ -30,7 +30,7 @@
 		<script>
 			var camera, scene, renderer;
 			var controls;
-			var shuttle, court, game;
+			var shuttle, court, game, scoreBoard;
 			var robot1, robot2;
 			var ball1, ball2;
 			var clock;
@@ -72,6 +72,11 @@
 				game = new THREE.Badminton.Game(court, shuttle, 2);
 				game.onScoreChange = function () {
 					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
+					if (this.lastWinner === 1) {
+						scoreBoard.setCardAction(0, this.score1.toString(), 'next');
+					} else {
+						scoreBoard.setCardAction(3, this.score2.toString(), 'next');
+					}
 				};
 				
 				clock = new THREE.Clock();
@@ -114,6 +119,11 @@
 					new THREE.BoxGeometry(10, 10, 10),
 					new THREE.MeshNormalMaterial());
 				scene.add(ball2);
+				
+				scoreBoard = new THREE.Badminton.ScoreBoard(200, 100, 50, 10);
+				scoreBoard.rotation.y = -Math.PI / 4;
+				scoreBoard.position.z = -400;
+				scene.add(scoreBoard);
 				
 				var gui = new dat.GUI();
 				
@@ -178,6 +188,7 @@
 					robot2.update(delta);
 					court.update(delta);
 					game.update(delta);
+					scoreBoard.update(delta);
 				}
 				controls.update();
 				requestAnimationFrame(animate);
