@@ -6,6 +6,7 @@
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r77/three.min.js'></script>
 		<script src='controls/OrbitControls.js'></script>
+		<script src='controls/DeviceOrientationControls.js'></script>
 		<style>
 			body {
 				margin: 0;
@@ -29,7 +30,7 @@
 		</div>
 		<script>
 			var camera, scene, renderer;
-			var controls;
+			var control, controls;
 			var shuttle, court, game, scoreBoard;
 			var robot1, robot2;
 			var ball1, ball2;
@@ -84,8 +85,6 @@
 				renderer = new THREE.WebGLRenderer();
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
-
-				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
 				robot1 = new THREE.Badminton.Robot();
 				robot1.setLimits(court.getFirstArea1(0), true);
@@ -128,6 +127,20 @@
 				var gui = new dat.GUI();
 				
 				gui.add(this, 'delay', 1, 30);
+				
+				control = 'orbit';
+				gui.add(this, 'control', ['orbit', 'deviceOrientation']).onChange(onControlChange);
+				onControlChange(control);
+				
+				function onControlChange(value) {
+					if (controls)
+						controls.dispose();
+					if (value === 'orbit') {
+						controls = new THREE.OrbitControls(camera, renderer.domElement);
+					} else if (value === 'deviceOrientation') {
+						controls = new THREE.DeviceOrientationControls(camera);
+					}
+				}
 				
 				addRobot(robot1, 'P1 (Player)');
 				addRobot(robot2, 'P2 (Computer)');
