@@ -155,9 +155,31 @@
 				next();
 				
 				document.body.appendChild(renderer.domElement);
+				document.addEventListener('keypress', onDocumentKeyPress, false);
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
 				window.addEventListener('resize', onWindowResize, false);
+			}
+
+			function onDocumentKeyPress(event) {
+				switch (event.key) {
+					case 'w':
+					case 'W':
+						robot1.impactType = 'top';
+						break;
+					case 's':
+					case 'S':
+						robot1.impactType = 'smash';
+						break;
+					case 'a':
+					case 'A':
+						robot1.impactType = 'left';
+						break;
+					case 'd':
+					case 'D':
+						robot1.impactType = 'right';
+						break;
+				}
 			}
 			
 			function getIntersectedPoint() {
