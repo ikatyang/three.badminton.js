@@ -184,6 +184,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	},
 	
 	update: function (delta) {
+		this.onBeforeUpdate();
 		var robotPosition;
 		var link;
 		var racket;
@@ -654,6 +655,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	topTableStart:[0, 1, 2, 3, 5, 6],	//和離網距離相應之最小力道在topForceTable中的index
 
 	onAfterImpact: function () {},
+	onBeforeUpdate: function () {},
 	
 }), {
 	
