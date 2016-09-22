@@ -107,6 +107,13 @@
 				robot2.onAfterImpact = function () {
 					this.setLimits(court.getArea2());
 				};
+				robot2.onBeforeUpdate = function() {
+					if(this.impactType === 'smash' || this.impactType === 'top') {
+						var shuttlePosition = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), court);
+						if (shuttlePosition.y < 185 && shuttlePosition.x > 0)
+							this.impactType = 'right';
+					}
+				};
 				scene.add(robot2);
 				
 				ball1 = new THREE.Mesh(
