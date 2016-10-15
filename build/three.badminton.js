@@ -295,7 +295,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	var body = new THREE.Mesh(
 		new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth),
-		new THREE.MeshNormalMaterial({ wireframe: true }));
+		new THREE.MeshNormalMaterial({ wireframe: false }));
 	body.position.set(0, bodyHeight / 2, 0);
 	this.add(body);
 	
@@ -379,7 +379,110 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	topLink.frame = topLinkFrame;
 	topLink.add(topLinkFrame);
 	body.add(topLink);
+
+	var pixelRow = 20;
+	var space = 3;
+	var side = bodyWidth * 0.3 < bodyHeight / 3 ? bodyWidth * 0.3 : bodyHeight / 3;  //眼睛範圍的方形邊長
+	var eyeMidR = new THREE.Vector2(bodyWidth * 0.3 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);  //眼睛中心點
+	var eyeMidL = new THREE.Vector2(bodyWidth * 0.7 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);
+	var pixelSide = side / (pixelRow + space);
+	var eyes = new THREE.Object3D();
+	var leftEyeBall = new THREE.Object3D();
+	var rightEyeBall = new THREE.Object3D();
+	var smashEyes = new THREE.Object3D();
+	var rFirst = new THREE.Vector3(eyeMidR.x - side / 2 + pixelSide / 2, eyeMidR.y + side / 2 - pixelSide / 2, bodyDepth / 2);
+	var rLast = new THREE.Vector3(eyeMidR.x + side / 2 - pixelSide / 2, eyeMidR.y - side / 2 + pixelSide / 2, bodyDepth / 2) ;
+	var lFirst = new THREE.Vector3(eyeMidL.x - side / 2 + pixelSide / 2, eyeMidL.y + side / 2 - pixelSide / 2, bodyDepth / 2);
+	var lLast = new THREE.Vector3(eyeMidL.x + side / 2 - pixelSide / 2, eyeMidL.y - side / 2 + pixelSide / 2, bodyDepth / 2);
 	
+	//pixel格數 + 2格寬的中間間隙共 pixelRow + space 格，pixel中心點每次移動一格寬 + 一格間隙
+	var addUnit = side / (pixelRow + space) + side * 2 / (pixelRow + space) / (pixelRow - 1);
+
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+	
+	//眼睛上方槓槓
+	for (var i = 0; i < 2; i++) {
+		var x = (i === 0) ? rFirst.x : lFirst.x;
+		var y = (i === 0) ? rFirst.y : lFirst.y;
+		for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
+			for (var k = 0; k < pixelRow; k++) {
+				var mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(k * addUnit + x, y - j * addUnit, 0.1 + bodyDepth / 2);
+				eyes.add(mesh);
+			}
+		}
+	}
+	
+	//眼珠
+	for (var i = 0; i < 2; i++) {
+		var x = (i === 0) ? rFirst.x : lFirst.x;
+		var y = (i === 0) ? rFirst.y : lFirst.y;
+		for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
+			for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
+				var mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(k * addUnit + x, y - j * addUnit, 0.1 + bodyDepth / 2);
+				if (i === 0)
+					rightEyeBall.add(mesh);
+				else
+					leftEyeBall.add(mesh);
+			}
+		}
+	}
+	eyes.add(rightEyeBall);
+	eyes.add(leftEyeBall);
+	body.add(eyes);
+
+	//殺球槓
+	var nowX = 0;
+	var i;
+	for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
+		for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 0.1 + bodyDepth / 2);
+			smashEyes.add(mesh);
+			
+			var mesh4 = mesh.clone();
+			mesh4.position.y -= addUnit;
+			smashEyes.add(mesh4);
+			
+			var mesh2 = mesh.clone();
+			mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 0.1 + bodyDepth / 2);
+			smashEyes.add(mesh2);
+			
+			var mesh3 = mesh2.clone();
+			mesh3.position.y -= addUnit;
+			smashEyes.add(mesh3);
+		}
+	}
+	
+	//珠
+	for (; i < pixelRow; i++) {
+		var j = Math.floor(pixelRow * 0.7);
+		
+		var mesh = new THREE.Mesh(geometry, material);
+		mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 0.1 + bodyDepth / 2);
+		
+		var mesh2 = new THREE.Mesh(geometry, material);
+		mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 0.1 + bodyDepth / 2);
+		
+		smashEyes.add(mesh);
+		smashEyes.add(mesh2);
+		
+		j++;
+		
+		var end = pixelRow - j;
+		for (j = 1; j < end; j++) {
+			var mesh3 = mesh.clone();
+			mesh3.position.x += addUnit * j;
+			smashEyes.add(mesh3);
+			
+			var mesh4 = mesh2.clone();
+			mesh4.position.x -= addUnit * j;
+			smashEyes.add(mesh4);
+		}
+	}
+
 	this.body = body;
 	
 	this.leftLink = leftLink;
@@ -427,6 +530,22 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
+
+	this.side = side;
+	this.addUnit = addUnit;
+	this.rightEyePixelRange = {
+		first: rFirst,
+		last: rLast,
+	};
+	this.leftEyePixelRange = {
+		first: lFirst,
+		last: lLast,
+	};
+	this.eyes = eyes;
+	this.leftEyeBall = leftEyeBall;
+	this.rightEyeBall = rightEyeBall;
+	this.smashEyes = smashEyes;
+	this.eyeStatus = 'common';
 }
 
 Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
@@ -489,6 +608,11 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = p.y;
 			impactLength = this.parameters.racketLength / 2;
 			localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
+			if (this.eyeStatus === 'common') {
+				this.body.remove(this.eyes);
+				this.body.add(this.smashEyes);
+				this.eyeStatus = 'smash';
+			}
 		} else if (this.impactType === 'top') {
 			link = this.topLink;
 			racket = this.topRacket;
@@ -498,7 +622,12 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = localImpactPosition.y;
 			impactSpeed = this.getTopImpactSpeed(impactHeight);
 			impactPosition = this.predictFallingPosition(impactHeight);
-		} else {
+		if (this.eyeStatus === 'smash') {
+			this.body.remove(this.smashEyes);
+			this.body.add(this.eyes);
+			this.eyeStatus = 'common';
+		}
+    } else {
 			if (this.impactType === 'left') {
 				link = this.leftLink;
 				racket = this.leftRacket;
@@ -516,6 +645,25 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactAngle = impactParams[0];
 			impactSpeed = impactParams[1];
 			impactPosition = this.predictFallingPosition(impactHeight);
+			if (this.eyeStatus === 'smash') {
+				this.body.remove(this.smashEyes);
+				this.body.add(this.eyes);
+				this.eyeStatus = 'common';
+			}
+		}
+
+		if (this.eyeStatus === 'common') {
+			var shuttlePos = this.body.worldToLocal(this.shuttle.localToWorld(new THREE.Vector3()));
+			if (shuttlePos.x > 5) {
+				this.leftEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
+				this.rightEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
+			} else if (shuttlePos.x < -5) {
+				this.leftEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
+				this.rightEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
+			} else {
+				this.leftEyeBall.position.x = 0;
+				this.rightEyeBall.position.x = 0;
+			}
 		}
 		
 		var bodyAngle;
@@ -689,8 +837,8 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if (j === forceTable[i].length) {
 			speed = forceTable[i][j - 1][1];
 		} else {
-			//直接線性內差,數字太大-> *0.6
-			var ratio = 0.6 * (x0 - forceTable[i][j - 1][0]) / (forceTable[i][j][0] - forceTable[i][j - 1][0]);
+			//直接線性內差,數字太大-> *0.8
+			var ratio = 0.8 * (x0 - forceTable[i][j - 1][0]) / (forceTable[i][j][0] - forceTable[i][j - 1][0]);
 			speed = forceTable[i][j - 1][1] + ratio * (forceTable[i][j][1] - forceTable[i][j - 1][1]);
 		}
 		return [forceTable[i][0], speed, 0.6]; //離網距離, 力道, 放大仰角
