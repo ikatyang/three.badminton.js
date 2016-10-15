@@ -563,8 +563,8 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if (j === forceTable[i].length) {
 			speed = forceTable[i][j - 1][1];
 		} else {
-			//直接線性內差,數字太大-> *0.6
-			var ratio = 0.6 * (x0 - forceTable[i][j - 1][0]) / (forceTable[i][j][0] - forceTable[i][j - 1][0]);
+			//直接線性內差,數字太大-> *0.8
+			var ratio = 0.8 * (x0 - forceTable[i][j - 1][0]) / (forceTable[i][j][0] - forceTable[i][j - 1][0]);
 			speed = forceTable[i][j - 1][1] + ratio * (forceTable[i][j][1] - forceTable[i][j - 1][1]);
 		}
 		return [forceTable[i][0], speed, 0.6]; //離網距離, 力道, 放大仰角
