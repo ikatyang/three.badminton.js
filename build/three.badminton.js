@@ -177,8 +177,12 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 			this.flipAngle = flipParams[0];
 			this.flipAngularVelocity = flipParams[1];
 			
-			var flipMatrix = new THREE.Matrix4().makeRotationAxis(this.flipAxis, this.flipAngle);
-			this.flipFrame.rotation.setFromRotationMatrix(flipMatrix);
+			if (Math.abs(this.flipAngle) < Math.PI) {
+				var flipMatrix = new THREE.Matrix4().makeRotationAxis(this.flipAxis, this.flipAngle);
+				this.flipFrame.rotation.setFromRotationMatrix(flipMatrix);
+			} else {
+				this.flipFrame.rotation.set(0, 0, 0);
+			}
 		}
 	},
 	
@@ -512,6 +516,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		zMin: 0,
 		zMax: 0,
 	};
+	this.limitEpsilon = 0.1;
 	
 	this.shuttle = null;
 	this.racketAttenuation = 0.9;
@@ -671,10 +676,12 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
 			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
 			!impactPosition || 
-			impactPosition.x < this.limits.xMin ||
-			impactPosition.x > this.limits.xMax || 
-			impactPosition.z < this.limits.zMin ||
-			impactPosition.z > this.limits.zMax) {
+			(this.limits.xMin === 0 && impactPosition.x < 0) ||
+			(this.limits.xMax === 0 && impactPosition.x > 0) ||
+			impactPosition.x < this.limits.xMin + (this.limits.xMin - this.limits.xMax) * this.limitEpsilon ||
+			impactPosition.x > this.limits.xMax + (this.limits.xMax - this.limits.xMin) * this.limitEpsilon || 
+			impactPosition.z < this.limits.zMin + (this.limits.zMin - this.limits.zMax) * this.limitEpsilon ||
+			impactPosition.z > this.limits.zMax + (this.limits.zMax - this.limits.zMin) * this.limitEpsilon) {
 			bodyAngle = 0;
 			impactAngle = 0;
 			rotationValue = 0;
@@ -1143,6 +1150,10 @@ Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
 
 	constructor: Court,
 	
+	reset: function () {
+		this.lastUpdateMul = 0;
+	},
+	
 	update: function (delta) {
 		var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this);
 		var lastPosition = this.shuttle.localToTarget(this.shuttle.velocity.clone().multiplyScalar(-this.shuttle.lastDelta), this);
@@ -1157,6 +1168,7 @@ Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
 			this.shuttle.state = 'stop-net';
 			this.shuttle.position.copy(this.localToTarget(netPosition.clone(), this.shuttle.parent));
 		}
+		this.lastUpdateMul = mul;
 	},
 	
 	getArea: function () {
