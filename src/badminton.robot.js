@@ -238,6 +238,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		zMin: 0,
 		zMax: 0,
 	};
+	this.limitEpsilon = 0.1;
 	
 	this.shuttle = null;
 	this.racketAttenuation = 0.9;
@@ -397,10 +398,12 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
 			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
 			!impactPosition || 
-			impactPosition.x < this.limits.xMin ||
-			impactPosition.x > this.limits.xMax || 
-			impactPosition.z < this.limits.zMin ||
-			impactPosition.z > this.limits.zMax) {
+			(this.limits.xMin === 0 && impactPosition.x < 0) ||
+			(this.limits.xMax === 0 && impactPosition.x > 0) ||
+			impactPosition.x < this.limits.xMin + (this.limits.xMin - this.limits.xMax) * this.limitEpsilon ||
+			impactPosition.x > this.limits.xMax + (this.limits.xMax - this.limits.xMin) * this.limitEpsilon || 
+			impactPosition.z < this.limits.zMin + (this.limits.zMin - this.limits.zMax) * this.limitEpsilon ||
+			impactPosition.z > this.limits.zMax + (this.limits.zMax - this.limits.zMin) * this.limitEpsilon) {
 			bodyAngle = 0;
 			impactAngle = 0;
 			rotationValue = 0;
