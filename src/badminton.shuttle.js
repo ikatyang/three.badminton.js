@@ -149,8 +149,12 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 			this.flipAngle = flipParams[0];
 			this.flipAngularVelocity = flipParams[1];
 			
-			var flipMatrix = new THREE.Matrix4().makeRotationAxis(this.flipAxis, this.flipAngle);
-			this.flipFrame.rotation.setFromRotationMatrix(flipMatrix);
+			if (Math.abs(this.flipAngle) < Math.PI) {
+				var flipMatrix = new THREE.Matrix4().makeRotationAxis(this.flipAxis, this.flipAngle);
+				this.flipFrame.rotation.setFromRotationMatrix(flipMatrix);
+			} else {
+				this.flipFrame.rotation.set(0, 0, 0);
+			}
 		}
 	},
 	
