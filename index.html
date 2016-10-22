@@ -91,6 +91,7 @@
 				robot1.shuttle = shuttle;
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
+					court.reset();
 					this.setLimits(court.getArea1());
 					robot2.impactType = getRandomImpactType();
 					
@@ -105,6 +106,7 @@
 				robot2.shuttle = shuttle;
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
+					court.reset();
 					this.setLimits(court.getArea2());
 				};
 				robot2.onBeforeUpdate = function() {

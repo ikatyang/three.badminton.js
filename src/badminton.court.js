@@ -40,6 +40,10 @@ Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
 
 	constructor: Court,
 	
+	reset: function () {
+		this.lastUpdateMul = 0;
+	},
+	
 	update: function (delta) {
 		var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this);
 		var lastPosition = this.shuttle.localToTarget(this.shuttle.velocity.clone().multiplyScalar(-this.shuttle.lastDelta), this);
@@ -54,6 +58,7 @@ Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
 			this.shuttle.state = 'stop-net';
 			this.shuttle.position.copy(this.localToTarget(netPosition.clone(), this.shuttle.parent));
 		}
+		this.lastUpdateMul = mul;
 	},
 	
 	getArea: function () {
