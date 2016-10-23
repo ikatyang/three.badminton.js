@@ -299,9 +299,64 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	var body = new THREE.Mesh(
 		new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth),
-		new THREE.MeshNormalMaterial({ wireframe: false }));
+		new THREE.MeshNormalMaterial({ wireframe: true }));
 	body.position.set(0, bodyHeight / 2, 0);
 	this.add(body);
+	
+	///////////////////////////////////////////////////////////
+	var tubularSeg = 12;
+	var radialSeg = 8;
+	var twoPI = 2 * Math.PI;
+	var bodyH = bodyHeight * 5 / 6;
+	var radialAdd = bodyH / (radialSeg - 1), tubularAdd = twoPI / tubularSeg;
+	var a = bodyWidth / 2.5;  //半實軸
+	var b = bodyH / 2;  //半虛軸
+	var center = new THREE.Vector3(0, b, 0);
+	var geo = new THREE.Geometry();
+	var positionObj = new THREE.Object3D();
+
+	for (var h = 0; h <= bodyH; h += radialAdd) {
+		var y = h;
+		var x = Math.sqrt((((y - center.y) * (y - center.y) / (b * b) + 1) * a * a)) - center.x;
+
+		for (var i = 0; i < twoPI; i += tubularAdd) {
+			positionObj.rotation.y = i;
+			positionObj.updateMatrixWorld();
+			geo.vertices.push(positionObj.localToWorld(new THREE.Vector3(x, y, 0)));
+		}
+	}
+	
+	var len = Math.floor(geo.vertices.length * 3 / 4); 
+	for(var index = 0; index < len; index++) {
+		var face = (index % tubularSeg === 0) ?
+			new THREE.Face3(index, index - 1 + tubularSeg, index - 1 + 2 * tubularSeg) :
+			new THREE.Face3(index, index - 1, index - 1 + tubularSeg);
+		if(face.c >= geo.vertices.length)
+			break;
+		geo.faces.push(face);
+		var face2 = (index % tubularSeg === 0) ?
+			new THREE.Face3(index, index - 1 + 2 * tubularSeg, index + tubularSeg) :
+			new THREE.Face3(index, index - 1 + tubularSeg, index + tubularSeg);
+		geo.faces.push(face2);
+	}
+
+	geo.computeBoundingSphere();
+	geo.computeFaceNormals();
+	geo.computeVertexNormals();
+
+	var bodyMaterial = new THREE.MeshBasicMaterial({
+		color: 0x000000,
+		side: THREE.DoubleSide
+	});
+	var waist = new THREE.Mesh (geo, bodyMaterial);
+	waist.position.set(0, -bodyHeight / 2, 0);
+	body.add (waist);
+
+	var headGeometry = new THREE.SphereGeometry(bodyHeight * 1 / 6, 32, 32);
+	var sphere = new THREE.Mesh(headGeometry, bodyMaterial);
+	sphere.position.set(0, bodyHeight * 1 / 3, 0);
+	body.add (sphere);
+	//////////////////////////////////////////////////////////
 	
 	var leftLink = Object.defineProperties(new THREE.Object3D(), {
 		angleA: {
