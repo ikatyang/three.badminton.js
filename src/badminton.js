@@ -6,3 +6,4 @@ export { Court } from './badminton.court.js';
 export { Game } from './badminton.game.js';
 export { ScoreBoard } from './badminton.scoreboard.js';
 export { ScoreBoardCard } from './badminton.scoreboardCard.js';
+export { TargetPoint } from './badminton.targetPoint.js';

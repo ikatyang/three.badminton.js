@@ -33,7 +33,7 @@
 			var control, controls;
 			var shuttle, court, game, scoreBoard;
 			var robot1, robot2;
-			var ball1, ball2;
+			var targetPoint1, targetPoint2;
 			var clock;
 			var animated = false;
 			var delay = 5;
@@ -97,7 +97,7 @@
 					
 					var randomPosition = getRandomPosition(robot1.limits);
 					robot2.targetPosition.copy(randomPosition);
-					ball2.position.copy(randomPosition);
+					targetPoint2.position.copy(randomPosition);
 				};
 				scene.add(robot1);
 				
@@ -118,15 +118,11 @@
 				};
 				scene.add(robot2);
 				
-				ball1 = new THREE.Mesh(
-					new THREE.BoxGeometry(10, 10, 10),
-					new THREE.MeshNormalMaterial());
-				scene.add(ball1);
+				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5);
+				scene.add(targetPoint1);
 				
-				ball2 = new THREE.Mesh(
-					new THREE.BoxGeometry(10, 10, 10),
-					new THREE.MeshNormalMaterial());
-				scene.add(ball2);
+				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5);
+				scene.add(targetPoint2);
 				
 				scoreBoard = new THREE.Badminton.ScoreBoard(200, 100, 50, 10);
 				scoreBoard.rotation.y = -Math.PI / 4;
@@ -207,7 +203,7 @@
 					var point = getIntersectedPoint();
 					if (point !== null) {
 						robot1.targetPosition.copy(point);
-						ball1.position.copy(point);
+						targetPoint1.position.copy(point);
 					}
 				}
 			}
@@ -234,6 +230,8 @@
 					game.update(delta);
 					scoreBoard.update(delta);
 				}
+				targetPoint1.update(delta, camera);
+				targetPoint2.update(delta, camera);
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
@@ -279,11 +277,11 @@
 				
 				var randomPosition1 = getRandomPosition(robot2.limits);
 				robot1.targetPosition.copy(randomPosition1);
-				ball1.position.copy(randomPosition1);
+				targetPoint1.position.copy(randomPosition1);
 				
 				var randomPosition2 = getRandomPosition(robot1.limits);
 				robot2.targetPosition.copy(randomPosition2);
-				ball2.position.copy(randomPosition2);
+				targetPoint2.position.copy(randomPosition2);
 				
 				var area = (game.lastWinner === 1) ?
 					court.getFirstArea1(game.score1) :
