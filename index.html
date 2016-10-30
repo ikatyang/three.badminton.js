@@ -28,6 +28,7 @@
 			<a href='javascript:toggle()'>Start</a>
 			<a href='javascript:next()'>Next</a>
 		</div>
+		<audio id='impactSound' src='audios/impact.mp3'></audio>
 		<script>
 			var camera, scene, renderer;
 			var control, controls;
@@ -38,6 +39,7 @@
 			var animated = false;
 			var delay = 5;
 			var touchable, raycaster, mouse, intersects;
+			var impactSound;
 
 			init();
 			animate();
@@ -86,6 +88,8 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
 				
+				impactSound = document.getElementById('impactSound');
+				
 				robot1 = new THREE.Badminton.Robot();
 				robot1.setLimits(court.getFirstArea1(0), true);
 				robot1.shuttle = shuttle;
@@ -98,6 +102,9 @@
 					var randomPosition = getRandomPosition(robot1.limits);
 					robot2.targetPosition.copy(randomPosition);
 					targetPoint2.position.copy(randomPosition);
+					
+					impactSound.currentTime = 0;
+					impactSound.play();
 				};
 				scene.add(robot1);
 				
@@ -108,6 +115,9 @@
 				robot2.onAfterImpact = function () {
 					court.reset();
 					this.setLimits(court.getArea2());
+					
+					impactSound.currentTime = 0;
+					impactSound.play();
 				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
