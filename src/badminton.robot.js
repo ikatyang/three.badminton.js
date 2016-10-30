@@ -635,7 +635,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			var ratio = 0.8 * (x0 - forceTable[i][j - 1][0]) / (forceTable[i][j][0] - forceTable[i][j - 1][0]);
 			speed = forceTable[i][j - 1][1] + ratio * (forceTable[i][j][1] - forceTable[i][j - 1][1]);
 		}
-		return [forceTable[i][0], speed, 0.6]; //離網距離, 力道, 放大仰角
+		return [forceTable[i][0], speed, 0.5]; //離網距離, 力道, 放大仰角
 	},
 
     searchNearTable: function (i, x0) {
