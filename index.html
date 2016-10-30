@@ -90,7 +90,27 @@
 				
 				impactSound = document.getElementById('impactSound');
 				
+				var leftRacketMaterial = new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture('textures/racketLeft.png'),
+					transparent: true
+				});
+				var rightRacketMaterial = new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture('textures/racketRight.png'),
+					transparent: true
+				});
+				var topRacketMaterial = new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture('textures/racketTop.png'),
+					transparent: true
+				});
+				
 				robot1 = new THREE.Badminton.Robot();
+				robot1.waist.material = new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture('textures/playerBody1.jpeg'),
+					side: THREE.DoubleSide
+				});
+				robot1.leftRacket.material = leftRacketMaterial;
+				robot1.rightRacket.material = rightRacketMaterial;
+				robot1.topRacket.material = topRacketMaterial;
 				robot1.setLimits(court.getFirstArea1(0), true);
 				robot1.shuttle = shuttle;
 				robot1.rotation.y = Math.PI / 2;
@@ -109,6 +129,13 @@
 				scene.add(robot1);
 				
 				robot2 = new THREE.Badminton.Robot();
+				robot2.waist.material = new THREE.MeshBasicMaterial({
+					map: THREE.ImageUtils.loadTexture('textures/playerBody2.jpeg'),
+					side: THREE.DoubleSide
+				});
+				robot2.leftRacket.material = leftRacketMaterial;
+				robot2.rightRacket.material = rightRacketMaterial;
+				robot2.topRacket.material = topRacketMaterial;
 				robot2.setLimits(court.getFirstArea2(0), true);
 				robot2.shuttle = shuttle;
 				robot2.rotation.y = -Math.PI / 2;
