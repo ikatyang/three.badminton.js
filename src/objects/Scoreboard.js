@@ -1,4 +1,4 @@
-import { ScoreBoardCard } from './badminton.scoreboardCard.js';
+import { ScoreBoardCard } from './ScoreboardCard.js';
 
 function ScoreBoard(width, height, depth, cardGap) {
 

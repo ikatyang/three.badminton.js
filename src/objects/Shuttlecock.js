@@ -1,4 +1,4 @@
-function Shuttle(corkRadius, skirtRadius, skirtHeight, corkMass, skirtMass) {
+function Shuttlecock(corkRadius, skirtRadius, skirtHeight, corkMass, skirtMass) {
 	
 	THREE.Object3D.call(this);
 	
@@ -248,4 +248,4 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 	
 });
 
-export { Shuttle };
+export { Shuttlecock };
