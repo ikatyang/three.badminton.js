@@ -15,6 +15,13 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var massCenter = (massRatio === undefined) ? corkRadius + beltHeight :
 		(corkMassCenter * massRatio + skirtMassCenter) / (massRatio + 1);
 	
+	var corkAngle = Math.atan((R - r) / (b + h));
+	var massToCorkTopLength = r / Math.tan(corkAngle);
+	var massToCorkCenterLength = massCenter - corkMassCenter;
+	
+	var skirtCrossSectionalRadius = r + (R - r) * (skirtMassCenter / h);
+	var skirtCrossSectionalArea = Math.PI * skirtCrossSectionalRadius * skirtCrossSectionalRadius;
+	
 	this.parameters = {
 		corkRadius: corkRadius,
 		skirtRadius: skirtRadius,
@@ -30,7 +37,11 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 		massRatio: massRatio,
 		massCenter: massCenter,
 		corkMassCenter: corkMassCenter,
-		skirtMassCenter: skirtMassCenter
+		skirtMassCenter: skirtMassCenter,
+		corkAngle: corkAngle,
+		massToCorkTopLength: massToCorkTopLength,
+		massToCorkCenterLength: massToCorkCenterLength,
+		skirtCrossSectionalArea: skirtCrossSectionalArea
 	};
 	
 	var corkPositionY = -corkRadius + massCenter;
