@@ -32,7 +32,7 @@
 		<script>
 			var camera, scene, renderer;
 			var control, controls;
-			var shuttle, court, game, scoreBoard;
+			var shuttle, court, game, scoreboard;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
 			var clock;
@@ -86,9 +86,9 @@
 				game.onScoreChange = function () {
 					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
 					if (this.lastWinner === 1) {
-						scoreBoard.setCardAction(0, this.score1.toString(), 'next');
+						scoreboard.setCardAction(0, this.score1.toString(), 'next');
 					} else {
-						scoreBoard.setCardAction(3, this.score2.toString(), 'next');
+						scoreboard.setCardAction(3, this.score2.toString(), 'next');
 					}
 				};
 				
@@ -171,10 +171,10 @@
 				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5);
 				scene.add(targetPoint2);
 				
-				scoreBoard = new THREE.Badminton.ScoreBoard(200, 100, 50, 10);
-				scoreBoard.rotation.y = -Math.PI / 4;
-				scoreBoard.position.z = -400;
-				scene.add(scoreBoard);
+				scoreboard = new THREE.Badminton.Scoreboard(200, 100, 50, 10);
+				scoreboard.rotation.y = -Math.PI / 4;
+				scoreboard.position.z = -400;
+				scene.add(scoreboard);
 				
 				var gui = new dat.GUI();
 				
@@ -276,7 +276,7 @@
 					court.update(delta);
 					game.update(delta);
 				}
-				scoreBoard.update(delta);
+				scoreboard.update(delta);
 				targetPoint1.update(delta, camera);
 				targetPoint2.update(delta, camera);
 				controls.update();

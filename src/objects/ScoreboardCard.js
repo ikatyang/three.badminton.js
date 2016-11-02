@@ -1,4 +1,4 @@
-function ScoreBoardCard(width, height, font) {
+function ScoreboardCard(width, height, font) {
 
 	THREE.Object3D.call(this);
 	
@@ -17,9 +17,9 @@ function ScoreBoardCard(width, height, font) {
 	this.textMesh = null;
 }
 
-ScoreBoardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
-	constructor: ScoreBoardCard,
+	constructor: ScoreboardCard,
 	
 	setText: function (text) {
 		this.text = text;
@@ -50,4 +50,4 @@ ScoreBoardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype)
 	
 });
 
-export { ScoreBoardCard };
+export { ScoreboardCard };

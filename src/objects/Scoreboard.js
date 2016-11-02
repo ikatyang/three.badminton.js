@@ -1,6 +1,6 @@
-import { ScoreBoardCard } from './ScoreboardCard.js';
+import { ScoreboardCard } from './ScoreboardCard.js';
 
-function ScoreBoard(width, height, depth, cardGap) {
+function Scoreboard(width, height, depth, cardGap) {
 
 	THREE.Object3D.call(this);
 	
@@ -95,7 +95,7 @@ function ScoreBoard(width, height, depth, cardGap) {
 		];
 		
 		function createCard(text, scale, posX, angle, visible) {
-			var card = new ScoreBoardCard(cardWidth * scale, cardHeight * scale, font);
+			var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale, font);
 			card.setText(text);
 			card.position.x = posX;
 			card.rotation.x = angle;
@@ -110,9 +110,9 @@ function ScoreBoard(width, height, depth, cardGap) {
 	this.actions = [null, null, null, null];
 }
 
-ScoreBoard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
-	constructor: ScoreBoard,
+	constructor: Scoreboard,
 	
 	setCardAction: function (cardNo, text, direction) {
 		var frontCard = this.frontCards[cardNo];
@@ -162,4 +162,4 @@ ScoreBoard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 });
 
-export { ScoreBoard };
+export { Scoreboard };
