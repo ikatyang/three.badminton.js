@@ -54,7 +54,17 @@
 				
 				var meter2unit = 100;
 				
-				shuttle = new THREE.Badminton.Shuttle(2.5, 5, 6.5);
+				var corkMass = 0.005;
+				var skirtMass = 0.0001;
+				shuttle = new THREE.Badminton.Shuttlecock(new THREE.Badminton.ShuttlecockGeometry(
+					2.5, 5, 1, 6.5, 16, 8, 0.1, 3 / 7, 1, 7 / 3, 0.1, corkMass / skirtMass
+				), new THREE.MultiMaterial([
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'black' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'beige' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' })
+				]), corkMass, skirtMass);
 				shuttle.meter2unit = meter2unit;
 				scene.add(shuttle);
 				

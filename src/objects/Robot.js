@@ -492,7 +492,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		link.angleB = 0;
 		
 		link.updateMatrixWorld();
-		if (this.checkIntersect(racket, this.shuttle.cork) && 
+		if (this.checkIntersect(racket, this.shuttle) && 
 			this.impactClock.getDelta() > this.impactDelta) {
 			var normal = link.directionLocalToWorld(new THREE.Vector3(0, 0, 1)).normalize();
 			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * impactLength), normal, this.racketAttenuation);
@@ -519,16 +519,22 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		this.body.rotation.y += bodyAngleDelta;
 	},
 	
-	checkIntersect: function (box, sphere) {
+	checkIntersect: function (racket, shuttlecock) {
 			
-		box.updateMatrixWorld();
-		sphere.updateMatrixWorld();
+		racket.updateMatrixWorld();
+		shuttlecock.updateMatrixWorld();
 		
-		var spherePosition = sphere.localToTarget(new THREE.Vector3(0, 0, 0), this.parent);
+		if (shuttlecock.geometry.boundingSphere === null)
+			shuttlecock.geometry.computeBoundingSphere();
+		
+		if (racket.geometry.boundingBox === null)
+			racket.geometry.computeBoundingBox();
+		
+		var spherePosition = shuttlecock.localToTarget(shuttlecock.geometry.boundingSphere.center.clone(), this.parent);
 		var lastSpherePosition = spherePosition.clone().addScaledVector(this.shuttle.velocity, -this.shuttle.lastDelta);
 		
-		this.parent.localToTarget(spherePosition, box);
-		this.parent.localToTarget(lastSpherePosition, box);
+		this.parent.localToTarget(spherePosition, racket);
+		this.parent.localToTarget(lastSpherePosition, racket);
 		
 		var isIntersect = false;
 		
@@ -538,14 +544,14 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			var circlePosition = spherePosition.clone().addScaledVector(spherePositionDelta, mul);
 			isIntersect = this.checkIntersectPlaneAndCircle({
 				min: {
-					x: -box.geometry.parameters.width / 2 - circlePosition.x,
-					y: -box.geometry.parameters.height / 2 - circlePosition.y
+					x: racket.geometry.boundingBox.min.x - circlePosition.x,
+					y: racket.geometry.boundingBox.min.y - circlePosition.y
 				},
 				max: {
-					x: box.geometry.parameters.width / 2 - circlePosition.x,
-					y: box.geometry.parameters.height / 2 - circlePosition.y
+					x: racket.geometry.boundingBox.max.x - circlePosition.x,
+					y: racket.geometry.boundingBox.max.y - circlePosition.y
 				},
-			}, sphere.geometry.parameters.radius);
+			}, shuttlecock.geometry.boundingSphere.radius);
 			this.lastCheckMul = mul;
 		}
 		return isIntersect;

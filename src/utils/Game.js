@@ -48,7 +48,7 @@ Game.prototype = {
 						((this.shuttle.impactCount % 2 === 1) ?
 							this.court.getArea1() :
 							this.court.getArea2()));
-				var position = this.shuttle.cork.localToTarget(new THREE.Vector3(0, 0, 0), this.court);
+				var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this.court);
 				if (position.x >= area.xMin && position.x <= area.xMax &&
 					position.z >= area.zMin && position.z <= area.zMax) {
 					if (this.shuttle.impactCount % 2 === 1) {
