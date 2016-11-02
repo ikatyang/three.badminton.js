@@ -1,10 +1,19 @@
-function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, widthSegments, heightSegments, rachisRadius, rachisRatio, featherWidth, featherRatio, featherAngle, massCenter) {
+function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, widthSegments, heightSegments, rachisRadius, rachisRatio, featherWidth, featherRatio, featherAngle, massRatio) {
 	
 	THREE.Geometry.call(this);
 	
 	this.type = 'ShuttlecockGeometry';
 	
-	var massCenter = (massCenter !== undefined) ? massCenter : corkRadius;
+	var R = skirtRadius;
+	var r = corkRadius;
+	var h = skirtHeight;
+	var b = beltHeight;
+	
+	var corkMassCenter = (5 * r * r + 12 * b * r + 6 * b * b) / (4 * (2 * r + 3 * b));
+	var skirtMassCenter = (h / 4) * (r * r + 2 * R * r + 3 * R * R) / (r * r + R * r + R * R);
+	
+	var massCenter = (massRatio === undefined) ? corkRadius + beltHeight :
+		(corkMassCenter * massRatio + skirtMassCenter) / (massRatio + 1);
 	
 	this.parameters = {
 		corkRadius: corkRadius,
@@ -18,7 +27,10 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 		featherWidth: featherWidth,
 		featherRatio: featherRatio,
 		featherAngle: featherAngle,
-		massCenter: massCenter
+		massRatio: massRatio,
+		massCenter: massCenter,
+		corkMassCenter: corkMassCenter,
+		skirtMassCenter: skirtMassCenter
 	};
 	
 	var corkPositionY = -corkRadius + massCenter;
