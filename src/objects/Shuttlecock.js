@@ -1,60 +1,37 @@
-function Shuttlecock(corkRadius, skirtRadius, skirtHeight, corkMass, skirtMass) {
+import { ShuttlecockGeometry } from '../geometries/ShuttlecockGeometry';
+
+function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
 	
 	THREE.Object3D.call(this);
 	
-	corkMass = (corkMass !== undefined) ? corkMass : 0.005;
-	skirtMass = (skirtMass !== undefined) ? skirtMass : 0.0001;
+	if (geometry instanceof ShuttlecockGeometry) {
+		corkAngle = geometry.parameters.corkAngle;
+		massToCorkTopLength = geometry.parameters.massToCorkTopLength;
+		massToCorkCenterLength = geometry.parameters.massToCorkCenterLength;
+		skirtCrossSectionalArea = geometry.parameters.skirtCrossSectionalArea;
+	}
+	
+	this.geometry = geometry;
+	this.material = material;
 	
 	this.parameters = {
-		corkRadius: corkRadius,
-		skirtRadius: skirtRadius, 
-		skirtHeight: skirtHeight,
+		mass: corkMass + skirtMass,
 		corkMass: corkMass,
 		skirtMass: skirtMass,
+		corkAngle: corkAngle,
+		massToCorkTopLength: massToCorkTopLength,
+		massToCorkCenterLength: massToCorkCenterLength,
+		skirtCrossSectionalArea: skirtCrossSectionalArea
 	};
 	
 	var flipFrame = new THREE.Object3D();
 	this.add(flipFrame);
 	
-	var cork = new THREE.Mesh(
-		new THREE.SphereGeometry(corkRadius, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-		new THREE.MeshNormalMaterial({
-			wireframe: true,
-			side: THREE.DoubleSide,
-		}));
-	flipFrame.add(cork);
-	
-	var skirt = new THREE.Mesh(
-		new THREE.CylinderGeometry(corkRadius, skirtRadius, skirtHeight, 16, 1, true),
-		new THREE.MeshNormalMaterial({
-			wireframe: true,
-			side: THREE.DoubleSide,
-		}));
-	flipFrame.add(skirt);
+	var mesh = new THREE.Mesh(geometry, material);
+	flipFrame.add(mesh);
 	
 	this.flipFrame = flipFrame;
-	this.cork = cork;
-	this.skirt = skirt;
-	
-	var corkMassCenter = (5 / 8) * corkRadius;
-	var skirtMassCenter = corkRadius + skirtHeight * (1 - (skirtRadius + corkRadius * 2) / (skirtRadius + corkRadius) / 3);
-	
-	var mass = corkMass + skirtMass;
-	this.mass = mass;
-	
-	var massCenter = (corkMass / mass) * corkMassCenter + (skirtMass / mass) * skirtMassCenter;
-	cork.position.y = massCenter - corkRadius;
-	skirt.position.y = massCenter - corkRadius - skirtHeight / 2;
-	
-	var corkHeight = corkRadius * skirtHeight / (skirtRadius - corkRadius);
-	var fullHeight = corkHeight + skirtHeight;
-	this.corkAngle = Math.atan(skirtRadius / fullHeight);
-	
-	var skirtCrossSectionalRadius = corkRadius + (skirtMassCenter - corkRadius) / skirtHeight * (skirtRadius - corkRadius);
-	this.skirtCrossSectionalArea = Math.PI * skirtCrossSectionalRadius * skirtCrossSectionalRadius;
-	
-	this.corkConeY = massCenter - corkRadius + corkHeight;
-	this.gravityToCorkLength = massCenter - corkMassCenter;
+	this.mesh = mesh;
 	
 	this.dragCoefficient = 0.44;
 	this.groundAttenuation = 0.9;
@@ -75,9 +52,9 @@ function Shuttlecock(corkRadius, skirtRadius, skirtHeight, corkMass, skirtMass) 
 	this.impactCount = 0;
 }
 
-Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
 
-	constructor: Shuttle,
+	constructor: Shuttlecock,
 	
 	getYAxis: function () {
 		this.flipFrame.updateMatrixWorld();
@@ -122,16 +99,16 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 	updateMove: function (delta) {
 		
 		var rho = this.airDensity;
-		var S = this.skirtCrossSectionalArea;
+		var S = this.parameters.skirtCrossSectionalArea;
 		var C_D = this.dragCoefficient;
 		var U = this.velocity.length();
 		
 		var F_D = rho * S * C_D * U * U / 2;
 		
 		var Fv = this.velocity.clone().normalize().multiplyScalar(-F_D);
-		var force = this.gravity.clone().multiplyScalar(this.mass).add(Fv);
+		var force = this.gravity.clone().multiplyScalar(this.parameters.mass).add(Fv);
 		
-		this.velocity.addScaledVector(force, delta / this.mass);
+		this.velocity.addScaledVector(force, delta / this.parameters.mass);
 		this.position.addScaledVector(this.velocity, delta);
 		
 		var xAxis = this.velocity.clone().cross(this.gravity).normalize();
@@ -174,12 +151,12 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 			
 		var flipAxis = this.directionWorldToLocal(yAxis.clone().negate().cross(velocityXZ)).normalize();
 		var flipAngle = Math.min(this.stopAngularVelocity * delta, 
-			yAxis.clone().negate().angleTo(velocityXZ) - this.corkAngle);
+			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
 		
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
 		this.rotation.setFromRotationMatrix(flipMatrix.multiply(new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle)));
 		
-		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.corkConeY, 0), this.parent).y;
+		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
 			this.state = 'stop-ground';
@@ -193,8 +170,8 @@ Shuttle.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Ob
 		var U = this.velocity.length();
 		var M_B = this.parameters.skirtMass;
 		var M_C = this.parameters.corkMass;
-		var l_GC = this.gravityToCorkLength;
-		var S = this.skirtCrossSectionalArea;
+		var l_GC = this.parameters.massToCorkCenterLength;
+		var S = this.parameters.skirtCrossSectionalArea;
 		return [
 			/* phi_dot     */ phi_dot,
 			/* phi_dot_dot */ -(rho * S * C_D * U) / (2 * M_B * (1 + M_B / M_C)) * phi_dot - (rho * S * C_D * U * U) / (2 * (M_C + M_B) * l_GC) * Math.sin(phi)
