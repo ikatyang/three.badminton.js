@@ -1,4 +1,4 @@
-import { ShuttlecockGeometry } from '../geometries/ShuttlecockGeometry';
+import { ShuttlecockGeometry } from '../geometries/ShuttlecockGeometry.js';
 
 function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
 	
