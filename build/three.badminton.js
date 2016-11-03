@@ -1829,19 +1829,6 @@ Game.prototype = {
 
 function Record(shuttlecock, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2, data) {
 	
-	this.data = data || {
-		init: {
-			score1: game.score1,
-			score2: game.score2,
-			nthScore: game.nthScore,
-			firstPlayer: game.lastWinner,
-			shuttlecock: this.getShuttlecockData(shuttlecock),
-			robot1: this.getRobotInitData(robot1),
-			robot2: this.getRobotInitData(robot2),
-		},
-		next: [],
-	};
-	
 	this.shuttlecock = shuttlecock;
 	this.robot1 = robot1;
 	this.robot2 = robot2;
@@ -1852,6 +1839,8 @@ function Record(shuttlecock, robot1, robot2, game, scoreboard, targetPoint1, tar
 	
 	this.resetCounter();
 	this.playing = false;
+	
+	this.init(data);
 }
 
 Record.prototype = {
@@ -1866,12 +1855,28 @@ Record.prototype = {
 		this.counter = 0;
 	},
 	
+	init: function (data) {
+		this.data = data || {
+			init: {
+				score1: this.game.score1,
+				score2: this.game.score2,
+				nthScore: this.game.nthScore,
+				firstPlayer: this.game.lastWinner,
+				shuttlecock: this.getShuttlecockData(this.shuttlecock),
+				robot1: this.getRobotInitData(this.robot1),
+				robot2: this.getRobotInitData(this.robot2),
+			},
+			next: [],
+		};
+	},
+	
 	play: function () {
 		this.resetCounter();
 		
 		this.game.score1 = this.data.init.score1;
 		this.game.score2 = this.data.init.score2;
 		this.game.nthScore = this.data.init.nthScore;
+		this.game.lastWinner = this.data.init.firstPlayer;
 		this.scoreboard.frontCard1.setText(this.game.score1.toString());
 		this.scoreboard.frontCard2.setText(this.game.score2.toString());
 		this.setRobotInit(this.robot1, this.data.init.robot1, this.targetPoint1);
