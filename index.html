@@ -85,11 +85,6 @@
 				game = new THREE.Badminton.Game(court, shuttle, 2);
 				game.onScoreChange = function () {
 					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
-					if (this.lastWinner === 1) {
-						scoreboard.setCardAction(0, this.score1.toString(), 'next');
-					} else {
-						scoreboard.setCardAction(3, this.score2.toString(), 'next');
-					}
 				};
 				
 				clock = new THREE.Clock();
@@ -175,6 +170,7 @@
 				scoreboard.rotation.y = -Math.PI / 4;
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
+				game.scoreboard = scoreboard;
 				
 				var gui = new dat.GUI();
 				
