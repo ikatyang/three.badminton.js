@@ -193,11 +193,11 @@
 					f.open();
 				}
 				
-				next();
-				
 				record = new THREE.Badminton.Record(shuttle, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2);
 				robot1.record = record;
 				robot2.record = record;
+				
+				next();
 				
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
@@ -333,6 +333,8 @@
 				game.nextScore();
 				
 				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
+				
+				record.init();
 			}
 			
 			function replay() {
