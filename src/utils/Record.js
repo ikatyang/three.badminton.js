@@ -43,6 +43,7 @@ Record.prototype = {
 		this.game.score1 = this.data.init.score1;
 		this.game.score2 = this.data.init.score2;
 		this.game.nthScore = this.data.init.nthScore;
+		this.game.lastWinner = this.data.init.firstPlayer;
 		this.scoreboard.frontCard1.setText(this.game.score1.toString());
 		this.scoreboard.frontCard2.setText(this.game.score2.toString());
 		this.setRobotInit(this.robot1, this.data.init.robot1, this.targetPoint1);
