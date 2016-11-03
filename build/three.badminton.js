@@ -1416,7 +1416,7 @@ Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
 	
 });
 
-function ScoreBoardCard(width, height, font) {
+function ScoreboardCard(width, height, font) {
 
 	THREE.Object3D.call(this);
 	
@@ -1435,9 +1435,9 @@ function ScoreBoardCard(width, height, font) {
 	this.textMesh = null;
 }
 
-ScoreBoardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
-	constructor: ScoreBoardCard,
+	constructor: ScoreboardCard,
 	
 	setText: function (text) {
 		this.text = text;
@@ -1468,7 +1468,7 @@ ScoreBoardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype)
 	
 });
 
-function ScoreBoard(width, height, depth, cardGap) {
+function Scoreboard(width, height, depth, cardGap) {
 
 	THREE.Object3D.call(this);
 	
@@ -1563,7 +1563,7 @@ function ScoreBoard(width, height, depth, cardGap) {
 		];
 		
 		function createCard(text, scale, posX, angle, visible) {
-			var card = new ScoreBoardCard(cardWidth * scale, cardHeight * scale, font);
+			var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale, font);
 			card.setText(text);
 			card.position.x = posX;
 			card.rotation.x = angle;
@@ -1578,9 +1578,9 @@ function ScoreBoard(width, height, depth, cardGap) {
 	this.actions = [null, null, null, null];
 }
 
-ScoreBoard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
-	constructor: ScoreBoard,
+	constructor: Scoreboard,
 	
 	setCardAction: function (cardNo, text, direction) {
 		var frontCard = this.frontCards[cardNo];
@@ -1709,6 +1709,8 @@ function Game(court, shuttle, firstPlayer) {
 	this.score1 = 0;
 	this.score2 = 0;
 	this.lastWinner = (firstPlayer !== undefined) ? firstPlayer : 1;
+	
+	this.scoreboard = null;
 }
 
 Game.prototype = {
@@ -1737,6 +1739,7 @@ Game.prototype = {
 					this.lastWinner = this.lastWinner % 2 + 1;
 				}
 				this.lastWinnerScore++;
+				this.updateScoreboard();
 				this.onScoreChange();
 			} else if (this.shuttle.state === 'stop-ground') {
 				var area = (this.shuttle.impactCount <= 1) ?
@@ -1766,7 +1769,18 @@ Game.prototype = {
 					}
 				}
 				this.lastWinnerScore++;
+				this.updateScoreboard();
 				this.onScoreChange();
+			}
+		}
+	},
+	
+	updateScoreboard: function () {
+		if (this.scoreboard) {
+			if (this.lastWinner === 1) {
+				this.scoreboard.setCardAction(0, this.score1.toString(), 'next');
+			} else {
+				this.scoreboard.setCardAction(3, this.score2.toString(), 'next');
 			}
 		}
 	},
@@ -1779,8 +1793,8 @@ exports.ShuttlecockGeometry = ShuttlecockGeometry;
 exports.Shuttlecock = Shuttlecock;
 exports.Robot = Robot;
 exports.Court = Court;
-exports.ScoreBoard = ScoreBoard;
-exports.ScoreBoardCard = ScoreBoardCard;
+exports.Scoreboard = Scoreboard;
+exports.ScoreboardCard = ScoreboardCard;
 exports.TargetPoint = TargetPoint;
 exports.Game = Game;
 
