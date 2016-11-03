@@ -27,12 +27,13 @@
 			<div id='score'>[0:0]</div>
 			<a href='javascript:toggle()'>Start</a>
 			<a href='javascript:next()'>Next</a>
+			<a href='javascript:replay()'>Replay</a>
 		</div>
 		<audio id='impactSound' src='audios/impact.mp3'></audio>
 		<script>
 			var camera, scene, renderer;
 			var control, controls;
-			var shuttle, court, game, scoreboard;
+			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
 			var clock;
@@ -121,11 +122,13 @@
 				robot1.setImpactAudio(impactSound, camera);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
-					robot2.impactType = getRandomImpactType();
-					
-					var randomPosition = getRandomPosition(robot1.limits);
-					robot2.targetPosition.copy(randomPosition);
-					targetPoint2.position.copy(randomPosition);
+					if (!record.playing) {
+						robot2.impactType = getRandomImpactType();
+						
+						var randomPosition = getRandomPosition(robot1.limits);
+						robot2.targetPosition.copy(randomPosition);
+						targetPoint2.position.copy(randomPosition);
+					}
 				};
 				scene.add(robot1);
 				
@@ -191,6 +194,10 @@
 				}
 				
 				next();
+				
+				record = new THREE.Badminton.Record(shuttle, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2);
+				robot1.record = record;
+				robot2.record = record;
 				
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
@@ -326,6 +333,10 @@
 				game.nextScore();
 				
 				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
+			}
+			
+			function replay() {
+				record.play();
 			}
 		</script>
 	</body>

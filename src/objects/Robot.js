@@ -343,6 +343,8 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	this.court = null;
 	this.player = null;
+	
+	this.record = null;
 }
 
 Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
@@ -514,6 +516,13 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * impactLength), normal, this.racketAttenuation);
 			this.impactCount = this.shuttle.impactCount;
 			this.healthPercent *= this.healthAttenuation;
+			
+			if (this.record) {
+				if (this.record.playing)
+					this.record.playRobot();
+				else
+					this.record.recordRobot(this);
+			}
 			
 			if (this.impactAudio && this.camera) {
 				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();

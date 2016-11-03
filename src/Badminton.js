@@ -10,3 +10,4 @@ export { ScoreboardCard } from './objects/ScoreboardCard.js';
 export { TargetPoint } from './objects/TargetPoint.js';
 
 export { Game } from './utils/Game.js';
+export { Record } from './utils/Record.js';
