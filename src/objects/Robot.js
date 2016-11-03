@@ -338,11 +338,19 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	this.rightEyeBall = rightEyeBall;
 	this.smashEyes = smashEyes;
 	this.eyeStatus = 'common';
+	
+	this.camera = null;
+	this.impactAudio = null;
 }
 
 Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
+	
+	setImpactAudio: function (impactAudio, camera) {
+		this.impactAudio = impactAudio;
+		this.camera = camera;
+	},
 	
 	reset: function () {
 		this.topLink.rotation.set(0, 0, 0);
@@ -498,6 +506,13 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * impactLength), normal, this.racketAttenuation);
 			this.impactCount = this.shuttle.impactCount;
 			this.healthPercent *= this.healthAttenuation;
+			
+			if (this.impactAudio && this.camera) {
+				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();
+				this.impactAudio.currentTime = 0;
+				this.impactAudio.volume = 1 - Math.abs(distance / this.camera.far);
+				this.impactAudio.play();
+			}
 			this.onAfterImpact();
 		}
 		

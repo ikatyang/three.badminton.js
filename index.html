@@ -118,6 +118,7 @@
 				robot1.topRacket.material = topRacketMaterial;
 				robot1.setLimits(court.getFirstArea1(0), true);
 				robot1.shuttle = shuttle;
+				robot1.setImpactAudio(impactSound, camera);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					court.reset();
@@ -127,9 +128,6 @@
 					var randomPosition = getRandomPosition(robot1.limits);
 					robot2.targetPosition.copy(randomPosition);
 					targetPoint2.position.copy(randomPosition);
-					
-					impactSound.currentTime = 0;
-					impactSound.play();
 				};
 				scene.add(robot1);
 				
@@ -143,13 +141,11 @@
 				robot2.topRacket.material = topRacketMaterial;
 				robot2.setLimits(court.getFirstArea2(0), true);
 				robot2.shuttle = shuttle;
+				robot2.setImpactAudio(impactSound, camera);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
 					court.reset();
 					this.setLimits(court.getArea2());
-					
-					impactSound.currentTime = 0;
-					impactSound.play();
 				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
