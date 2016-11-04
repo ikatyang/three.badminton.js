@@ -1,6 +1,7 @@
 import './plugins.js';
 
 export { ShuttlecockGeometry } from './geometries/ShuttlecockGeometry.js';
+export { BodyGeometry } from './geometries/BodyGeometry.js';
 
 export { Shuttlecock } from './objects/Shuttlecock.js';
 export { Robot } from './objects/Robot.js';
