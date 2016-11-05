@@ -86,7 +86,7 @@ Record.prototype = {
 	
 	getRobotInitData: function (robot) {
 		return {
-			limits: robot.limits,
+			responsibleArea: robot.responsibleArea.toArray(),
 			impactCount: robot.impactCount,
 			healthPercent: robot.healthPercent,
 			bodyAngle: robot.body.rotation.y,
@@ -96,7 +96,7 @@ Record.prototype = {
 	},
 	
 	setRobotInit: function (robot, data) {
-		robot.limits = data.limits;
+		robot.responsibleArea.fromArray(data.responsibleArea);
 		robot.impactCount = data.impactCount;
 		robot.healthPercent = data.healthPercent;
 		robot.body.rotation.y = data.bodyAngle;
