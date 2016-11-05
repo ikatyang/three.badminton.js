@@ -69,15 +69,36 @@
 				shuttle.meter2unit = meter2unit;
 				scene.add(shuttle);
 				
-				court = new THREE.Badminton.Court(meter2unit);
-				court.shuttle = shuttle;
+				court = new THREE.Badminton.Court(
+					new THREE.Badminton.CourtGeometry(198, 670, 594, 259, 305, 10),
+					new THREE.MeshBasicMaterial({ color: 'white' }));
+				court.rotation.x = -Math.PI / 2;
 				scene.add(court);
 				
-				var courtArea = court.getArea();
+				var netHeight = 110;
+				net = new THREE.Mesh(
+					new THREE.Badminton.NetGeometry(610, netHeight, 5, 2, 61, netHeight / 10),
+					new THREE.MeshNormalMaterial({
+						side: THREE.DoubleSide
+					}));
+				net.rotation.y = Math.PI / 2;
+				net.position.y = 155 - netHeight / 2;
+				scene.add(net);
+				
+				var post1 = new THREE.Mesh(
+					new THREE.CylinderGeometry(5, 5, 155, 16),
+					new THREE.MeshNormalMaterial());
+				post1.position.set(0, 77.5, 305);
+				scene.add(post1);
+				
+				var post2 = post1.clone();
+				post2.position.z *= -1;
+				scene.add(post2);
+				
+				var courtArea = court.getArea('All');
 				touchable = new THREE.Mesh(
-					new THREE.PlaneGeometry(courtArea.xMax - courtArea.xMin, courtArea.zMax - courtArea.zMin),
+					new THREE.PlaneGeometry(courtArea.max.x - courtArea.min.x, courtArea.max.y - courtArea.min.y),
 					new THREE.MeshBasicMaterial({ colorWrite: false }));
-				touchable.rotation.x = -Math.PI / 2;
 				court.add(touchable);
 				
 				mouse = new THREE.Vector2();
@@ -110,6 +131,7 @@
 				});
 				
 				robot1 = new THREE.Badminton.Robot();
+				scene.add(robot1);
 				robot1.waist.material = new THREE.MeshBasicMaterial({
 					map: THREE.ImageUtils.loadTexture('textures/playerBody1.jpeg'),
 					side: THREE.DoubleSide
@@ -125,14 +147,14 @@
 					if (!record.playing) {
 						robot2.impactType = getRandomImpactType();
 						
-						var randomPosition = getRandomPosition(robot1.limits);
+						var randomPosition = getRandomPosition(robot1.responsibleArea);
 						robot2.targetPosition.copy(randomPosition);
 						targetPoint2.position.copy(randomPosition);
 					}
 				};
-				scene.add(robot1);
 				
 				robot2 = new THREE.Badminton.Robot();
+				scene.add(robot2);
 				robot2.waist.material = new THREE.MeshBasicMaterial({
 					map: THREE.ImageUtils.loadTexture('textures/playerBody2.jpeg'),
 					side: THREE.DoubleSide
@@ -151,7 +173,6 @@
 							this.impactType = 'right';
 					}
 				};
-				scene.add(robot2);
 				
 				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5);
 				scene.add(targetPoint1);
@@ -197,6 +218,7 @@
 				robot1.record = record;
 				robot2.record = record;
 				
+				render();
 				next();
 				
 				document.body.appendChild(renderer.domElement);
@@ -230,10 +252,10 @@
 			function getIntersectedPoint() {
 				if (intersects.length > 0) {
 					var point = court.worldToLocal(intersects[0].point);
-					if (point.x >= robot2.limits.xMin &&
-						point.x <= robot2.limits.xMax &&
-						point.z >= robot2.limits.zMin &&
-						point.z <= robot2.limits.zMax) return point;
+					if (point.x >= robot2.responsibleArea.min.x &&
+						point.x <= robot2.responsibleArea.max.x &&
+						point.z >= robot2.responsibleArea.min.z &&
+						point.z <= robot2.responsibleArea.max.z) return point;
 				}
 				return null;
 			}
@@ -242,6 +264,7 @@
 				if (event.which === 1) {
 					var point = getIntersectedPoint();
 					if (point !== null) {
+						court.localToTarget(point, robot1.parent);
 						robot1.targetPosition.copy(point);
 						targetPoint1.position.copy(point);
 					}
@@ -266,7 +289,7 @@
 					shuttle.update(delta);
 					robot1.update(delta);
 					robot2.update(delta);
-					court.update(delta);
+					checkNetCollision();
 					game.update(delta);
 				}
 				scoreboard.update(delta);
@@ -299,35 +322,61 @@
 					return 'smash';
 			}
 			
-			function getRandomPosition(limits) {
+			function getRandomPosition(area) {
 				return new THREE.Vector3(
-					limits.xMin + (limits.xMax - limits.xMin) * Math.random(),
+					area.min.x + (area.max.x - area.min.x) * Math.random(),
 					0,
-					limits.zMin + (limits.zMax - limits.zMin) * Math.random());
+					area.min.z + (area.max.z - area.min.z) * Math.random());
+			}
+			
+			function checkNetCollision() {
+				var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), scene);
+				var lastPosition = shuttle.localToTarget(shuttle.velocity.clone().multiplyScalar(-shuttle.lastDelta), scene);
+				var positionDelta = lastPosition.clone().sub(position);
+				var mul = -position.x / positionDelta.x;
+				var netPosition = position.clone().addScaledVector(positionDelta, mul);
+				if ((Math.abs(mul) <= 1 || mul * checkNetCollision.lastUpdateMul < 0) &&
+					netPosition.y >= 0 &&
+					netPosition.y <= 155 &&
+					netPosition.z >= -305 &&
+					netPosition.z <= 305) {
+					shuttle.state = 'stop-net';
+					shuttle.position.copy(scene.localToTarget(netPosition.clone(), shuttle.parent));
+				}
+				checkNetCollision.lastUpdateMul = mul;
 			}
 
 			function next() {
 				animated = false;
-				robot1.setLimits(court.getFirstArea1(game.lastWinnerScore), true);
+				
+				areaA = court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'A');
+				court.localToTarget(areaA, robot1.parent);
+				
+				robot1.setResponsibleArea(areaA, true);
 				robot1.reset();
-				robot2.setLimits(court.getFirstArea2(game.lastWinnerScore), true);
+				
+				var areaB = court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'B');
+				court.localToTarget(areaB, robot2.parent);
+				
+				robot2.setResponsibleArea(areaB, true);
 				robot2.reset();
 				
 				robot1.impactType = robot2.impactType = 'right';
 				
-				var randomPosition1 = getRandomPosition(robot2.limits);
+				var randomPosition1 = getRandomPosition(robot2.responsibleArea);
 				robot1.targetPosition.copy(randomPosition1);
 				targetPoint1.position.copy(randomPosition1);
 				
-				var randomPosition2 = getRandomPosition(robot1.limits);
+				var randomPosition2 = getRandomPosition(robot1.responsibleArea);
 				robot2.targetPosition.copy(randomPosition2);
 				targetPoint2.position.copy(randomPosition2);
 				
 				var area = (game.lastWinner === 1) ?
-					court.getFirstArea1(game.score1) :
-					court.getFirstArea2(game.score2);
+					court.getArea('SingleFirst' + (game.score1 % 2 == 0 ? 'Right' : 'Left') + 'A') :
+					court.getArea('SingleFirst' + (game.score2 % 2 == 0 ? 'Right' : 'Left') + 'B');
+				court.localToTarget(area, shuttle.parent);
 				shuttle.rotation.set(0, 0, 0);
-				shuttle.position.set((area.xMin + area.xMax) / 2, 120, (area.zMin + area.zMax) / 2);
+				shuttle.position.copy(area.min.clone().add(area.max).divideScalar(2).add(new THREE.Vector3(0, 120, 0)));
 				shuttle.position.x += 30 * (game.lastWinner === 1 ? 1 : -1);
 				shuttle.velocity.set(100 * (game.lastWinner === 1 ? 1 : -1), 200, 0);
 				game.nextScore();
@@ -335,6 +384,7 @@
 				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
 				
 				record.init();
+				checkNetCollision.lastUpdateMul = 0;
 			}
 			
 			function replay() {
