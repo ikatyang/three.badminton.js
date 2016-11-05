@@ -250,13 +250,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	this.impactDelta = 1;
 	this.impactCount = 0;
 	
-	this.limits = {
-		xMin: 0,
-		xMax: 0,
-		zMin: 0,
-		zMax: 0,
+	this.responsibleArea = {
+		min: new THREE.Vector3(0, 0, 0),
+		max: new THREE.Vector3(0, 0, 0),
 	};
-	this.limitEpsilon = 0.1;
+	this.responsibleAreaEpsilon = 0.1;
 	
 	this.shuttle = null;
 	this.racketAttenuation = 0.9;
@@ -313,7 +311,9 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	setCourt: function (court, player) {
 		this.court = court;
 		this.player = player;
-		this.setLimits(court['getFirstArea' + player](0), true);
+		var area = court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B'));
+		court.localToTarget(area, this.parent);
+		this.setResponsibleArea(area, true);
 	},
 	
 	reset: function () {
@@ -324,10 +324,10 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		this.healthPercent = 100;
 	},
 	
-	setLimits: function (limits, resetPosition) {
-		this.limits = limits;
-		if (resetPosition === true)
-			this.position.set((limits.xMin + limits.xMax) / 2, 0, (limits.zMin + limits.zMax) / 2);
+	setResponsibleArea: function (responsibleArea, resetPosition) {
+		this.responsibleArea = responsibleArea;
+		if (resetPosition)
+			this.position.copy(responsibleArea.min.clone().add(responsibleArea.max).divideScalar(2));
 	},
 	
 	predictFallingTime: function (y) {
@@ -435,16 +435,16 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
 			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
 			!impactPosition || 
-			(this.limits.xMin === 0 && impactPosition.x < 0) ||
-			(this.limits.xMax === 0 && impactPosition.x > 0) ||
-			impactPosition.x < this.limits.xMin + (this.limits.xMin - this.limits.xMax) * this.limitEpsilon ||
-			impactPosition.x > this.limits.xMax + (this.limits.xMax - this.limits.xMin) * this.limitEpsilon || 
-			impactPosition.z < this.limits.zMin + (this.limits.zMin - this.limits.zMax) * this.limitEpsilon ||
-			impactPosition.z > this.limits.zMax + (this.limits.zMax - this.limits.zMin) * this.limitEpsilon) {
+			(this.responsibleArea.min.x === 0 && impactPosition.x < 0) ||
+			(this.responsibleArea.max.x === 0 && impactPosition.x > 0) ||
+			impactPosition.x < this.responsibleArea.min.x + (this.responsibleArea.min.x - this.responsibleArea.max.x) * this.responsibleAreaEpsilon ||
+			impactPosition.x > this.responsibleArea.max.x + (this.responsibleArea.max.x - this.responsibleArea.min.x) * this.responsibleAreaEpsilon || 
+			impactPosition.z < this.responsibleArea.min.z + (this.responsibleArea.min.z - this.responsibleArea.max.z) * this.responsibleAreaEpsilon ||
+			impactPosition.z > this.responsibleArea.max.z + (this.responsibleArea.max.z - this.responsibleArea.min.z) * this.responsibleAreaEpsilon) {
 			bodyAngle = 0;
 			impactAngle = 0;
 			rotationValue = 0;
-			robotPosition = new THREE.Vector3((this.limits.xMin + this.limits.xMax) / 2, 0, (this.limits.zMin + this.limits.zMax) / 2);
+			robotPosition = this.responsibleArea.min.clone().add(this.responsibleArea.max).divideScalar(2);
 		} else {
 			
 			var bodyDirection = this.directionWorldToLocal(this.targetPosition.clone().sub(impactPosition).setY(0));
@@ -486,8 +486,9 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			}
 			
 			if (this.court && this.player) {
-				this.court.reset();
-				this.setLimits(this.court['getArea' + this.player]());
+				var area = this.court.getArea('Single' + (this.player === 1 ? 'A' : 'B'));
+				this.court.localToTarget(area, this.parent);
+				this.setResponsibleArea(area);
 			}
 			
 			this.onAfterImpact();

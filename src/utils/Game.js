@@ -42,18 +42,19 @@ Game.prototype = {
 			} else if (this.shuttle.state === 'stop-ground') {
 				var area = (this.shuttle.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
-						this.court.getFirstArea2(this.score1) : 
-						this.court.getFirstArea1(this.score2)) :
+						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
+						this.court.getArea('SingleFirst' + (this.score2 % 2 === 0 ? 'Right' : 'Left') + 'A')) :
 					((this.lastWinner === 1) ?
 						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getArea2() :
-							this.court.getArea1()) : 
+							this.court.getAreaSingleB() :
+							this.court.getAreaSingleA()) : 
 						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getArea1() :
-							this.court.getArea2()));
+							this.court.getAreaSingleA() :
+							this.court.getAreaSingleB()));
+				this.court.localToTarget(area, this.shuttle.parent);
 				var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this.court);
-				if (position.x >= area.xMin && position.x <= area.xMax &&
-					position.z >= area.zMin && position.z <= area.zMax) {
+				if (position.x >= area.min.x && position.x <= area.max.x &&
+					position.z >= area.min.z && position.z <= area.max.z) {
 					if (this.shuttle.impactCount % 2 === 1) {
 						this.lastWinner = this.lastWinner;
 					} else {
