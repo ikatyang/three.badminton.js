@@ -2,6 +2,7 @@ import './plugins.js';
 
 export { ShuttlecockGeometry } from './geometries/ShuttlecockGeometry.js';
 export { BodyGeometry } from './geometries/BodyGeometry.js';
+export { NetGeometry } from './geometries/NetGeometry.js';
 
 export { Shuttlecock } from './objects/Shuttlecock.js';
 export { Robot } from './objects/Robot.js';
