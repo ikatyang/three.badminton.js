@@ -1,7 +1,7 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.THREE = global.THREE || {}, global.THREE.Badminton = global.THREE.Badminton || {})));
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (factory((global.THREE = global.THREE || {}, global.THREE.Badminton = global.THREE.Badminton || {})));
 }(this, (function (exports) { 'use strict';
 
 window.performance = window.performance || Date;
@@ -21,8 +21,27 @@ if (THREE.Object3D.prototype.directionWorldToLocal === undefined) {
 }
 
 if (THREE.Object3D.prototype.localToTarget === undefined) {
-	THREE.Object3D.prototype.localToTarget = function (vector, target) {
-		return target.worldToLocal(this.localToWorld(vector));
+	THREE.Object3D.prototype.localToTarget = function (object, target) {
+		if (object instanceof THREE.Vector3) {
+			return target.worldToLocal(this.localToWorld(object));
+		} else if (object instanceof THREE.Box3) {
+			var p1 = this.localToTarget(object.min.clone(), target);
+			var p2 = this.localToTarget(object.max.clone(), target);
+			return object.setFromPoints([p1, p2]);
+		}
+	}
+}
+
+if (THREE.Box3.prototype.fromArray === undefined) {
+	THREE.Box3.prototype.fromArray = function (array) {
+		this.setFromArray(array);
+		return this;
+	}
+}
+
+if (THREE.Box3.prototype.toArray === undefined) {
+	THREE.Box3.prototype.toArray = function () {
+		return this.min.toArray().concat(this.max.toArray());
 	}
 }
 
@@ -167,6 +186,198 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 
 ShuttlecockGeometry.prototype = Object.create(THREE.Geometry.prototype);
 ShuttlecockGeometry.prototype.constructor = ShuttlecockGeometry;
+
+function BodyGeometry(bodyHeight, bodyWidth){
+
+  THREE.Geometry.call(this);
+
+  var tubularSeg = 12;
+  var radialSeg = 4;
+  var bodyH = bodyHeight * 2 / 3;
+  var radialAdd = bodyH / (radialSeg - 1);
+  var tubularAdd = 2 * Math.PI / tubularSeg;
+  var a = bodyWidth / 2.5;  //半實軸
+  var b = bodyH / 2;  //半虛軸
+  var center = new THREE.Vector3(0, b, 0);
+  var geo = this;
+  var positionObj = new THREE.Object3D();
+
+  for (var h = 0; h <= bodyH; h += radialAdd) {
+    var y = h;
+    var x = Math.sqrt((((y - center.y) * (y - center.y) / (b * b) + 1) * a * a)) - center.x;
+
+  	for (var i = 0; i < 2 * Math.PI; i += tubularAdd) {
+      positionObj.rotation.y = i;
+      positionObj.updateMatrixWorld();
+      geo.vertices.push(positionObj.localToWorld(new THREE.Vector3(x, y, 0)));
+    }
+  }
+
+  var len = Math.floor(geo.vertices.length - tubularSeg);
+  var modMax = tubularSeg - 1;
+
+  for(var index = 0; index < len; index++) {
+    var face = (index % tubularSeg === modMax) ?
+      new THREE.Face3(index, index + 1 - tubularSeg, index + tubularSeg) :
+      new THREE.Face3(index, index + 1, index + tubularSeg);
+
+    face.materialIndex = 0;
+    geo.faces.push(face);
+    var y = Math.floor(index / tubularSeg) / (radialSeg - 1);
+    var x = index % tubularSeg / tubularSeg;
+    var p1 = new THREE.Vector2(x + 1/tubularSeg, y);
+    var p2 = new THREE.Vector2(x, y + 1 / (radialSeg - 1));
+    var p3 = new THREE.Vector2(x + 1/tubularSeg, y + 1 / (radialSeg - 1));
+    geo.faceVertexUvs[0].push([new THREE.Vector2(x, y), p1, p2]);
+
+    var face2 = (index % tubularSeg === modMax) ?
+      new THREE.Face3(index + tubularSeg, index - modMax, index + 1) :
+      new THREE.Face3(index + tubularSeg, index + 1, index + tubularSeg + 1);
+    face.materialIndex = 0;
+    geo.faces.push(face2);
+    geo.faceVertexUvs[0].push([p2, p1, p3]); 
+  }
+
+  geo.computeBoundingSphere();
+  geo.computeFaceNormals();
+  geo.computeVertexNormals();
+
+}
+
+BodyGeometry.prototype = Object.create(THREE.Geometry.prototype);
+BodyGeometry.prototype.constructor = BodyGeometry;
+
+function NetGeometry(width, height, outerTube, innerTube, widthSegments, heightSegments) {
+	
+	THREE.Geometry.call(this);
+	
+	this.type = 'NetGeometry';
+	
+	innerTube = (innerTube !== undefined) ? innerTube : outerTube;
+	widthSegments = (widthSegments !== undefined) ? widthSegments : 1;
+	heightSegments = (heightSegments !== undefined) ? heightSegments : 1;
+	
+	this.parameters = {
+		width: width,
+		height: height,
+		outerTube: outerTube,
+		innerTube: innerTube,
+		widthSegments: widthSegments,
+		heightSegments: heightSegments,
+	};
+	
+	var outerVerticalPlane = new THREE.PlaneGeometry(outerTube, height);
+	var outerHorizontalPlane = new THREE.PlaneGeometry(width, outerTube);
+	
+	this.merge(outerVerticalPlane, new THREE.Matrix4().compose(
+		new THREE.Vector3(-width / 2 + outerTube / 2, 0, 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	this.merge(outerVerticalPlane, new THREE.Matrix4().compose(
+		new THREE.Vector3(width / 2 - outerTube / 2, 0, 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	this.merge(outerHorizontalPlane, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, height / 2 - outerTube / 2 , 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	this.merge(outerHorizontalPlane, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, -height / 2 + outerTube / 2, 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	var innerVerticalPlane = new THREE.PlaneGeometry(innerTube, height);
+	var innerHorizontalPlane = new THREE.PlaneGeometry(width, innerTube);
+	
+	var innerWidth = width - outerTube * 2;
+	var innerWidthDelta = (innerWidth - innerTube * (widthSegments - 1)) / widthSegments;
+	var innerVerticalX = -width / 2 + outerTube + innerWidthDelta + innerTube / 2;
+	for (var i = 0; i < widthSegments - 1; i++, innerVerticalX += innerWidthDelta + innerTube) {
+		this.merge(innerVerticalPlane, new THREE.Matrix4().compose(
+			new THREE.Vector3(innerVerticalX, 0, 0),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+			new THREE.Vector3(1, 1, 1)
+		), 1);
+	}
+	
+	var innerHeight = height - outerTube * 2;
+	var innerHeightDelta = (innerHeight - innerTube * (heightSegments - 1)) / heightSegments;
+	var innerVerticalY = -height / 2 + outerTube + innerHeightDelta + innerTube / 2;
+	for (var i = 0; i < heightSegments - 1; i++, innerVerticalY += innerHeightDelta + innerTube) {
+		this.merge(innerHorizontalPlane, new THREE.Matrix4().compose(
+			new THREE.Vector3(0, innerVerticalY, 0),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+			new THREE.Vector3(1, 1, 1)
+		), 1);
+	}
+}
+
+NetGeometry.prototype = Object.create(THREE.Geometry.prototype);
+NetGeometry.prototype.constructor = NetGeometry;
+
+function CourtGeometry(shortLine, longLineSingle, longLineDouble, sidelineSingle, sidelineDouble, lineWidth) {
+	
+	THREE.Geometry.call(this);
+	
+	this.type = 'CourtGeometry';
+	
+	this.parameters = {
+		shortLine: shortLine,
+		longLineSingle: longLineSingle,
+		longLineDouble: longLineDouble,
+		sidelineSingle: sidelineSingle,
+		sidelineDouble: sidelineDouble,
+		lineWidth: lineWidth,
+	};
+	
+	var verticalPlane = new THREE.PlaneGeometry(lineWidth, sidelineDouble * 2);
+	var verticalPlaneXs = [shortLine + lineWidth / 2, longLineDouble - lineWidth / 2, longLineSingle - lineWidth / 2];
+	for (var i = 0; i < verticalPlaneXs.length; i++) {
+		for (var sign = -1; sign <= 1; sign += 2) {
+			this.merge(verticalPlane, new THREE.Matrix4().compose(
+				new THREE.Vector3(verticalPlaneXs[i] * sign, 0, 0),
+				new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+				new THREE.Vector3(1, 1, 1)
+			), 0);
+		}
+	}
+	this.merge(verticalPlane, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	var horizontalPlane = new THREE.PlaneGeometry(longLineSingle * 2, lineWidth);
+	var horizontalPlaneYs = [sidelineSingle - lineWidth / 2, sidelineDouble - lineWidth / 2];
+	for (var i = 0; i < horizontalPlaneYs.length; i++) {
+		for (var sign = -1; sign <= 1; sign += 2) {
+			this.merge(horizontalPlane, new THREE.Matrix4().compose(
+				new THREE.Vector3(0, horizontalPlaneYs[i] * sign, 0),
+				new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+				new THREE.Vector3(1, 1, 1)
+			), 0);
+		}
+	}
+	
+	var horizontalPlanePart = new THREE.PlaneGeometry(longLineSingle - shortLine, lineWidth);
+	for (var sign = -1; sign <= 1; sign += 2) {
+		this.merge(horizontalPlanePart, new THREE.Matrix4().compose(
+			new THREE.Vector3((shortLine + longLineSingle) / 2 * sign, 0, 0),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+			new THREE.Vector3(1, 1, 1)
+		), 0);
+	}
+}
+
+CourtGeometry.prototype = Object.create(THREE.Geometry.prototype);
+CourtGeometry.prototype.constructor = CourtGeometry;
 
 function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
 	
@@ -421,60 +632,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	this.add(body);
 	
 	///////////////////////////////////////////////////////////
-	var tubularSeg = 12;
-	var radialSeg = 4;
-	var bodyH = bodyHeight * 2 / 3;
-	var radialAdd = bodyH / (radialSeg - 1);
-	var tubularAdd = 2 * Math.PI / tubularSeg;
-	var a = bodyWidth / 2.5;  //半實軸
-	var b = bodyH / 2;  //半虛軸
-	var center = new THREE.Vector3(0, b, 0);
-	var geo = new THREE.Geometry();
-	var positionObj = new THREE.Object3D();
-
-	for (var h = 0; h <= bodyH; h += radialAdd) {
-		var y = h;
-		var x = Math.sqrt((((y - center.y) * (y - center.y) / (b * b) + 1) * a * a)) - center.x;
-
-		for (var i = 0; i < 2 * Math.PI; i += tubularAdd) {
-			positionObj.rotation.y = i;
-			positionObj.updateMatrixWorld();
-			geo.vertices.push(positionObj.localToWorld(new THREE.Vector3(x, y, 0)));
-		}
-	}
-	
-	var len = Math.floor(geo.vertices.length - tubularSeg);
-	var modMax = tubularSeg - 1;
-	
-	for(var index = 0; index < len; index++) {
-		var face = (index % tubularSeg === modMax) ?
-			new THREE.Face3(index, index + 1 - tubularSeg, index + tubularSeg) :
-			new THREE.Face3(index, index + 1, index + tubularSeg);
-		face.materialIndex = 0;
-		geo.faces.push(face);
-		var y = Math.floor(index / tubularSeg) / (radialSeg - 1);
-		var x = index % tubularSeg / tubularSeg;
-		var p1 = new THREE.Vector2(x + 1/tubularSeg, y);
-		var p2 = new THREE.Vector2(x, y + 1 / (radialSeg - 1));
-		var p3 = new THREE.Vector2(x + 1/tubularSeg, y + 1 / (radialSeg - 1));
-		geo.faceVertexUvs[0].push([new THREE.Vector2(x, y), p1, p2]);
-		var face2 = (index % tubularSeg === modMax) ?
-			new THREE.Face3(index + tubularSeg, index - modMax, index + 1) :
-			new THREE.Face3(index + tubularSeg, index + 1, index + tubularSeg + 1);
-		face.materialIndex = 0;
-		geo.faces.push(face2);
-		geo.faceVertexUvs[0].push([p2, p1, p3]); 
-	}
-
-	geo.computeBoundingSphere();
-	geo.computeFaceNormals();
-	geo.computeVertexNormals();
-
 	var bodyMaterial = new THREE.MeshBasicMaterial({
 		color: 0x000000,
 		side: THREE.DoubleSide
 	});
-	var waist = new THREE.Mesh (geo, bodyMaterial);
+	var waist = new THREE.Mesh (new BodyGeometry(bodyHeight, bodyWidth), bodyMaterial);
 	waist.position.set(0, -bodyHeight / 2, 0);
 	body.add (waist);
 
@@ -691,13 +853,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	this.impactDelta = 1;
 	this.impactCount = 0;
 	
-	this.limits = {
-		xMin: 0,
-		xMax: 0,
-		zMin: 0,
-		zMax: 0,
+	this.responsibleArea = {
+		min: new THREE.Vector3(0, 0, 0),
+		max: new THREE.Vector3(0, 0, 0),
 	};
-	this.limitEpsilon = 0.1;
+	this.responsibleAreaEpsilon = 0.1;
 	
 	this.shuttle = null;
 	this.racketAttenuation = 0.9;
@@ -754,7 +914,9 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	setCourt: function (court, player) {
 		this.court = court;
 		this.player = player;
-		this.setLimits(court['getFirstArea' + player](0), true);
+		var area = court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B'));
+		court.localToTarget(area, this.parent);
+		this.setResponsibleArea(area, true);
 	},
 	
 	reset: function () {
@@ -765,10 +927,10 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		this.healthPercent = 100;
 	},
 	
-	setLimits: function (limits, resetPosition) {
-		this.limits = limits;
-		if (resetPosition === true)
-			this.position.set((limits.xMin + limits.xMax) / 2, 0, (limits.zMin + limits.zMax) / 2);
+	setResponsibleArea: function (responsibleArea, resetPosition) {
+		this.responsibleArea = responsibleArea;
+		if (resetPosition)
+			this.position.copy(responsibleArea.min.clone().add(responsibleArea.max).divideScalar(2));
 	},
 	
 	predictFallingTime: function (y) {
@@ -876,16 +1038,16 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
 			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
 			!impactPosition || 
-			(this.limits.xMin === 0 && impactPosition.x < 0) ||
-			(this.limits.xMax === 0 && impactPosition.x > 0) ||
-			impactPosition.x < this.limits.xMin + (this.limits.xMin - this.limits.xMax) * this.limitEpsilon ||
-			impactPosition.x > this.limits.xMax + (this.limits.xMax - this.limits.xMin) * this.limitEpsilon || 
-			impactPosition.z < this.limits.zMin + (this.limits.zMin - this.limits.zMax) * this.limitEpsilon ||
-			impactPosition.z > this.limits.zMax + (this.limits.zMax - this.limits.zMin) * this.limitEpsilon) {
+			(this.responsibleArea.min.x === 0 && impactPosition.x < 0) ||
+			(this.responsibleArea.max.x === 0 && impactPosition.x > 0) ||
+			impactPosition.x < this.responsibleArea.min.x + (this.responsibleArea.min.x - this.responsibleArea.max.x) * this.responsibleAreaEpsilon ||
+			impactPosition.x > this.responsibleArea.max.x + (this.responsibleArea.max.x - this.responsibleArea.min.x) * this.responsibleAreaEpsilon || 
+			impactPosition.z < this.responsibleArea.min.z + (this.responsibleArea.min.z - this.responsibleArea.max.z) * this.responsibleAreaEpsilon ||
+			impactPosition.z > this.responsibleArea.max.z + (this.responsibleArea.max.z - this.responsibleArea.min.z) * this.responsibleAreaEpsilon) {
 			bodyAngle = 0;
 			impactAngle = 0;
 			rotationValue = 0;
-			robotPosition = new THREE.Vector3((this.limits.xMin + this.limits.xMax) / 2, 0, (this.limits.zMin + this.limits.zMax) / 2);
+			robotPosition = this.responsibleArea.min.clone().add(this.responsibleArea.max).divideScalar(2);
 		} else {
 			
 			var bodyDirection = this.directionWorldToLocal(this.targetPosition.clone().sub(impactPosition).setY(0));
@@ -927,8 +1089,9 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			}
 			
 			if (this.court && this.player) {
-				this.court.reset();
-				this.setLimits(this.court['getArea' + this.player]());
+				var area = this.court.getArea('Single' + (this.player === 1 ? 'A' : 'B'));
+				this.court.localToTarget(area, this.parent);
+				this.setResponsibleArea(area);
 			}
 			
 			this.onAfterImpact();
@@ -1334,122 +1497,81 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	
 });
 
-function Court(meter2unit) {
+function Court(courtGeometry, material) {
 	
-	meter2unit = (meter2unit !== undefined) ? meter2unit : 1;
-	
-	this.parameters = {
-		meter2unit: meter2unit,
-	};
-	
-	var material = new THREE.LineBasicMaterial();
-	var geometry = new THREE.Geometry();
-	geometry.vertices.push(
-		new THREE.Vector3( -6.70,    0, -3.05), new THREE.Vector3( -6.70,    0,  3.05),
-		new THREE.Vector3( -5.94,    0, -3.05), new THREE.Vector3( -5.94,    0,  3.05),
-		new THREE.Vector3( -1.98,    0, -3.05), new THREE.Vector3( -1.98,    0,  3.05),
-		new THREE.Vector3(     0,    0, -3.05), new THREE.Vector3(     0,    0,  3.05),
-		new THREE.Vector3(     0, 1.55, -3.05), new THREE.Vector3(     0, 1.55,  3.05),
-		new THREE.Vector3(     0,    0, -3.05), new THREE.Vector3(     0,    0,  3.05),
-		new THREE.Vector3(  1.98,    0, -3.05), new THREE.Vector3(  1.98,    0,  3.05),
-		new THREE.Vector3(  5.94,    0, -3.05), new THREE.Vector3(  5.94,    0,  3.05),
-		new THREE.Vector3(  6.70,    0, -3.05), new THREE.Vector3(  6.70,    0,  3.05),
-		new THREE.Vector3( -6.70,    0, -3.05), new THREE.Vector3(  6.70,    0, -3.05),
-		new THREE.Vector3( -6.70,    0, -2.59), new THREE.Vector3(  6.70,    0, -2.59),
-		new THREE.Vector3( -6.70,    0,     0), new THREE.Vector3( -1.98,    0,     0),
-		new THREE.Vector3(  6.70,    0,     0), new THREE.Vector3(  1.98,    0,     0),
-		new THREE.Vector3( -6.70,    0,  2.59), new THREE.Vector3(  6.70,    0,  2.59),
-		new THREE.Vector3( -6.70,    0,  3.05), new THREE.Vector3(  6.70,    0,  3.05),
-		new THREE.Vector3(     0,    0, -3.05), new THREE.Vector3(     0, 1.55, -3.05),
-		new THREE.Vector3(     0,    0, -2.59), new THREE.Vector3(     0, 1.55, -2.59),
-		new THREE.Vector3(     0,    0,  2.59), new THREE.Vector3(     0, 1.55,  2.59),
-		new THREE.Vector3(     0,    0,  3.05), new THREE.Vector3(     0, 1.55,  3.05));
-	for (var i = 0; i < geometry.vertices.length; i++)
-		geometry.vertices[i].multiplyScalar(meter2unit);
-	
-	THREE.LineSegments.call(this, geometry, material);
-	
-	this.shuttle = null;
+	THREE.Mesh.call(this, courtGeometry, material);
 }
 
-Court.prototype = Object.assign(Object.create(THREE.LineSegments.prototype), {
-
+Court.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
+	
 	constructor: Court,
 	
-	reset: function () {
-		this.lastUpdateMul = 0;
+	inArea: function (name, point) {
+		return this.getArea(name).containsPoint(point);
 	},
 	
-	update: function (delta) {
-		var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this);
-		var lastPosition = this.shuttle.localToTarget(this.shuttle.velocity.clone().multiplyScalar(-this.shuttle.lastDelta), this);
-		var positionDelta = lastPosition.clone().sub(position);
-		var mul = -position.x / positionDelta.x;
-		var netPosition = position.clone().addScaledVector(positionDelta, mul);
-		if ((Math.abs(mul) <= 1 || mul * this.lastUpdateMul < 0) &&
-			netPosition.y >= 0 &&
-			netPosition.y <= this.parameters.meter2unit * 1.55 &&
-			netPosition.z >= this.parameters.meter2unit * -3.05 &&
-			netPosition.z <= this.parameters.meter2unit * 3.05) {
-			this.shuttle.state = 'stop-net';
-			this.shuttle.position.copy(this.localToTarget(netPosition.clone(), this.shuttle.parent));
-		}
-		this.lastUpdateMul = mul;
+	getArea: function (name) {
+		return this['getArea' + name]();
 	},
 	
-	getArea: function () {
-		return {
-			xMin: this.parameters.meter2unit * -6.70,
-			xMax: this.parameters.meter2unit * 6.70,
-			zMin: this.parameters.meter2unit * -2.59,
-			zMax: this.parameters.meter2unit * 2.59,
-		};
+	getAreaAll: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, -this.geometry.parameters.sidelineDouble, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, this.geometry.parameters.sidelineDouble, 0));
 	},
 	
-	getArea1: function () {
-		return {
-			xMin: this.parameters.meter2unit * -6.70,
-			xMax: this.parameters.meter2unit * 0,
-			zMin: this.parameters.meter2unit * -2.59,
-			zMax: this.parameters.meter2unit * 2.59,
-		};
+	getAreaSingle: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, this.geometry.parameters.sidelineSingle, 0));
 	},
 	
-	getArea2: function () {
-		return {
-			xMin: this.parameters.meter2unit * 0,
-			xMax: this.parameters.meter2unit * 6.70,
-			zMin: this.parameters.meter2unit * -2.59,
-			zMax: this.parameters.meter2unit * 2.59,
-		};
+	getAreaSingleA: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(0, this.geometry.parameters.sidelineSingle, 0));
 	},
 	
-	getFirstArea1: function (score) {
-		return (score % 2 === 1) ? {
-			xMin: this.parameters.meter2unit * -6.70,
-			xMax: this.parameters.meter2unit * -1.98,
-			zMin: this.parameters.meter2unit * -2.59,
-			zMax: this.parameters.meter2unit * 0,
-		} : {
-			xMin: this.parameters.meter2unit * -6.70,
-			xMax: this.parameters.meter2unit * -1.98,
-			zMin: this.parameters.meter2unit * 0,
-			zMax: this.parameters.meter2unit * 2.59,
-		};
+	getAreaSingleFirstA: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(-this.geometry.parameters.shortLine, this.geometry.parameters.sidelineSingle, 0));
 	},
 	
-	getFirstArea2: function (score) {
-		return (score % 2 === 1) ? {
-			xMin: this.parameters.meter2unit * 1.98,
-			xMax: this.parameters.meter2unit * 6.70,
-			zMin: this.parameters.meter2unit * 0,
-			zMax: this.parameters.meter2unit * 2.59,
-		} : {
-			xMin: this.parameters.meter2unit * 1.98,
-			xMax: this.parameters.meter2unit * 6.70,
-			zMin: this.parameters.meter2unit * -2.59,
-			zMax: this.parameters.meter2unit * 0,
-		};
+	getAreaSingleFirstLeftA: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, 0, 0),
+			new THREE.Vector3(-this.geometry.parameters.shortLine, this.geometry.parameters.sidelineSingle, 0));
+	},
+	
+	getAreaSingleFirstRightA: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(-this.geometry.parameters.longLineSingle, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(-this.geometry.parameters.shortLine, 0, 0));
+	},
+	
+	getAreaSingleB: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(0, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, this.geometry.parameters.sidelineSingle, 0));
+	},
+	
+	getAreaSingleFirstB: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(this.geometry.parameters.shortLine, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, this.geometry.parameters.sidelineSingle, 0));
+	},
+	
+	getAreaSingleFirstLeftB: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(this.geometry.parameters.shortLine, -this.geometry.parameters.sidelineSingle, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, 0, 0));
+	},
+	
+	getAreaSingleFirstRightB: function () {
+		return new THREE.Box3(
+			new THREE.Vector3(this.geometry.parameters.shortLine, 0, 0),
+			new THREE.Vector3(this.geometry.parameters.longLineSingle, this.geometry.parameters.sidelineSingle, 0));
 	},
 	
 });
@@ -1782,18 +1904,19 @@ Game.prototype = {
 			} else if (this.shuttle.state === 'stop-ground') {
 				var area = (this.shuttle.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
-						this.court.getFirstArea2(this.score1) : 
-						this.court.getFirstArea1(this.score2)) :
+						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
+						this.court.getArea('SingleFirst' + (this.score2 % 2 === 0 ? 'Right' : 'Left') + 'A')) :
 					((this.lastWinner === 1) ?
 						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getArea2() :
-							this.court.getArea1()) : 
+							this.court.getAreaSingleB() :
+							this.court.getAreaSingleA()) : 
 						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getArea1() :
-							this.court.getArea2()));
+							this.court.getAreaSingleA() :
+							this.court.getAreaSingleB()));
+				this.court.localToTarget(area, this.shuttle.parent);
 				var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this.court);
-				if (position.x >= area.xMin && position.x <= area.xMax &&
-					position.z >= area.zMin && position.z <= area.zMax) {
+				if (position.x >= area.min.x && position.x <= area.max.x &&
+					position.z >= area.min.z && position.z <= area.max.z) {
 					if (this.shuttle.impactCount % 2 === 1) {
 						this.lastWinner = this.lastWinner;
 					} else {
@@ -1915,7 +2038,7 @@ Record.prototype = {
 	
 	getRobotInitData: function (robot) {
 		return {
-			limits: robot.limits,
+			responsibleArea: robot.responsibleArea.toArray(),
 			impactCount: robot.impactCount,
 			healthPercent: robot.healthPercent,
 			bodyAngle: robot.body.rotation.y,
@@ -1925,7 +2048,7 @@ Record.prototype = {
 	},
 	
 	setRobotInit: function (robot, data) {
-		robot.limits = data.limits;
+		robot.responsibleArea.fromArray(data.responsibleArea);
 		robot.impactCount = data.impactCount;
 		robot.healthPercent = data.healthPercent;
 		robot.body.rotation.y = data.bodyAngle;
@@ -1951,6 +2074,9 @@ Record.prototype = {
 };
 
 exports.ShuttlecockGeometry = ShuttlecockGeometry;
+exports.BodyGeometry = BodyGeometry;
+exports.NetGeometry = NetGeometry;
+exports.CourtGeometry = CourtGeometry;
 exports.Shuttlecock = Shuttlecock;
 exports.Robot = Robot;
 exports.Court = Court;
