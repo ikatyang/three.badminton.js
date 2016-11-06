@@ -49,7 +49,7 @@
 
 				scene = new THREE.Scene();
 
-				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
 				camera.position.set(-800, 300, 0);
 				scene.add(camera);
 				
@@ -71,7 +71,7 @@
 				
 				court = new THREE.Badminton.Court(
 					new THREE.Badminton.CourtGeometry(198, 670, 594, 259, 305, 10),
-					new THREE.MeshBasicMaterial({ color: 'white' }));
+					new THREE.MeshBasicMaterial({ color: 'white', side: THREE.DoubleSide }));
 				court.rotation.x = -Math.PI / 2;
 				scene.add(court);
 				
@@ -98,7 +98,7 @@
 				var courtArea = court.getArea('All');
 				touchable = new THREE.Mesh(
 					new THREE.PlaneGeometry(courtArea.max.x - courtArea.min.x, courtArea.max.y - courtArea.min.y),
-					new THREE.MeshBasicMaterial({ colorWrite: false }));
+					new THREE.MeshBasicMaterial({ visible: false }));
 				court.add(touchable);
 				
 				mouse = new THREE.Vector2();
@@ -186,6 +186,34 @@
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
 				game.scoreboard = scoreboard;
+				
+				var skybox = new THREE.Mesh(
+					new THREE.BoxGeometry(10000, 10000, 10000, 1, 1, 1),
+					new THREE.MultiMaterial([
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox1.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox2.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox3.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox4.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox5.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox6.png'), side: THREE.BackSide }),
+					])
+				);
+				scene.add(skybox);
+				
+				var ground = new THREE.Mesh(
+					new THREE.CylinderGeometry(1500, 400, 300, 64),
+					new THREE.MeshLambertMaterial({ color: 0x082908 }));
+				ground.position.y = -150.1;
+				scene.add(ground);
+				
+				var wall = new THREE.Mesh(
+					new THREE.CylinderGeometry(1500, 1500, 500, 64 ,1, true),
+					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/wall.jpg'), side: THREE.DoubleSide }));
+				scene.add(wall);
+				
+				var light = new THREE.SpotLight(0xffffff, 60, 950, 1, 0.6, 2);
+				light.position.y = 700;
+				scene.add(light);
 				
 				var gui = new dat.GUI();
 				
