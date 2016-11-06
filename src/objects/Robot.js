@@ -27,7 +27,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	var body = new THREE.Mesh(
 		new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth),
-		new THREE.MeshNormalMaterial({ wireframe: true }));
+		new THREE.MeshNormalMaterial({ visible: false }));
 	body.position.set(0, bodyHeight / 2, 0);
 	this.add(body);
 	
@@ -64,7 +64,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	});
 	var leftRacket = new THREE.Mesh(
 		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ wireframe: true }));
+		new THREE.MeshNormalMaterial({ visible: false }));
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
 	leftLink.position.set(bodyWidth / 2, 0, 0);
@@ -90,7 +90,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	});
 	var rightRacket = new THREE.Mesh(
 		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ wireframe: true }));
+		new THREE.MeshNormalMaterial({ visible: false }));
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
 	rightLink.position.set(-bodyWidth / 2, 0, 0);
@@ -117,7 +117,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	var topLinkFrame = new THREE.Object3D();
 	var topRacket = new THREE.Mesh(
 		new THREE.BoxGeometry(racketWidth, racketLength, racketDepth),
-		new THREE.MeshNormalMaterial({ wireframe: true }));
+		new THREE.MeshNormalMaterial({ visible: false }));
 	topRacket.position.set(0, racketLength / 2, 0);
 	topLinkFrame.add(topRacket);
 	topLink.position.set(0, bodyHeight / 2, 0);
