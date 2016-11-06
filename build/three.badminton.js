@@ -1085,9 +1085,12 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			
 			if (this.impactAudio && this.camera) {
 				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();
-				this.impactAudio.currentTime = 0;
-				this.impactAudio.volume = 1 - Math.abs(distance / this.impactAudioMaxDistance);
-				this.impactAudio.play();
+				var volume = 1 - Math.abs(distance / this.impactAudioMaxDistance);
+				if (volume > 0) {
+					this.impactAudio.currentTime = 0;
+					this.impactAudio.volume = volume;
+					this.impactAudio.play();
+				}
 			}
 			
 			if (this.court && this.player) {
