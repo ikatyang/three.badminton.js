@@ -895,6 +895,7 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	this.camera = null;
 	this.impactAudio = null;
+	this.impactAudioMaxDistance = 1;
 	
 	this.court = null;
 	this.player = null;
@@ -906,9 +907,10 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 
 	constructor: Robot,
 	
-	setImpactAudio: function (impactAudio, camera) {
+	setImpactAudio: function (impactAudio, camera, impactAudioMaxDistance) {
 		this.impactAudio = impactAudio;
 		this.camera = camera;
+		this.impactAudioMaxDistance = impactAudioMaxDistance;
 	},
 	
 	setCourt: function (court, player) {
@@ -1084,7 +1086,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			if (this.impactAudio && this.camera) {
 				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();
 				this.impactAudio.currentTime = 0;
-				this.impactAudio.volume = 1 - Math.abs(distance / this.camera.far);
+				this.impactAudio.volume = 1 - Math.abs(distance / this.impactAudioMaxDistance);
 				this.impactAudio.play();
 			}
 			
