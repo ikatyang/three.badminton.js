@@ -281,10 +281,11 @@
 			function getIntersectedPoint() {
 				if (intersects.length > 0) {
 					var point = court.worldToLocal(intersects[0].point);
-					if (point.x >= robot2.responsibleArea.min.x &&
-						point.x <= robot2.responsibleArea.max.x &&
-						point.z >= robot2.responsibleArea.min.z &&
-						point.z <= robot2.responsibleArea.max.z) return point;
+					var area = robot2.parent.localToTarget(robot2.responsibleArea.clone(), court);
+					if (point.x >= area.min.x &&
+						point.x <= area.max.x &&
+						point.y >= area.min.y &&
+						point.y <= area.max.y) return point;
 				}
 				return null;
 			}
@@ -293,9 +294,8 @@
 				if (event.which === 1) {
 					var point = getIntersectedPoint();
 					if (point !== null) {
-						court.localToTarget(point, robot1.parent);
-						robot1.targetPosition.copy(point);
-						targetPoint1.position.copy(point);
+						robot1.targetPosition.copy(court.localToTarget(point.clone(), robot1.parent));
+						targetPoint1.position.copy(court.localToTarget(point.clone(), targetPoint1.parent));
 					}
 				}
 			}
