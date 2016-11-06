@@ -1,4 +1,4 @@
-import { BodyGeometry } from '../geometries/BodyGeometry.js';
+import { HyperbolaGeometry } from '../geometries/HyperbolaGeometry.js';
 import { Head } from './Head.js';
 import { SmashEyes } from './SmashEyes.js';
 import { Eyes } from './Eyes.js';
@@ -36,8 +36,9 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		color: 0x000000,
 		side: THREE.DoubleSide
 	});
-	var waist = new THREE.Mesh (new BodyGeometry(bodyHeight, bodyWidth), bodyMaterial);
-	waist.position.set(0, -bodyHeight / 2, 0);
+	
+	var waist = new THREE.Mesh(new HyperbolaGeometry(bodyWidth / 2, bodyWidth / 2.5, bodyHeight * 2 / 3, 16, 16), bodyMaterial);
+	waist.position.set(0, -bodyHeight / 6, 0);
 	body.add (waist);
 
 	body.add (new Head(bodyHeight));

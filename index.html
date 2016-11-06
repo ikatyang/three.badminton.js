@@ -133,10 +133,11 @@
 				
 				robot1 = new THREE.Badminton.Robot();
 				scene.add(robot1);
-				robot1.waist.material = new THREE.MeshBasicMaterial({
-					map: textureLoader.load('textures/playerBody1.jpeg'),
-					side: THREE.DoubleSide
-				});
+				robot1.waist.material = new THREE.MultiMaterial([
+					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/playerBody1.jpeg') }),
+					new THREE.MeshBasicMaterial({ color: 'white' }),
+					new THREE.MeshBasicMaterial({ color: 'blue' }),
+				]);
 				robot1.leftRacket.material = leftRacketMaterial;
 				robot1.rightRacket.material = rightRacketMaterial;
 				robot1.topRacket.material = topRacketMaterial;
@@ -156,10 +157,11 @@
 				
 				robot2 = new THREE.Badminton.Robot();
 				scene.add(robot2);
-				robot2.waist.material = new THREE.MeshBasicMaterial({
-					map: textureLoader.load('textures/playerBody2.jpeg'),
-					side: THREE.DoubleSide
-				});
+				robot2.waist.material = new THREE.MultiMaterial([
+					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/playerBody2.jpeg') }),
+					new THREE.MeshBasicMaterial({ color: 0xff0000 }),
+					new THREE.MeshBasicMaterial({ color: 0x800000 }),
+				]);
 				robot2.leftRacket.material = leftRacketMaterial;
 				robot2.rightRacket.material = rightRacketMaterial;
 				robot2.topRacket.material = topRacketMaterial;
