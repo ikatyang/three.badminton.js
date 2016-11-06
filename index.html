@@ -142,7 +142,7 @@
 				robot1.topRacket.material = topRacketMaterial;
 				robot1.setCourt(court, 1);
 				robot1.shuttle = shuttle;
-				robot1.setImpactAudio(impactSound, camera);
+				robot1.setImpactAudio(impactSound, camera, 2000);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					if (!record.playing) {
@@ -165,7 +165,7 @@
 				robot2.topRacket.material = topRacketMaterial;
 				robot2.setCourt(court, 2);
 				robot2.shuttle = shuttle;
-				robot2.setImpactAudio(impactSound, camera);
+				robot2.setImpactAudio(impactSound, camera, 2000);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
