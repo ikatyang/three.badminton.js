@@ -117,23 +117,24 @@
 				
 				impactSound = document.getElementById('impactSound');
 				
+				var textureLoader = new THREE.TextureLoader();
 				var leftRacketMaterial = new THREE.MeshBasicMaterial({
-					map: THREE.ImageUtils.loadTexture('textures/racketLeft.png'),
+					map: textureLoader.load('textures/racketLeft.png'),
 					transparent: true
 				});
 				var rightRacketMaterial = new THREE.MeshBasicMaterial({
-					map: THREE.ImageUtils.loadTexture('textures/racketRight.png'),
+					map: textureLoader.load('textures/racketRight.png'),
 					transparent: true
 				});
 				var topRacketMaterial = new THREE.MeshBasicMaterial({
-					map: THREE.ImageUtils.loadTexture('textures/racketTop.png'),
+					map: textureLoader.load('textures/racketTop.png'),
 					transparent: true
 				});
 				
 				robot1 = new THREE.Badminton.Robot();
 				scene.add(robot1);
 				robot1.waist.material = new THREE.MeshBasicMaterial({
-					map: THREE.ImageUtils.loadTexture('textures/playerBody1.jpeg'),
+					map: textureLoader.load('textures/playerBody1.jpeg'),
 					side: THREE.DoubleSide
 				});
 				robot1.leftRacket.material = leftRacketMaterial;
@@ -156,7 +157,7 @@
 				robot2 = new THREE.Badminton.Robot();
 				scene.add(robot2);
 				robot2.waist.material = new THREE.MeshBasicMaterial({
-					map: THREE.ImageUtils.loadTexture('textures/playerBody2.jpeg'),
+					map: textureLoader.load('textures/playerBody2.jpeg'),
 					side: THREE.DoubleSide
 				});
 				robot2.leftRacket.material = leftRacketMaterial;
