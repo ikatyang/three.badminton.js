@@ -64,7 +64,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var circleGeometry = new THREE.CircleGeometry(corkRadius, widthSegments, 0, Math.PI * 2);
 	this.merge(circleGeometry, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, circlePositionY, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 2);
 	
@@ -75,7 +75,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var ringGeometry1 = new THREE.TorusGeometry(ringRadius1, rachisRadius, heightSegments * 2, widthSegments, Math.PI * 2);
 	this.merge(ringGeometry1, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, ringPositionY1, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 3);
 	
@@ -84,7 +84,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var ringGeometry2 = new THREE.TorusGeometry(ringRadius2, rachisRadius, heightSegments * 2, widthSegments, Math.PI * 2);
 	this.merge(ringGeometry2, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, ringPositionY2, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 3);
 	
