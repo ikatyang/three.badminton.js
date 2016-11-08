@@ -1,7 +1,7 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (factory((global.THREE = global.THREE || {}, global.THREE.Badminton = global.THREE.Badminton || {})));
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.THREE = global.THREE || {}, global.THREE.Badminton = global.THREE.Badminton || {})));
 }(this, (function (exports) { 'use strict';
 
 window.performance = window.performance || Date;
@@ -111,7 +111,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var circleGeometry = new THREE.CircleGeometry(corkRadius, widthSegments, 0, Math.PI * 2);
 	this.merge(circleGeometry, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, circlePositionY, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 2);
 	
@@ -122,7 +122,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var ringGeometry1 = new THREE.TorusGeometry(ringRadius1, rachisRadius, heightSegments * 2, widthSegments, Math.PI * 2);
 	this.merge(ringGeometry1, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, ringPositionY1, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 3);
 	
@@ -131,7 +131,7 @@ function ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, w
 	var ringGeometry2 = new THREE.TorusGeometry(ringRadius2, rachisRadius, heightSegments * 2, widthSegments, Math.PI * 2);
 	this.merge(ringGeometry2, new THREE.Matrix4().compose(
 		new THREE.Vector3(0, ringPositionY2, 0),
-		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, -Math.PI / 2, 0, 'YXZ')),
 		new THREE.Vector3(1, 1, 1)
 	), 3);
 	
@@ -675,59 +675,60 @@ Head.prototype.constructor = Head;
 
 function SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
 
-  THREE.Object3D.call(this);
+	THREE.Object3D.call(this);
 
-  var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-  var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-  //殺球槓
-  var nowX = 0;
-  var i;
-  for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
-    for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
-      var mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-      this.add(mesh);
-			
-      var mesh4 = mesh.clone();
-      mesh4.position.y -= addUnit;
-      this.add(mesh4);
-			
-      var mesh2 = mesh.clone();
-      mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-      this.add(mesh2);
-			
-      var mesh3 = mesh2.clone();
-      mesh3.position.y -= addUnit;
-      this.add(mesh3);
-    }
-  }
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 	
-  //珠
-  for (; i < pixelRow; i++) {
-    var j = Math.floor(pixelRow * 0.7);
-		
-    var mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-		
-    var mesh2 = new THREE.Mesh(geometry, material);
-    mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-		
-    this.add(mesh);
-    this.add(mesh2);
-		
-    j++;
-		
-    var end = pixelRow - j;
-    for (j = 1; j < end; j++) {
-      var mesh3 = mesh.clone();
-      mesh3.position.x += addUnit * j;
-      this.add(mesh3);
-			
-      var mesh4 = mesh2.clone();
-      mesh4.position.x -= addUnit * j;
-      this.add(mesh4);
-    }
-  }
+	//殺球槓
+	var nowX = 0;
+	var i;
+	for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
+		for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh);
+
+			var mesh4 = mesh.clone();
+			mesh4.position.y -= addUnit;
+			this.add(mesh4);
+
+			var mesh2 = mesh.clone();
+			mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh2);
+
+			var mesh3 = mesh2.clone();
+			mesh3.position.y -= addUnit;
+			this.add(mesh3);
+		}
+	}
+
+	//珠
+	for (; i < pixelRow; i++) {
+		var j = Math.floor(pixelRow * 0.7);
+
+		var mesh = new THREE.Mesh(geometry, material);
+		mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+
+		var mesh2 = new THREE.Mesh(geometry, material);
+		mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+
+		this.add(mesh);
+		this.add(mesh2);
+
+		j++;
+
+		var end = pixelRow - j;
+		for (j = 1; j < end; j++) {
+			var mesh3 = mesh.clone();
+			mesh3.position.x += addUnit * j;
+			this.add(mesh3);
+
+			var mesh4 = mesh2.clone();
+			mesh4.position.x -= addUnit * j;
+			this.add(mesh4);
+		}
+	}
 }
 
 SmashEyes.prototype = Object.create(THREE.Object3D.prototype);
@@ -735,22 +736,22 @@ SmashEyes.prototype.constructor = SmashEyes;
 
 function Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
 
-  THREE.Object3D.call(this);
+	THREE.Object3D.call(this);
 
-  var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-  var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 
-  for (var i = 0; i < 2; i++) {
-    var x = (i === 0) ? rFirst.x : lFirst.x;
-    var y = (i === 0) ? rFirst.y : lFirst.y;
-    for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
-      for (var k = 0; k < pixelRow; k++) {
-        var mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-        this.add(mesh);
-      }
-    }
-  }
+	for (var i = 0; i < 2; i++) {
+		var x = (i === 0) ? rFirst.x : lFirst.x;
+		var y = (i === 0) ? rFirst.y : lFirst.y;
+		for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
+			for (var k = 0; k < pixelRow; k++) {
+				var mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
+				this.add(mesh);
+			}
+		}
+	}
 }
 
 Eyes.prototype = Object.create(THREE.Object3D.prototype);
@@ -758,20 +759,20 @@ Eyes.prototype.constructor = Eyes;
 
 function EyeBall(bodyHeight, pixelRow, addUnit, First, pixelSide) {
 
-  THREE.Object3D.call(this);
+	THREE.Object3D.call(this);
 
-  var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-  var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 
-  var x = First.x;
-  var y = First.y;
-  for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
-    for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
-      var mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-      this.add(mesh);
-    }
-  }
+	var x = First.x;
+	var y = First.y;
+	for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
+		for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh);
+		}
+	}
 
 }
 
