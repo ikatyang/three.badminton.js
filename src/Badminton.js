@@ -4,6 +4,7 @@ export { ShuttlecockGeometry } from './geometries/ShuttlecockGeometry.js';
 export { HyperbolaGeometry } from './geometries/HyperbolaGeometry.js';
 export { NetGeometry } from './geometries/NetGeometry.js';
 export { CourtGeometry } from './geometries/CourtGeometry.js';
+export { RacketGeometry } from './geometries/RacketGeometry.js';
 
 export { Shuttlecock } from './objects/Shuttlecock.js';
 export { Robot } from './objects/Robot.js';
