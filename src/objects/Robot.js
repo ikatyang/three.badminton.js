@@ -1,17 +1,22 @@
-import { HyperbolaGeometry } from '../geometries/HyperbolaGeometry.js';
-import { Head } from './Head.js';
-
-function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, racketDepth) {
+function Robot(body, racket) {
 
 	THREE.Object3D.call(this);
 	
-	bodyWidth = (bodyWidth !== undefined) ? bodyWidth : 50;
-	bodyHeight = (bodyHeight !== undefined) ? bodyHeight : 160;
-	bodyDepth = (bodyDepth !== undefined) ? bodyDepth : 50;
+	var bodyBox = new THREE.Box3().setFromObject(body);
+	var bodySize = bodyBox.max.clone().sub(bodyBox.min);
+	var bodyCenter = bodyBox.max.clone().add(bodyBox.min).divideScalar(2);
 	
-	racketLength = (racketLength !== undefined) ? racketLength : 50;
-	racketWidth = (racketWidth !== undefined) ? racketWidth : 30;
-	racketDepth = (racketDepth !== undefined) ? racketDepth : 1;
+	var racketBox = new THREE.Box3().setFromObject(racket);
+	var racketSize = racketBox.max.clone().sub(racketBox.min);
+	var racketCenter = racketBox.max.clone().add(racketBox.min).divideScalar(2);
+	
+	var bodyWidth = bodySize.x;
+	var bodyHeight = bodySize.y;
+	var bodyDepth = bodySize.z;
+	
+	var racketLength = racketSize.y;
+	var racketWidth = racketSize.x;
+	var racketDepth = racketSize.z;
 	
 	this.parameters = {
 		bodyWidth: bodyWidth,
@@ -22,24 +27,9 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		racketDepth: racketDepth,
 	};
 	
-	var body = new THREE.Mesh(
-		new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
-	body.position.set(0, bodyHeight / 2, 0);
+	var body = body.clone();
+	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
-	
-
-	var bodyMaterial = new THREE.MeshBasicMaterial({
-		color: 0x000000,
-		side: THREE.DoubleSide
-	});
-	
-	var waist = new THREE.Mesh(new HyperbolaGeometry(bodyWidth / 2, bodyWidth / 2.5, bodyHeight * 2 / 3, 16, 16), bodyMaterial);
-	waist.position.set(0, -bodyHeight / 6, 0);
-	body.add (waist);
-
-	body.add (new Head(bodyHeight));
-
 	
 	var leftLink = Object.defineProperties(new THREE.Object3D(), {
 		angleA: {
@@ -59,12 +49,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 			},
 		},
 	});
-	var leftRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var leftRacket = racket.clone();
+	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
-	leftLink.position.set(bodyWidth / 2, 0, 0);
+	leftLink.position.set(bodyWidth / 2, bodyCenter.y, 0);
 	body.add(leftLink);
 	
 	var rightLink = Object.defineProperties(new THREE.Object3D(), {
@@ -85,12 +74,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 			},
 		},
 	});
-	var rightRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var rightRacket = racket.clone();
+	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
-	rightLink.position.set(-bodyWidth / 2, 0, 0);
+	rightLink.position.set(-bodyWidth / 2, bodyCenter.y, 0);
 	body.add(rightLink);
 	
 	var topLink = Object.defineProperties(new THREE.Object3D(), {
@@ -112,18 +100,15 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		},
 	});
 	var topLinkFrame = new THREE.Object3D();
-	var topRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketWidth, racketLength, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var topRacket = racket.clone();
 	topRacket.position.set(0, racketLength / 2, 0);
 	topLinkFrame.add(topRacket);
-	topLink.position.set(0, bodyHeight / 2, 0);
+	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
 	topLink.frame = topLinkFrame;
 	topLink.add(topLinkFrame);
 	body.add(topLink);
 
 	this.body = body;
-	this.waist = waist;
 	
 	this.leftLink = leftLink;
 	this.leftRacket = leftRacket;

@@ -118,29 +118,9 @@
 				impactSound = document.getElementById('impactSound');
 				
 				var textureLoader = new THREE.TextureLoader();
-				var leftRacketMaterial = new THREE.MeshBasicMaterial({
-					map: textureLoader.load('textures/racketLeft.png'),
-					transparent: true
-				});
-				var rightRacketMaterial = new THREE.MeshBasicMaterial({
-					map: textureLoader.load('textures/racketRight.png'),
-					transparent: true
-				});
-				var topRacketMaterial = new THREE.MeshBasicMaterial({
-					map: textureLoader.load('textures/racketTop.png'),
-					transparent: true
-				});
 				
-				robot1 = new THREE.Badminton.Robot();
+				robot1 = createRobot('textures/playerBody1.jpeg', 'white', 'blue');
 				scene.add(robot1);
-				robot1.waist.material = new THREE.MultiMaterial([
-					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/playerBody1.jpeg') }),
-					new THREE.MeshBasicMaterial({ color: 'white' }),
-					new THREE.MeshBasicMaterial({ color: 'blue' }),
-				]);
-				robot1.leftRacket.material = leftRacketMaterial;
-				robot1.rightRacket.material = rightRacketMaterial;
-				robot1.topRacket.material = topRacketMaterial;
 				robot1.setCourt(court, 1);
 				robot1.shuttle = shuttle;
 				robot1.setImpactAudio(impactSound, camera, 2000);
@@ -155,16 +135,8 @@
 					}
 				};
 				
-				robot2 = new THREE.Badminton.Robot();
+				robot2 = createRobot('textures/playerBody2.jpeg', 0xff0000, 0x800000);
 				scene.add(robot2);
-				robot2.waist.material = new THREE.MultiMaterial([
-					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/playerBody2.jpeg') }),
-					new THREE.MeshBasicMaterial({ color: 0xff0000 }),
-					new THREE.MeshBasicMaterial({ color: 0x800000 }),
-				]);
-				robot2.leftRacket.material = leftRacketMaterial;
-				robot2.rightRacket.material = rightRacketMaterial;
-				robot2.topRacket.material = topRacketMaterial;
 				robot2.setCourt(court, 2);
 				robot2.shuttle = shuttle;
 				robot2.setImpactAudio(impactSound, camera, 2000);
@@ -278,6 +250,49 @@
 						robot1.impactType = 'right';
 						break;
 				}
+			}
+			
+			function createRobot(texturePath, topColor, bottomColor) {
+				
+				var racketMesh = new THREE.Mesh(
+					new THREE.Badminton.RacketGeometry(30, 50, 1, 1, 6, 10),
+					new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+				
+				bodyMesh = new THREE.Mesh(
+					new THREE.Badminton.HyperbolaGeometry(25, 20, 160 * 2 / 3, 16, 16),
+					new THREE.MultiMaterial([
+						new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(texturePath) }),
+						new THREE.MeshBasicMaterial({ color: topColor }),
+						new THREE.MeshBasicMaterial({ color: bottomColor }),
+					]));
+					
+				bodyMesh.add(createHead(160 / 6));
+				
+				var robot = new THREE.Badminton.Robot(bodyMesh, racketMesh);
+				
+				function createHead(radius) {
+					var head = new THREE.Object3D();
+					
+					var sphere = new THREE.Mesh(
+						new THREE.SphereGeometry(radius, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
+						new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide}));
+					sphere.position.set(0, 0, 0);
+					sphere.rotation.z = Math.PI / 2;
+					head.add(sphere);
+
+					var monitor = new THREE.Mesh(
+						new THREE.BoxGeometry(radius * 6 * 2 / 9, radius * 6 * 1 / 8, 2),
+						new THREE.MeshBasicMaterial({color: 0x000000}));
+					monitor.position.set(0, 0, radius * 6 * 1 / 9);
+					head.add(monitor);
+					
+					// TODO
+					head.position.y = radius * 3;
+					
+					return head;
+				}
+				
+				return robot;
 			}
 			
 			function getIntersectedPoint() {
