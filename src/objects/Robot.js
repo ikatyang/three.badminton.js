@@ -1,8 +1,5 @@
 import { HyperbolaGeometry } from '../geometries/HyperbolaGeometry.js';
 import { Head } from './Head.js';
-import { SmashEyes } from './SmashEyes.js';
-import { Eyes } from './Eyes.js';
-import { EyeBall } from './EyeBall.js';
 
 function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, racketDepth) {
 
@@ -125,31 +122,6 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	topLink.add(topLinkFrame);
 	body.add(topLink);
 
-	var pixelRow = 20;
-	var space = 3;
-	var side = bodyWidth * 0.3 < bodyHeight / 3 ? bodyWidth * 0.3 : bodyHeight / 3;  //眼睛範圍的方形邊長
-	var eyeMidR = new THREE.Vector2(bodyWidth * 0.3 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);  //眼睛中心點
-	var eyeMidL = new THREE.Vector2(bodyWidth * 0.7 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);
-	var pixelSide = side / (pixelRow + space);
-	var rFirst = new THREE.Vector3(eyeMidR.x - side / 2 + pixelSide / 2, eyeMidR.y + side / 2 - pixelSide / 2, bodyDepth / 2);
-	var rLast = new THREE.Vector3(eyeMidR.x + side / 2 - pixelSide / 2, eyeMidR.y - side / 2 + pixelSide / 2, bodyDepth / 2) ;
-	var lFirst = new THREE.Vector3(eyeMidL.x - side / 2 + pixelSide / 2, eyeMidL.y + side / 2 - pixelSide / 2, bodyDepth / 2);
-	var lLast = new THREE.Vector3(eyeMidL.x + side / 2 - pixelSide / 2, eyeMidL.y - side / 2 + pixelSide / 2, bodyDepth / 2);
-	
-	//pixel格數 + 2格寬的中間間隙共 pixelRow + space 格，pixel中心點每次移動一格寬 + 一格間隙
-	var addUnit = side / (pixelRow + space) + side * 2 / (pixelRow + space) / (pixelRow - 1);
-
-
-	var eyes = new Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide);
-	//眼珠
-	var rightEyeBall = new EyeBall(bodyHeight, pixelRow, addUnit, rFirst, pixelSide);
-	var leftEyeBall = new EyeBall(bodyHeight, pixelRow, addUnit, lFirst, pixelSide);
-
-	eyes.add(rightEyeBall);
-	eyes.add(leftEyeBall);
-	body.add(eyes);
-
-
 	this.body = body;
 	this.waist = waist;
 	
@@ -196,15 +168,6 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
-
-	this.side = side;
-	this.addUnit = addUnit;
-
-	this.eyes = eyes;
-	this.leftEyeBall = leftEyeBall;
-	this.rightEyeBall = rightEyeBall;
-	this.smashEyes = new SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide);
-	this.eyeStatus = 'common';
 	
 	this.camera = null;
 	this.impactAudio = null;
@@ -290,11 +253,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = p.y;
 			impactLength = this.parameters.racketLength / 2;
 			localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
-			if (this.eyeStatus === 'common') {
-				this.body.remove(this.eyes);
-				this.body.add(this.smashEyes);
-				this.eyeStatus = 'smash';
-			}
 		} else if (this.impactType === 'top') {
 			link = this.topLink;
 			racket = this.topRacket;
@@ -304,11 +262,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = localImpactPosition.y;
 			impactSpeed = this.getTopImpactSpeed(impactHeight);
 			impactPosition = this.predictFallingPosition(impactHeight);
-		if (this.eyeStatus === 'smash') {
-			this.body.remove(this.smashEyes);
-			this.body.add(this.eyes);
-			this.eyeStatus = 'common';
-		}
     } else {
 			if (this.impactType === 'left') {
 				link = this.leftLink;
@@ -327,25 +280,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactAngle = impactParams[0];
 			impactSpeed = impactParams[1];
 			impactPosition = this.predictFallingPosition(impactHeight);
-			if (this.eyeStatus === 'smash') {
-				this.body.remove(this.smashEyes);
-				this.body.add(this.eyes);
-				this.eyeStatus = 'common';
-			}
-		}
-
-		if (this.eyeStatus === 'common') {
-			var shuttlePos = this.body.worldToLocal(this.shuttle.localToWorld(new THREE.Vector3()));
-			if (shuttlePos.x > 5) {
-				this.leftEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
-				this.rightEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
-			} else if (shuttlePos.x < -5) {
-				this.leftEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
-				this.rightEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
-			} else {
-				this.leftEyeBall.position.x = 0;
-				this.rightEyeBall.position.x = 0;
-			}
 		}
 		
 		var bodyAngle;
