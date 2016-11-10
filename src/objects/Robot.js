@@ -27,7 +27,7 @@ function Robot(body, racket) {
 		racketDepth: racketDepth,
 	};
 	
-	var body = body.clone();
+	body = body.clone();
 	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
 	
