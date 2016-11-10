@@ -258,39 +258,79 @@
 					new THREE.Badminton.RacketGeometry(30, 50, 1, 1, 6, 10),
 					new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
 				
-				bodyMesh = new THREE.Mesh(
-					new THREE.Badminton.HyperbolaGeometry(25, 20, 160 * 2 / 3, 16, 16),
+				var bodyMesh = new THREE.Mesh(
+					new THREE.Badminton.HyperbolaGeometry(25, 20, 100, 16, 16),
 					new THREE.MultiMaterial([
 						new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(texturePath) }),
 						new THREE.MeshBasicMaterial({ color: topColor }),
 						new THREE.MeshBasicMaterial({ color: bottomColor }),
 					]));
-					
-				bodyMesh.add(createHead(160 / 6));
+				
+				var headFrame = new THREE.Object3D();
+				headFrame.position.y = 75;
+				bodyMesh.add(headFrame);
+				
+				var radius = 25;
+				var head = new THREE.Mesh(
+					new THREE.SphereGeometry(radius, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
+					new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide }));
+				head.rotation.z = Math.PI / 2;
+				headFrame.add(head);
+				
+				var width = radius * 4 / 3;
+				var height = radius * 3 / 4;
+				
+				var scene = new THREE.Scene();
+				var camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -10, 10);
+				var renderTarget = new THREE.WebGLRenderTarget(width, height);
+				
+				var eyebrowRight = new THREE.Mesh(
+					new THREE.PlaneGeometry(width / 3, 2),
+					new THREE.MeshBasicMaterial({ color: 'white' }));
+				eyebrowRight.position.set(-width / 4, height / 4, 5);
+				scene.add(eyebrowRight);
+				
+				var eyebrowLeft = eyebrowRight.clone();
+				eyebrowRight.position.x *= -1;
+				scene.add(eyebrowLeft);
+				
+				var eyeballRight = new THREE.Mesh(
+					new THREE.CircleGeometry(width / 12, 32),
+					new THREE.MeshBasicMaterial({ color: 'white' }));
+				eyeballRight.position.set(-width / 4, 0, 5);
+				scene.add(eyeballRight);
+				
+				var eyeballLeft = eyeballRight.clone();
+				eyeballLeft.position.x *= -1;
+				scene.add(eyeballLeft);
+				
+				var blackMaterial = new THREE.MeshBasicMaterial({ color: 'black' });
+				
+				var monitor = new THREE.Mesh(
+					new THREE.BoxGeometry(width, height, 2),
+					new THREE.MultiMaterial([
+						blackMaterial,
+						blackMaterial,
+						blackMaterial,
+						blackMaterial,
+						new THREE.Badminton.PixelMaterial({
+							map: renderTarget.texture,
+							size: new THREE.Vector2(width, height),
+							pixelSize: new THREE.Vector2(1, 1)}),
+						blackMaterial,
+					]));
+				monitor.position.z = radius * 2 / 3;
+				headFrame.add(monitor);
 				
 				var robot = new THREE.Badminton.Robot(bodyMesh, racketMesh);
-				
-				function createHead(radius) {
-					var head = new THREE.Object3D();
-					
-					var sphere = new THREE.Mesh(
-						new THREE.SphereGeometry(radius, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
-						new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide}));
-					sphere.position.set(0, 0, 0);
-					sphere.rotation.z = Math.PI / 2;
-					head.add(sphere);
-
-					var monitor = new THREE.Mesh(
-						new THREE.BoxGeometry(radius * 6 * 2 / 9, radius * 6 * 1 / 8, 2),
-						new THREE.MeshBasicMaterial({color: 0x000000}));
-					monitor.position.set(0, 0, radius * 6 * 1 / 9);
-					head.add(monitor);
-					
-					// TODO
-					head.position.y = radius * 3;
-					
-					return head;
-				}
+				robot.monitor = monitor;
+				monitor.eyebrowRight = eyebrowRight;
+				monitor.eyebrowLeft = eyebrowLeft;
+				monitor.eyeballRight = eyeballRight;
+				monitor.eyeballLeft = eyeballLeft;
+				monitor.renderTarget = renderTarget;
+				monitor.camera = camera;
+				monitor.scene = scene;
 				
 				return robot;
 			}
@@ -349,6 +389,12 @@
 			function render() {
 				raycaster.setFromCamera(mouse, camera);
 				intersects = raycaster.intersectObject(touchable);
+				
+				renderer.setClearColor(0x000000);
+				renderer.render(robot1.monitor.scene, robot1.monitor.camera, robot1.monitor.renderTarget);
+				renderer.render(robot2.monitor.scene, robot2.monitor.camera, robot2.monitor.renderTarget);
+				
+				renderer.setClearColor(0x888888);
 				renderer.render(scene, camera);
 			}
 
