@@ -427,6 +427,101 @@ function CourtGeometry(shortLine, longLineSingle, longLineDouble, sidelineSingle
 CourtGeometry.prototype = Object.create(THREE.Geometry.prototype);
 CourtGeometry.prototype.constructor = CourtGeometry;
 
+function RacketGeometry(width, height, tube, lineWidth, widthSegments, heightSegments, radialSegments, tubularSegments){
+	
+	THREE.Geometry.call(this);
+	
+	this.type = 'RacketGeometry';
+	
+	radialSegments = (radialSegments !== undefined) ? radialSegments : 16;
+	tubularSegments = (tubularSegments !== undefined) ? tubularSegments : 16;
+	
+	this.parameters = {
+		width: width,
+		height: height,
+		tube: tube,
+		lineWidth: lineWidth,
+		widthSegments: widthSegments,
+		heightSegments: heightSegments,
+		radialSegments: radialSegments,
+		tubularSegments: tubularSegments,
+	};
+	
+	var a = width / 2 - tube;
+	var b = height / 2 - tube;
+	var vertexCount = radialSegments * tubularSegments;
+	
+	for (var i = 0; i < radialSegments; i++) {
+		
+		for (var j = 0; j < tubularSegments; j++) {
+			
+			var u = i / tubularSegments * Math.PI * 2;
+			var v = j / radialSegments * Math.PI * 2;
+			
+			var vertexIndex = this.vertices.length;
+			
+			this.vertices.push(new THREE.Vector3(
+				(a + tube * Math.cos(v)) * Math.cos(u),
+				(b + tube * Math.cos(v)) * Math.sin(u),
+				tube * Math.sin(v)));
+			
+			var face0 = vertexIndex + 0;
+			var face1 = vertexIndex + 1;
+			
+			if (j === tubularSegments - 1)
+				face1 -= tubularSegments;
+			
+			var faceNext0 = (face0 + tubularSegments) % vertexCount;
+			var faceNext1 = (face1 + tubularSegments) % vertexCount;
+			
+			this.faces.push(
+				new THREE.Face3(face0, faceNext0, faceNext1),
+				new THREE.Face3(face0, faceNext1, face1));
+			
+			// TODO
+			this.faceVertexUvs[0].push(
+				[new THREE.Vector2(0, 1), new THREE.Vector2(0, 0), new THREE.Vector2(1, 0)],
+				[new THREE.Vector2(1, 1), new THREE.Vector2(0, 0), new THREE.Vector2(1, 0)]);
+		}
+	}
+	
+	var innerWidth = 2 * (a - tube);
+	var innerWidthDelta = lineWidth + (innerWidth - lineWidth * (widthSegments - 1)) / widthSegments;
+	
+	for (var i = 0, x = -innerWidth / 2 - lineWidth / 2 + innerWidthDelta; i < widthSegments - 1; i++, x += innerWidthDelta) {
+		
+		var planeHeight = 2 * b * Math.sin(Math.acos(x / a));
+		var verticalPlane = new THREE.PlaneGeometry(lineWidth, planeHeight);
+		
+		this.merge(verticalPlane, new THREE.Matrix4().compose(
+			new THREE.Vector3(x, 0, 0),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+			new THREE.Vector3(1, 1, 1)
+		), 1);
+	}
+	
+	var innerHeight = 2 * (b - tube);
+	var innerHeightDelta = lineWidth + (innerHeight - lineWidth * (heightSegments - 1)) / heightSegments;
+	
+	for (var i = 0, y = -innerHeight / 2 - lineWidth / 2 + innerHeightDelta; i < heightSegments - 1; i++, y += innerHeightDelta) {
+		
+		var planeWidth = 2 * a * Math.cos(Math.asin(y / b));
+		var horizontalPlane = new THREE.PlaneGeometry(planeWidth, lineWidth);
+		
+		this.merge(horizontalPlane, new THREE.Matrix4().compose(
+			new THREE.Vector3(0, y, 0),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0, 'XYZ')),
+			new THREE.Vector3(1, 1, 1)
+		), 1);
+	}
+	
+	this.computeFaceNormals();
+	this.computeVertexNormals();
+}
+
+RacketGeometry.prototype = Object.create(THREE.Geometry.prototype);
+RacketGeometry.prototype.constructor = RacketGeometry;
+
 function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
 	
 	THREE.Object3D.call(this);
@@ -652,144 +747,25 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 	
 });
 
-function Head(bodyHeight) {
-
-	THREE.Object3D.call(this);
-
-	var sphere = new THREE.Mesh(
-		new THREE.SphereGeometry(bodyHeight * 1 / 6, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
-		new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide}));
-	sphere.position.set(0, bodyHeight * 1 / 3, 0);
-	sphere.rotation.z = Math.PI / 2;
-	this.add(sphere);
-
-	var monitor = new THREE.Mesh(
-		new THREE.BoxGeometry(bodyHeight * 2 / 9, bodyHeight * 1 / 8, 2),
-		new THREE.MeshBasicMaterial({color: 0x000000}));
-	monitor.position.set(0, bodyHeight * 1 / 3, bodyHeight * 1 / 9);
-	this.add(monitor);
-}
-
-Head.prototype = Object.create(THREE.Object3D.prototype);
-Head.prototype.constructor = Head;
-
-function SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-	
-	//殺球槓
-	var nowX = 0;
-	var i;
-	for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
-		for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
-			var mesh = new THREE.Mesh(geometry, material);
-			mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh);
-
-			var mesh4 = mesh.clone();
-			mesh4.position.y -= addUnit;
-			this.add(mesh4);
-
-			var mesh2 = mesh.clone();
-			mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh2);
-
-			var mesh3 = mesh2.clone();
-			mesh3.position.y -= addUnit;
-			this.add(mesh3);
-		}
-	}
-
-	//珠
-	for (; i < pixelRow; i++) {
-		var j = Math.floor(pixelRow * 0.7);
-
-		var mesh = new THREE.Mesh(geometry, material);
-		mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-
-		var mesh2 = new THREE.Mesh(geometry, material);
-		mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-
-		this.add(mesh);
-		this.add(mesh2);
-
-		j++;
-
-		var end = pixelRow - j;
-		for (j = 1; j < end; j++) {
-			var mesh3 = mesh.clone();
-			mesh3.position.x += addUnit * j;
-			this.add(mesh3);
-
-			var mesh4 = mesh2.clone();
-			mesh4.position.x -= addUnit * j;
-			this.add(mesh4);
-		}
-	}
-}
-
-SmashEyes.prototype = Object.create(THREE.Object3D.prototype);
-SmashEyes.prototype.constructor = SmashEyes;
-
-function Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-
-	for (var i = 0; i < 2; i++) {
-		var x = (i === 0) ? rFirst.x : lFirst.x;
-		var y = (i === 0) ? rFirst.y : lFirst.y;
-		for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
-			for (var k = 0; k < pixelRow; k++) {
-				var mesh = new THREE.Mesh(geometry, material);
-				mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-				this.add(mesh);
-			}
-		}
-	}
-}
-
-Eyes.prototype = Object.create(THREE.Object3D.prototype);
-Eyes.prototype.constructor = Eyes;
-
-function EyeBall(bodyHeight, pixelRow, addUnit, First, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-
-	var x = First.x;
-	var y = First.y;
-	for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
-		for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
-			var mesh = new THREE.Mesh(geometry, material);
-			mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh);
-		}
-	}
-
-}
-
-EyeBall.prototype = Object.create(THREE.Object3D.prototype);
-EyeBall.prototype.constructor = EyeBall;
-
-function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, racketDepth) {
+function Robot(body, racket) {
 
 	THREE.Object3D.call(this);
 	
-	bodyWidth = (bodyWidth !== undefined) ? bodyWidth : 50;
-	bodyHeight = (bodyHeight !== undefined) ? bodyHeight : 160;
-	bodyDepth = (bodyDepth !== undefined) ? bodyDepth : 50;
+	var bodyBox = new THREE.Box3().setFromObject(body);
+	var bodySize = bodyBox.max.clone().sub(bodyBox.min);
+	var bodyCenter = bodyBox.max.clone().add(bodyBox.min).divideScalar(2);
 	
-	racketLength = (racketLength !== undefined) ? racketLength : 50;
-	racketWidth = (racketWidth !== undefined) ? racketWidth : 30;
-	racketDepth = (racketDepth !== undefined) ? racketDepth : 1;
+	var racketBox = new THREE.Box3().setFromObject(racket);
+	var racketSize = racketBox.max.clone().sub(racketBox.min);
+	var racketCenter = racketBox.max.clone().add(racketBox.min).divideScalar(2);
+	
+	var bodyWidth = bodySize.x;
+	var bodyHeight = bodySize.y;
+	var bodyDepth = bodySize.z;
+	
+	var racketLength = racketSize.y;
+	var racketWidth = racketSize.x;
+	var racketDepth = racketSize.z;
 	
 	this.parameters = {
 		bodyWidth: bodyWidth,
@@ -800,24 +776,9 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		racketDepth: racketDepth,
 	};
 	
-	var body = new THREE.Mesh(
-		new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
-	body.position.set(0, bodyHeight / 2, 0);
+	var body = body.clone();
+	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
-	
-
-	var bodyMaterial = new THREE.MeshBasicMaterial({
-		color: 0x000000,
-		side: THREE.DoubleSide
-	});
-	
-	var waist = new THREE.Mesh(new HyperbolaGeometry(bodyWidth / 2, bodyWidth / 2.5, bodyHeight * 2 / 3, 16, 16), bodyMaterial);
-	waist.position.set(0, -bodyHeight / 6, 0);
-	body.add (waist);
-
-	body.add (new Head(bodyHeight));
-
 	
 	var leftLink = Object.defineProperties(new THREE.Object3D(), {
 		angleA: {
@@ -837,12 +798,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 			},
 		},
 	});
-	var leftRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var leftRacket = racket.clone();
+	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
-	leftLink.position.set(bodyWidth / 2, 0, 0);
+	leftLink.position.set(bodyWidth / 2, bodyCenter.y, 0);
 	body.add(leftLink);
 	
 	var rightLink = Object.defineProperties(new THREE.Object3D(), {
@@ -863,12 +823,11 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 			},
 		},
 	});
-	var rightRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketLength, racketWidth, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var rightRacket = racket.clone();
+	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
-	rightLink.position.set(-bodyWidth / 2, 0, 0);
+	rightLink.position.set(-bodyWidth / 2, bodyCenter.y, 0);
 	body.add(rightLink);
 	
 	var topLink = Object.defineProperties(new THREE.Object3D(), {
@@ -890,43 +849,15 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 		},
 	});
 	var topLinkFrame = new THREE.Object3D();
-	var topRacket = new THREE.Mesh(
-		new THREE.BoxGeometry(racketWidth, racketLength, racketDepth),
-		new THREE.MeshNormalMaterial({ visible: false }));
+	var topRacket = racket.clone();
 	topRacket.position.set(0, racketLength / 2, 0);
 	topLinkFrame.add(topRacket);
-	topLink.position.set(0, bodyHeight / 2, 0);
+	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
 	topLink.frame = topLinkFrame;
 	topLink.add(topLinkFrame);
 	body.add(topLink);
 
-	var pixelRow = 20;
-	var space = 3;
-	var side = bodyWidth * 0.3 < bodyHeight / 3 ? bodyWidth * 0.3 : bodyHeight / 3;  //眼睛範圍的方形邊長
-	var eyeMidR = new THREE.Vector2(bodyWidth * 0.3 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);  //眼睛中心點
-	var eyeMidL = new THREE.Vector2(bodyWidth * 0.7 - bodyWidth/2, bodyHeight * 5 / 6 - bodyHeight / 2);
-	var pixelSide = side / (pixelRow + space);
-	var rFirst = new THREE.Vector3(eyeMidR.x - side / 2 + pixelSide / 2, eyeMidR.y + side / 2 - pixelSide / 2, bodyDepth / 2);
-	var rLast = new THREE.Vector3(eyeMidR.x + side / 2 - pixelSide / 2, eyeMidR.y - side / 2 + pixelSide / 2, bodyDepth / 2) ;
-	var lFirst = new THREE.Vector3(eyeMidL.x - side / 2 + pixelSide / 2, eyeMidL.y + side / 2 - pixelSide / 2, bodyDepth / 2);
-	var lLast = new THREE.Vector3(eyeMidL.x + side / 2 - pixelSide / 2, eyeMidL.y - side / 2 + pixelSide / 2, bodyDepth / 2);
-	
-	//pixel格數 + 2格寬的中間間隙共 pixelRow + space 格，pixel中心點每次移動一格寬 + 一格間隙
-	var addUnit = side / (pixelRow + space) + side * 2 / (pixelRow + space) / (pixelRow - 1);
-
-
-	var eyes = new Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide);
-	//眼珠
-	var rightEyeBall = new EyeBall(bodyHeight, pixelRow, addUnit, rFirst, pixelSide);
-	var leftEyeBall = new EyeBall(bodyHeight, pixelRow, addUnit, lFirst, pixelSide);
-
-	eyes.add(rightEyeBall);
-	eyes.add(leftEyeBall);
-	body.add(eyes);
-
-
 	this.body = body;
-	this.waist = waist;
 	
 	this.leftLink = leftLink;
 	this.leftRacket = leftRacket;
@@ -971,15 +902,6 @@ function Robot(bodyWidth, bodyHeight, bodyDepth, racketLength, racketWidth, rack
 	
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
-
-	this.side = side;
-	this.addUnit = addUnit;
-
-	this.eyes = eyes;
-	this.leftEyeBall = leftEyeBall;
-	this.rightEyeBall = rightEyeBall;
-	this.smashEyes = new SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide);
-	this.eyeStatus = 'common';
 	
 	this.camera = null;
 	this.impactAudio = null;
@@ -1065,11 +987,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = p.y;
 			impactLength = this.parameters.racketLength / 2;
 			localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
-			if (this.eyeStatus === 'common') {
-				this.body.remove(this.eyes);
-				this.body.add(this.smashEyes);
-				this.eyeStatus = 'smash';
-			}
 		} else if (this.impactType === 'top') {
 			link = this.topLink;
 			racket = this.topRacket;
@@ -1079,11 +996,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactHeight = localImpactPosition.y;
 			impactSpeed = this.getTopImpactSpeed(impactHeight);
 			impactPosition = this.predictFallingPosition(impactHeight);
-		if (this.eyeStatus === 'smash') {
-			this.body.remove(this.smashEyes);
-			this.body.add(this.eyes);
-			this.eyeStatus = 'common';
-		}
     } else {
 			if (this.impactType === 'left') {
 				link = this.leftLink;
@@ -1102,25 +1014,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 			impactAngle = impactParams[0];
 			impactSpeed = impactParams[1];
 			impactPosition = this.predictFallingPosition(impactHeight);
-			if (this.eyeStatus === 'smash') {
-				this.body.remove(this.smashEyes);
-				this.body.add(this.eyes);
-				this.eyeStatus = 'common';
-			}
-		}
-
-		if (this.eyeStatus === 'common') {
-			var shuttlePos = this.body.worldToLocal(this.shuttle.localToWorld(new THREE.Vector3()));
-			if (shuttlePos.x > 5) {
-				this.leftEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
-				this.rightEyeBall.position.x = this.side / 2 - this.side * 0.3 / 2;
-			} else if (shuttlePos.x < -5) {
-				this.leftEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
-				this.rightEyeBall.position.x = -(this.side / 2 - this.side * 0.3 / 2);
-			} else {
-				this.leftEyeBall.position.x = 0;
-				this.rightEyeBall.position.x = 0;
-			}
 		}
 		
 		var bodyAngle;
@@ -1953,6 +1846,133 @@ TargetPoint.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 });
 
+function Head(bodyHeight) {
+
+	THREE.Object3D.call(this);
+
+	var sphere = new THREE.Mesh(
+		new THREE.SphereGeometry(bodyHeight * 1 / 6, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
+		new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide}));
+	sphere.position.set(0, bodyHeight * 1 / 3, 0);
+	sphere.rotation.z = Math.PI / 2;
+	this.add(sphere);
+
+	var monitor = new THREE.Mesh(
+		new THREE.BoxGeometry(bodyHeight * 2 / 9, bodyHeight * 1 / 8, 2),
+		new THREE.MeshBasicMaterial({color: 0x000000}));
+	monitor.position.set(0, bodyHeight * 1 / 3, bodyHeight * 1 / 9);
+	this.add(monitor);
+}
+
+Head.prototype = Object.create(THREE.Object3D.prototype);
+Head.prototype.constructor = Head;
+
+function SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
+
+	THREE.Object3D.call(this);
+
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+	
+	//殺球槓
+	var nowX = 0;
+	var i;
+	for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
+		for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh);
+
+			var mesh4 = mesh.clone();
+			mesh4.position.y -= addUnit;
+			this.add(mesh4);
+
+			var mesh2 = mesh.clone();
+			mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh2);
+
+			var mesh3 = mesh2.clone();
+			mesh3.position.y -= addUnit;
+			this.add(mesh3);
+		}
+	}
+
+	//珠
+	for (; i < pixelRow; i++) {
+		var j = Math.floor(pixelRow * 0.7);
+
+		var mesh = new THREE.Mesh(geometry, material);
+		mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+
+		var mesh2 = new THREE.Mesh(geometry, material);
+		mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
+
+		this.add(mesh);
+		this.add(mesh2);
+
+		j++;
+
+		var end = pixelRow - j;
+		for (j = 1; j < end; j++) {
+			var mesh3 = mesh.clone();
+			mesh3.position.x += addUnit * j;
+			this.add(mesh3);
+
+			var mesh4 = mesh2.clone();
+			mesh4.position.x -= addUnit * j;
+			this.add(mesh4);
+		}
+	}
+}
+
+SmashEyes.prototype = Object.create(THREE.Object3D.prototype);
+SmashEyes.prototype.constructor = SmashEyes;
+
+function Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
+
+	THREE.Object3D.call(this);
+
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+
+	for (var i = 0; i < 2; i++) {
+		var x = (i === 0) ? rFirst.x : lFirst.x;
+		var y = (i === 0) ? rFirst.y : lFirst.y;
+		for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
+			for (var k = 0; k < pixelRow; k++) {
+				var mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
+				this.add(mesh);
+			}
+		}
+	}
+}
+
+Eyes.prototype = Object.create(THREE.Object3D.prototype);
+Eyes.prototype.constructor = Eyes;
+
+function EyeBall(bodyHeight, pixelRow, addUnit, First, pixelSide) {
+
+	THREE.Object3D.call(this);
+
+	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
+	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+
+	var x = First.x;
+	var y = First.y;
+	for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
+		for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
+			this.add(mesh);
+		}
+	}
+
+}
+
+EyeBall.prototype = Object.create(THREE.Object3D.prototype);
+EyeBall.prototype.constructor = EyeBall;
+
 function Game(court, shuttle, firstPlayer) {
 
 	this.court = court;
@@ -2170,6 +2190,7 @@ exports.ShuttlecockGeometry = ShuttlecockGeometry;
 exports.HyperbolaGeometry = HyperbolaGeometry;
 exports.NetGeometry = NetGeometry;
 exports.CourtGeometry = CourtGeometry;
+exports.RacketGeometry = RacketGeometry;
 exports.Shuttlecock = Shuttlecock;
 exports.Robot = Robot;
 exports.Court = Court;
