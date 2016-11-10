@@ -12,7 +12,6 @@ export { Court } from './objects/Court.js';
 export { Scoreboard } from './objects/Scoreboard.js';
 export { ScoreboardCard } from './objects/ScoreboardCard.js';
 export { TargetPoint } from './objects/TargetPoint.js';
-export { Head } from './objects/Head.js';
 export { SmashEyes } from './objects/SmashEyes.js';
 export { Eyes } from './objects/Eyes.js';
 export { EyeBall } from './objects/EyeBall.js';
