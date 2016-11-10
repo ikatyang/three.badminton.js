@@ -522,6 +522,42 @@ function RacketGeometry(width, height, tube, lineWidth, widthSegments, heightSeg
 RacketGeometry.prototype = Object.create(THREE.Geometry.prototype);
 RacketGeometry.prototype.constructor = RacketGeometry;
 
+var pixel_vertex_shader = "varying vec2 vUv;\r\nvoid main() {\r\n\tgl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n\tvUv = uv;\r\n}";
+
+var pixel_fragment_shader = "uniform sampler2D texture;\r\nuniform vec2 size;\r\nuniform vec2 pixelSize;\r\nvarying vec2 vUv;\r\n\r\nvoid main() {\r\n\t\r\n\tvec2 pixelRatio = pixelSize / size;\r\n\tgl_FragColor = vec4(texture2D(texture, pixelRatio * floor(vUv / pixelRatio)).rgb, 1.0); \r\n}";
+
+function PixelMaterial(parameters){
+	
+	var params = {};
+	
+	for (var key in parameters)
+		params[key] = parameters[key];
+	
+	params.uniforms = {
+		texture: {
+			value: parameters.map
+		},
+		size: {
+			value: parameters.size
+		},
+		pixelSize: {
+			value: parameters.pixelSize
+		},
+	};
+	
+	params.vertexShader = pixel_vertex_shader;
+	params.fragmentShader = pixel_fragment_shader;
+	
+	delete params.map;
+	delete params.size;
+	delete params.pixelSize;
+	
+	THREE.ShaderMaterial.call(this, params);
+}
+
+PixelMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+PixelMaterial.prototype.constructor = PixelMaterial;
+
 function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
 	
 	THREE.Object3D.call(this);
@@ -776,7 +812,7 @@ function Robot(body, racket) {
 		racketDepth: racketDepth,
 	};
 	
-	var body = body.clone();
+	body = body.clone();
 	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
 	
@@ -1846,133 +1882,6 @@ TargetPoint.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 });
 
-function Head(bodyHeight) {
-
-	THREE.Object3D.call(this);
-
-	var sphere = new THREE.Mesh(
-		new THREE.SphereGeometry(bodyHeight * 1 / 6, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
-		new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide}));
-	sphere.position.set(0, bodyHeight * 1 / 3, 0);
-	sphere.rotation.z = Math.PI / 2;
-	this.add(sphere);
-
-	var monitor = new THREE.Mesh(
-		new THREE.BoxGeometry(bodyHeight * 2 / 9, bodyHeight * 1 / 8, 2),
-		new THREE.MeshBasicMaterial({color: 0x000000}));
-	monitor.position.set(0, bodyHeight * 1 / 3, bodyHeight * 1 / 9);
-	this.add(monitor);
-}
-
-Head.prototype = Object.create(THREE.Object3D.prototype);
-Head.prototype.constructor = Head;
-
-function SmashEyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-	
-	//殺球槓
-	var nowX = 0;
-	var i;
-	for (i = 0; i < Math.ceil(pixelRow * 0.5); i++){
-		for (var j = 0; j < 2 && nowX < pixelRow; j++, nowX++) {
-			var mesh = new THREE.Mesh(geometry, material);
-			mesh.position.set(rFirst.clone().x + nowX * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh);
-
-			var mesh4 = mesh.clone();
-			mesh4.position.y -= addUnit;
-			this.add(mesh4);
-
-			var mesh2 = mesh.clone();
-			mesh2.position.set(lFirst.clone().x + (pixelRow - nowX) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh2);
-
-			var mesh3 = mesh2.clone();
-			mesh3.position.y -= addUnit;
-			this.add(mesh3);
-		}
-	}
-
-	//珠
-	for (; i < pixelRow; i++) {
-		var j = Math.floor(pixelRow * 0.7);
-
-		var mesh = new THREE.Mesh(geometry, material);
-		mesh.position.set(rFirst.clone().x + j * addUnit, rFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-
-		var mesh2 = new THREE.Mesh(geometry, material);
-		mesh2.position.set(lFirst.clone().x + (pixelRow - j) * addUnit, lFirst.clone().y - i * addUnit, 1.1 + bodyHeight * 1 / 9);
-
-		this.add(mesh);
-		this.add(mesh2);
-
-		j++;
-
-		var end = pixelRow - j;
-		for (j = 1; j < end; j++) {
-			var mesh3 = mesh.clone();
-			mesh3.position.x += addUnit * j;
-			this.add(mesh3);
-
-			var mesh4 = mesh2.clone();
-			mesh4.position.x -= addUnit * j;
-			this.add(mesh4);
-		}
-	}
-}
-
-SmashEyes.prototype = Object.create(THREE.Object3D.prototype);
-SmashEyes.prototype.constructor = SmashEyes;
-
-function Eyes(bodyHeight, pixelRow, addUnit, lFirst, rFirst, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-
-	for (var i = 0; i < 2; i++) {
-		var x = (i === 0) ? rFirst.x : lFirst.x;
-		var y = (i === 0) ? rFirst.y : lFirst.y;
-		for (var j = Math.floor(pixelRow * 0.2); j < Math.ceil(pixelRow * 0.3); j++) {
-			for (var k = 0; k < pixelRow; k++) {
-				var mesh = new THREE.Mesh(geometry, material);
-				mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-				this.add(mesh);
-			}
-		}
-	}
-}
-
-Eyes.prototype = Object.create(THREE.Object3D.prototype);
-Eyes.prototype.constructor = Eyes;
-
-function EyeBall(bodyHeight, pixelRow, addUnit, First, pixelSide) {
-
-	THREE.Object3D.call(this);
-
-	var geometry = new THREE.PlaneGeometry(pixelSide, pixelSide);
-	var material = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
-
-	var x = First.x;
-	var y = First.y;
-	for (var j = Math.floor(pixelRow * 0.3); j < Math.ceil(pixelRow * 0.9); j++) {
-		for (var k = Math.floor(pixelRow * 0.35); k < Math.ceil(pixelRow * 0.65); k++) {
-			var mesh = new THREE.Mesh(geometry, material);
-			mesh.position.set(k * addUnit + x, y - j * addUnit, 1.1 + bodyHeight * 1 / 9);
-			this.add(mesh);
-		}
-	}
-
-}
-
-EyeBall.prototype = Object.create(THREE.Object3D.prototype);
-EyeBall.prototype.constructor = EyeBall;
-
 function Game(court, shuttle, firstPlayer) {
 
 	this.court = court;
@@ -2191,16 +2100,13 @@ exports.HyperbolaGeometry = HyperbolaGeometry;
 exports.NetGeometry = NetGeometry;
 exports.CourtGeometry = CourtGeometry;
 exports.RacketGeometry = RacketGeometry;
+exports.PixelMaterial = PixelMaterial;
 exports.Shuttlecock = Shuttlecock;
 exports.Robot = Robot;
 exports.Court = Court;
 exports.Scoreboard = Scoreboard;
 exports.ScoreboardCard = ScoreboardCard;
 exports.TargetPoint = TargetPoint;
-exports.Head = Head;
-exports.SmashEyes = SmashEyes;
-exports.Eyes = Eyes;
-exports.EyeBall = EyeBall;
 exports.Game = Game;
 exports.Record = Record;
 
