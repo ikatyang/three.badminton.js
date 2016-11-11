@@ -398,10 +398,18 @@
 				var robots = [robot1, robot2];
 				for (var i = 0; i < 2; i++) {
 					var robot = robots[i];
-					var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
-					var angle = Math.atan(position.x / Math.max(position.z, 0));
 					var monitor = robot.monitor;
-					monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
+					if (robot.impactType === 'smash') {
+						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = 0;
+						monitor.eyebrowLeft.rotation.z = Math.PI / 8;
+						monitor.eyebrowRight.rotation.z = -Math.PI / 8;
+					} else {
+						var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
+						var angle = Math.atan(position.x / Math.max(position.z, 0));
+						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
+						monitor.eyebrowLeft.rotation.z = 0;
+						monitor.eyebrowRight.rotation.z = 0;
+					}
 				}
 			}
 			
