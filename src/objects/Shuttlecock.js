@@ -36,9 +36,8 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.dragCoefficient = 0.44;
 	this.groundAttenuation = 0.9;
 	
-	this.meter2unit = 1;
-	this._airDensity = 1.1839;
-	this._gravity = new THREE.Vector3(0, -9.8, 0);
+	this.airDensity = 1.1839;
+	this.gravity = new THREE.Vector3(0, -9.8, 0);
 	this.velocity = new THREE.Vector3(0, 0, 0);
 	
 	this.flipAngle = 0;
@@ -52,7 +51,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.impactCount = 0;
 }
 
-Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
 	
@@ -150,7 +149,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			velocityXZ.negate();
 			
 		var flipAxis = this.directionWorldToLocal(yAxis.clone().negate().cross(velocityXZ)).normalize();
-		var flipAngle = Math.min(this.stopAngularVelocity * delta, 
+		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
 			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
 		
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
@@ -201,26 +200,6 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		for (var i = 0; i < params.length; i++) 
 			params[i] += (f_k1[i] + 2 * f_k2[i] + 2 * f_k3[i] + f_k4[i]) / 6 * dt;
 		return params;
-	},
-	
-}), {
-
-	airDensity: {
-		get: function () {
-			return this._airDensity / Math.pow(this.meter2unit, 3);
-		},
-		set: function (value) {
-			this._airDensity = value;
-		},
-	},
-	
-	gravity: {
-		get: function () {
-			return this._gravity.clone().multiplyScalar(this.meter2unit);
-		},
-		set: function (value) {
-			this._gravity = value;
-		},
 	},
 	
 });

@@ -78,7 +78,7 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
 				
-				robot1 = createRobot('textures/playerBody1.jpeg', 'white', 'blue');
+				robot1 = createRobot(court, 'textures/playerBody1.jpeg', 'white', 'blue');
 				scene.add(robot1);
 				robot1.setCourt(court, 1);
 				robot1.shuttle = shuttle;
@@ -93,7 +93,7 @@
 					}
 				};
 				
-				robot2 = createRobot('textures/playerBody2.jpeg', 0xff0000, 0x800000);
+				robot2 = createRobot(court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
 				scene.add(robot2);
 				robot2.setCourt(court, 2);
 				robot2.shuttle = shuttle;
@@ -264,6 +264,8 @@
 				post2.position.z *= -1;
 				netFrame.add(post2);
 				
+				court.postHeight = postHeight;
+				
 				return court;
 			}
 			
@@ -281,8 +283,11 @@
 				var featherWidth = 1;
 				var featherRatio = 7 / 3;
 				var featherAngle = 0.1
-				var corkMass = 0.005;
-				var skirtMass = 0.0001;
+				
+				var corkMass = 0.005; // mass
+				var skirtMass = 0.0001; // mass
+				var airDensity = 0.0000011839; // mass * length^-3
+				var gravity = new THREE.Vector3(0, -980, 0); // mass * length * time^-2
 				
 				var shuttlecock = new THREE.Badminton.Shuttlecock(
 					new THREE.Badminton.ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, widthSegments, heightSegments, rachisRadius, rachisRatio, featherWidth, featherRatio, featherAngle, corkMass / skirtMass
@@ -293,12 +298,14 @@
 					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'beige' }),
 					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' })
 				]), corkMass, skirtMass);
-				shuttlecock.meter2unit = meter2unit;
+				
+				shuttlecock.airDensity = airDensity;
+				shuttlecock.gravity.copy(gravity);
 				
 				return shuttlecock;
 			}
 			
-			function createRobot(texturePath, topColor, bottomColor) {
+			function createRobot(court, texturePath, topColor, bottomColor) {
 				
 				var racketWidth = 30;
 				var racketHeight = 50;
@@ -398,6 +405,8 @@
 				monitor.scene = scene;
 				
 				robot.setImpactAudio(document.getElementById('impactSound'), window.camera, 2000);
+				robot.netHeight = court.postHeight;
+				robot.netHeightDelta = court.postHeight / 10;
 				
 				return robot;
 			}

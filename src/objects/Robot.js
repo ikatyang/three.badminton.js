@@ -143,8 +143,8 @@ function Robot(body, racket) {
 	this.bodyAngularSpeed = Math.PI * 2;
 	this.linkAngularSpeed = Math.PI * 2;
 	
-	this._netHeight = 1.55;
-	this._netHeightDelta = 0.2;
+	this.netHeight = 1.55;
+	this.netHeightDelta = 0.2;
 	
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
@@ -164,7 +164,7 @@ function Robot(body, racket) {
 	this.record = null;
 }
 
-Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
 	
@@ -709,26 +709,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 
 	onAfterImpact: function () {},
 	onBeforeUpdate: function () {},
-	
-}), {
-	
-	netHeight: {
-		get: function () {
-			return this._netHeight * this.shuttle.meter2unit;
-		},
-		set: function (value) {
-			this._netHeight = value;
-		},
-	},
-	
-	netHeightDelta: {
-		get: function () {
-			return this._netHeightDelta * this.shuttle.meter2unit;
-		},
-		set: function (value) {
-			this._netHeightDelta = value;
-		},
-	},
 	
 });
 
