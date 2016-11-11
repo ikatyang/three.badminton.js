@@ -284,25 +284,31 @@
 				var camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -10, 10);
 				var renderTarget = new THREE.WebGLRenderTarget(width, height);
 				
+				var eyeRight = new THREE.Object3D();
+				eyeRight.position.x = -width / 4;
+				scene.add(eyeRight);
+				
+				var eyeLeft = eyeRight.clone();
+				eyeLeft.position.x *= -1;
+				scene.add(eyeLeft);
+				
 				var eyebrowRight = new THREE.Mesh(
 					new THREE.PlaneGeometry(width / 3, 2),
 					new THREE.MeshBasicMaterial({ color: 'white' }));
-				eyebrowRight.position.set(-width / 4, height / 4, 5);
-				scene.add(eyebrowRight);
-				
-				var eyebrowLeft = eyebrowRight.clone();
-				eyebrowRight.position.x *= -1;
-				scene.add(eyebrowLeft);
+				eyebrowRight.position.set(0, height / 4, 5);
+				eyeRight.add(eyebrowRight);
 				
 				var eyeballRight = new THREE.Mesh(
 					new THREE.CircleGeometry(width / 12, 32),
 					new THREE.MeshBasicMaterial({ color: 'white' }));
-				eyeballRight.position.set(-width / 4, 0, 5);
-				scene.add(eyeballRight);
+				eyeballRight.position.set(0, 0, 5);
+				eyeRight.add(eyeballRight);
+				
+				var eyebrowLeft = eyebrowRight.clone();
+				eyeLeft.add(eyebrowLeft);
 				
 				var eyeballLeft = eyeballRight.clone();
-				eyeballLeft.position.x *= -1;
-				scene.add(eyeballLeft);
+				eyeLeft.add(eyeballLeft);
 				
 				var blackMaterial = new THREE.MeshBasicMaterial({ color: 'black' });
 				
@@ -328,6 +334,7 @@
 				monitor.eyebrowLeft = eyebrowLeft;
 				monitor.eyeballRight = eyeballRight;
 				monitor.eyeballLeft = eyeballLeft;
+				monitor.eyeballScope = width / 12;
 				monitor.renderTarget = renderTarget;
 				monitor.camera = camera;
 				monitor.scene = scene;
@@ -377,6 +384,7 @@
 					robot2.update(delta);
 					checkNetCollision();
 					game.update(delta);
+					updateEyes();
 				}
 				scoreboard.update(delta);
 				targetPoint1.update(delta, camera);
@@ -384,6 +392,17 @@
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
+			}
+			
+			function updateEyes() {
+				var robots = [robot1, robot2];
+				for (var i = 0; i < 2; i++) {
+					var robot = robots[i];
+					var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
+					var angle = Math.atan(position.x / Math.max(position.z, 0));
+					var monitor = robot.monitor;
+					monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
+				}
 			}
 			
 			function render() {
