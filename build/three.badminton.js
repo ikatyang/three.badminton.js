@@ -594,9 +594,8 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.dragCoefficient = 0.44;
 	this.groundAttenuation = 0.9;
 	
-	this.meter2unit = 1;
-	this._airDensity = 1.1839;
-	this._gravity = new THREE.Vector3(0, -9.8, 0);
+	this.airDensity = 1.1839;
+	this.gravity = new THREE.Vector3(0, -9.8, 0);
 	this.velocity = new THREE.Vector3(0, 0, 0);
 	
 	this.flipAngle = 0;
@@ -610,7 +609,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.impactCount = 0;
 }
 
-Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
 	
@@ -708,7 +707,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			velocityXZ.negate();
 			
 		var flipAxis = this.directionWorldToLocal(yAxis.clone().negate().cross(velocityXZ)).normalize();
-		var flipAngle = Math.min(this.stopAngularVelocity * delta, 
+		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
 			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
 		
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
@@ -759,26 +758,6 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		for (var i = 0; i < params.length; i++) 
 			params[i] += (f_k1[i] + 2 * f_k2[i] + 2 * f_k3[i] + f_k4[i]) / 6 * dt;
 		return params;
-	},
-	
-}), {
-
-	airDensity: {
-		get: function () {
-			return this._airDensity / Math.pow(this.meter2unit, 3);
-		},
-		set: function (value) {
-			this._airDensity = value;
-		},
-	},
-	
-	gravity: {
-		get: function () {
-			return this._gravity.clone().multiplyScalar(this.meter2unit);
-		},
-		set: function (value) {
-			this._gravity = value;
-		},
 	},
 	
 });
@@ -838,7 +817,7 @@ function Robot(body, racket) {
 	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
-	leftLink.position.set(bodyWidth / 2, bodyCenter.y, 0);
+	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, 0);
 	body.add(leftLink);
 	
 	var rightLink = Object.defineProperties(new THREE.Object3D(), {
@@ -863,7 +842,7 @@ function Robot(body, racket) {
 	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
-	rightLink.position.set(-bodyWidth / 2, bodyCenter.y, 0);
+	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, 0);
 	body.add(rightLink);
 	
 	var topLink = Object.defineProperties(new THREE.Object3D(), {
@@ -928,8 +907,8 @@ function Robot(body, racket) {
 	this.bodyAngularSpeed = Math.PI * 2;
 	this.linkAngularSpeed = Math.PI * 2;
 	
-	this._netHeight = 1.55;
-	this._netHeightDelta = 0.2;
+	this.netHeight = 1.55;
+	this.netHeightDelta = 0.2;
 	
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
@@ -949,7 +928,7 @@ function Robot(body, racket) {
 	this.record = null;
 }
 
-Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
+Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
 	
@@ -962,9 +941,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	setCourt: function (court, player) {
 		this.court = court;
 		this.player = player;
-		var area = court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B'));
-		court.localToTarget(area, this.parent);
-		this.setResponsibleArea(area, true);
+		this.setResponsibleArea(court.localToTarget(court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B')), this.parent), true);
 	},
 	
 	reset: function () {
@@ -1496,26 +1473,6 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 
 	onAfterImpact: function () {},
 	onBeforeUpdate: function () {},
-	
-}), {
-	
-	netHeight: {
-		get: function () {
-			return this._netHeight * this.shuttle.meter2unit;
-		},
-		set: function (value) {
-			this._netHeight = value;
-		},
-	},
-	
-	netHeightDelta: {
-		get: function () {
-			return this._netHeightDelta * this.shuttle.meter2unit;
-		},
-		set: function (value) {
-			this._netHeightDelta = value;
-		},
-	},
 	
 });
 
