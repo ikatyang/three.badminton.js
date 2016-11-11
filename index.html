@@ -36,10 +36,10 @@
 			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
-			var clock;
+			var clock, mouse, raycaster;
 			var animated = false;
 			var delay = 5;
-			var touchable, raycaster, mouse, intersects;
+			var touchable, intersects;
 
 			init();
 			animate();
@@ -64,6 +64,7 @@
 					new THREE.MeshBasicMaterial({ visible: false }));
 				court.add(touchable);
 				
+				clock = new THREE.Clock();
 				mouse = new THREE.Vector2();
 				raycaster = new THREE.Raycaster();
 				
@@ -71,8 +72,6 @@
 				game.onScoreChange = function () {
 					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
 				};
-				
-				clock = new THREE.Clock();
 				
 				renderer = new THREE.WebGLRenderer();
 				renderer.setSize(window.innerWidth, window.innerHeight);
@@ -346,8 +345,10 @@
 				var height = headRadius * 3 / 4;
 				
 				var scene = new THREE.Scene();
-				var camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -10, 10);
 				var renderTarget = new THREE.WebGLRenderTarget(width, height);
+				
+				var camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -10, 10);
+				scene.add(camera);
 				
 				var eyeRight = new THREE.Object3D();
 				eyeRight.position.x = -width / 4;
