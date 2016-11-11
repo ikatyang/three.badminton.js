@@ -40,60 +40,23 @@
 			var animated = false;
 			var delay = 5;
 			var touchable, raycaster, mouse, intersects;
-			var impactSound;
 
 			init();
 			animate();
 
 			function init() {
 
-				scene = new THREE.Scene();
+				scene = createScene();
 
 				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
 				camera.position.set(-800, 300, 0);
 				scene.add(camera);
 				
-				var meter2unit = 100;
-				
-				var corkMass = 0.005;
-				var skirtMass = 0.0001;
-				shuttle = new THREE.Badminton.Shuttlecock(new THREE.Badminton.ShuttlecockGeometry(
-					2.5, 5, 1, 6.5, 16, 8, 0.1, 3 / 7, 1, 7 / 3, 0.1, corkMass / skirtMass
-				), new THREE.MultiMaterial([
-					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
-					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'black' }),
-					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
-					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'beige' }),
-					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' })
-				]), corkMass, skirtMass);
-				shuttle.meter2unit = meter2unit;
+				shuttle = createShuttlecock();
 				scene.add(shuttle);
 				
-				court = new THREE.Badminton.Court(
-					new THREE.Badminton.CourtGeometry(198, 670, 594, 259, 305, 10),
-					new THREE.MeshBasicMaterial({ color: 'white', side: THREE.DoubleSide }));
-				court.rotation.x = -Math.PI / 2;
+				court = createCourt();
 				scene.add(court);
-				
-				var netHeight = 110;
-				net = new THREE.Mesh(
-					new THREE.Badminton.NetGeometry(610, netHeight, 5, 2, 61, netHeight / 10),
-					new THREE.MeshNormalMaterial({
-						side: THREE.DoubleSide
-					}));
-				net.rotation.y = Math.PI / 2;
-				net.position.y = 155 - netHeight / 2;
-				scene.add(net);
-				
-				var post1 = new THREE.Mesh(
-					new THREE.CylinderGeometry(5, 5, 155, 16),
-					new THREE.MeshNormalMaterial());
-				post1.position.set(0, 77.5, 305);
-				scene.add(post1);
-				
-				var post2 = post1.clone();
-				post2.position.z *= -1;
-				scene.add(post2);
 				
 				var courtArea = court.getArea('All');
 				touchable = new THREE.Mesh(
@@ -115,15 +78,10 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
 				
-				impactSound = document.getElementById('impactSound');
-				
-				var textureLoader = new THREE.TextureLoader();
-				
 				robot1 = createRobot('textures/playerBody1.jpeg', 'white', 'blue');
 				scene.add(robot1);
 				robot1.setCourt(court, 1);
 				robot1.shuttle = shuttle;
-				robot1.setImpactAudio(impactSound, camera, 2000);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					if (!record.playing) {
@@ -139,7 +97,6 @@
 				scene.add(robot2);
 				robot2.setCourt(court, 2);
 				robot2.shuttle = shuttle;
-				robot2.setImpactAudio(impactSound, camera, 2000);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
@@ -160,34 +117,6 @@
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
 				game.scoreboard = scoreboard;
-				
-				var skybox = new THREE.Mesh(
-					new THREE.BoxGeometry(10000, 10000, 10000, 1, 1, 1),
-					new THREE.MultiMaterial([
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox1.png'), side: THREE.BackSide }),
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox2.png'), side: THREE.BackSide }),
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox3.png'), side: THREE.BackSide }),
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox4.png'), side: THREE.BackSide }),
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox5.png'), side: THREE.BackSide }),
-						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox6.png'), side: THREE.BackSide }),
-					])
-				);
-				scene.add(skybox);
-				
-				var ground = new THREE.Mesh(
-					new THREE.CylinderGeometry(1500, 400, 300, 64),
-					new THREE.MeshLambertMaterial({ color: 0x082908 }));
-				ground.position.y = -150.1;
-				scene.add(ground);
-				
-				var wall = new THREE.Mesh(
-					new THREE.CylinderGeometry(1500, 1500, 500, 64 ,1, true),
-					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/wall.jpg'), side: THREE.DoubleSide }));
-				scene.add(wall);
-				
-				var light = new THREE.SpotLight(0xffffff, 60, 950, 1, 0.6, 2);
-				light.position.y = 700;
-				scene.add(light);
 				
 				var gui = new dat.GUI();
 				
@@ -252,14 +181,144 @@
 				}
 			}
 			
+			function createScene() {
+				
+				var scene = new THREE.Scene();
+				
+				var textureLoader = new THREE.TextureLoader();
+				var skybox = new THREE.Mesh(
+					new THREE.BoxGeometry(10000, 10000, 10000, 1, 1, 1),
+					new THREE.MultiMaterial([
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox1.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox2.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox3.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox4.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox5.png'), side: THREE.BackSide }),
+						new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/skybox6.png'), side: THREE.BackSide }),
+					])
+				);
+				scene.add(skybox);
+				
+				var ground = new THREE.Mesh(
+					new THREE.CylinderGeometry(1500, 400, 300, 64),
+					new THREE.MeshLambertMaterial({ color: 0x082908 }));
+				ground.position.y = -150.1;
+				scene.add(ground);
+				
+				var wall = new THREE.Mesh(
+					new THREE.CylinderGeometry(1500, 1500, 500, 64 ,1, true),
+					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/wall.jpg'), side: THREE.DoubleSide }));
+				scene.add(wall);
+				
+				var light = new THREE.SpotLight(0xffffff, 60, 950, 1, 0.6, 2);
+				light.position.y = 700;
+				scene.add(light);
+				
+				return scene;
+			}
+			
+			function createCourt() {
+				
+				var shortLine = 198;
+				var longLineSingle = 670;
+				var longLineDouble = 594;
+				var sidelineSingle = 259;
+				var sidelineDouble = 305;
+				var lineWidth = 10;
+				
+				var netWidth = sidelineDouble * 2;
+				var netHeight = 110;
+				var netOuterTube = 5
+				var netInnerTube = 2
+				var netWidthSegments = netWidth / 10;
+				var netHeightSegments = netHeight / 10;
+				
+				var postRadius = 5;
+				var postHeight = 155;
+				
+				var court = new THREE.Badminton.Court(
+					new THREE.Badminton.CourtGeometry(shortLine, longLineSingle, longLineDouble, sidelineSingle, sidelineDouble, lineWidth),
+					new THREE.MeshBasicMaterial({ color: 'white', side: THREE.DoubleSide }));
+				court.rotation.x = -Math.PI / 2;
+				
+				var netFrame = new THREE.Object3D();
+				netFrame.rotation.x = Math.PI / 2;
+				court.add(netFrame);
+				
+				var net = new THREE.Mesh(
+					new THREE.Badminton.NetGeometry(netWidth, netHeight, netOuterTube, netInnerTube, netWidthSegments, netHeightSegments),
+					new THREE.MeshNormalMaterial({
+						side: THREE.DoubleSide
+					}));
+				net.rotation.y = Math.PI / 2;
+				net.position.y = postHeight - netHeight / 2;
+				netFrame.add(net);
+				
+				var post1 = new THREE.Mesh(
+					new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16),
+					new THREE.MeshNormalMaterial());
+				post1.position.set(0, postHeight / 2, sidelineDouble);
+				netFrame.add(post1);
+				
+				var post2 = post1.clone();
+				post2.position.z *= -1;
+				netFrame.add(post2);
+				
+				return court;
+			}
+			
+			function createShuttlecock() {
+				
+				var meter2unit = 100;
+				var corkRadius = 2.5;
+				var skirtRadius = 5;
+				var beltHeight = 1;
+				var skirtHeight = 6.5;
+				var widthSegments = 16;
+				var heightSegments = 8;
+				var rachisRadius = 0.1;
+				var rachisRatio = 3 / 7;
+				var featherWidth = 1;
+				var featherRatio = 7 / 3;
+				var featherAngle = 0.1
+				var corkMass = 0.005;
+				var skirtMass = 0.0001;
+				
+				var shuttlecock = new THREE.Badminton.Shuttlecock(
+					new THREE.Badminton.ShuttlecockGeometry(corkRadius, skirtRadius, beltHeight, skirtHeight, widthSegments, heightSegments, rachisRadius, rachisRatio, featherWidth, featherRatio, featherAngle, corkMass / skirtMass
+				), new THREE.MultiMaterial([
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'black' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'beige' }),
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' })
+				]), corkMass, skirtMass);
+				shuttlecock.meter2unit = meter2unit;
+				
+				return shuttlecock;
+			}
+			
 			function createRobot(texturePath, topColor, bottomColor) {
 				
+				var racketWidth = 30;
+				var racketHeight = 50;
+				var racketTube = 1;
+				var racketLineWidth = 1;
+				var racketWidthSegments = 6;
+				var racketHeightSegments = 10;
+				
+				var bodyOuterRadius = 25;
+				var bodyInnerRadius = 20;
+				var bodyHeight = 100;
+				
+				var headRadius = 25;
+				
 				var racketMesh = new THREE.Mesh(
-					new THREE.Badminton.RacketGeometry(30, 50, 1, 1, 6, 10),
+					new THREE.Badminton.RacketGeometry(racketWidth, racketHeight, racketTube, racketLineWidth, racketWidthSegments, racketHeightSegments),
 					new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
 				
 				var bodyMesh = new THREE.Mesh(
-					new THREE.Badminton.HyperbolaGeometry(25, 20, 100, 16, 16),
+					new THREE.Badminton.HyperbolaGeometry(bodyOuterRadius, bodyInnerRadius, bodyHeight, 16, 16),
 					new THREE.MultiMaterial([
 						new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(texturePath) }),
 						new THREE.MeshBasicMaterial({ color: topColor }),
@@ -267,18 +326,17 @@
 					]));
 				
 				var headFrame = new THREE.Object3D();
-				headFrame.position.y = 75;
+				headFrame.position.y = bodyHeight / 2 + headRadius;
 				bodyMesh.add(headFrame);
 				
-				var radius = 25;
 				var head = new THREE.Mesh(
-					new THREE.SphereGeometry(radius, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
+					new THREE.SphereGeometry(headRadius, 32, 32, Math.PI * 2 / 3, Math.PI * 5 / 3), 
 					new THREE.MeshBasicMaterial({ color: 0x220000, side: THREE.DoubleSide }));
 				head.rotation.z = Math.PI / 2;
 				headFrame.add(head);
 				
-				var width = radius * 4 / 3;
-				var height = radius * 3 / 4;
+				var width = headRadius * 4 / 3;
+				var height = headRadius * 3 / 4;
 				
 				var scene = new THREE.Scene();
 				var camera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, -10, 10);
@@ -325,7 +383,7 @@
 							pixelSize: new THREE.Vector2(1, 1)}),
 						blackMaterial,
 					]));
-				monitor.position.z = radius * 2 / 3;
+				monitor.position.z = headRadius * 2 / 3;
 				headFrame.add(monitor);
 				
 				var robot = new THREE.Badminton.Robot(bodyMesh, racketMesh);
@@ -339,7 +397,28 @@
 				monitor.camera = camera;
 				monitor.scene = scene;
 				
+				robot.setImpactAudio(document.getElementById('impactSound'), window.camera, 2000);
+				
 				return robot;
+			}
+			
+			function updateEyes() {
+				var robots = [robot1, robot2];
+				for (var i = 0; i < robots.length; i++) {
+					var robot = robots[i];
+					var monitor = robot.monitor;
+					if (robot.impactType === 'smash') {
+						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = 0;
+						monitor.eyebrowLeft.rotation.z = Math.PI / 8;
+						monitor.eyebrowRight.rotation.z = -Math.PI / 8;
+					} else {
+						var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
+						var angle = Math.atan(position.x / Math.max(position.z, 0));
+						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
+						monitor.eyebrowLeft.rotation.z = 0;
+						monitor.eyebrowRight.rotation.z = 0;
+					}
+				}
 			}
 			
 			function getIntersectedPoint() {
@@ -392,25 +471,6 @@
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
-			}
-			
-			function updateEyes() {
-				var robots = [robot1, robot2];
-				for (var i = 0; i < 2; i++) {
-					var robot = robots[i];
-					var monitor = robot.monitor;
-					if (robot.impactType === 'smash') {
-						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = 0;
-						monitor.eyebrowLeft.rotation.z = Math.PI / 8;
-						monitor.eyebrowRight.rotation.z = -Math.PI / 8;
-					} else {
-						var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
-						var angle = Math.atan(position.x / Math.max(position.z, 0));
-						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
-						monitor.eyebrowLeft.rotation.z = 0;
-						monitor.eyebrowRight.rotation.z = 0;
-					}
-				}
 			}
 			
 			function render() {

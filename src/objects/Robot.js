@@ -177,9 +177,7 @@ Robot.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Obje
 	setCourt: function (court, player) {
 		this.court = court;
 		this.player = player;
-		var area = court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B'));
-		court.localToTarget(area, this.parent);
-		this.setResponsibleArea(area, true);
+		this.setResponsibleArea(court.localToTarget(court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B')), this.parent), true);
 	},
 	
 	reset: function () {
