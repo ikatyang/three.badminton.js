@@ -53,7 +53,7 @@ function Robot(body, racket) {
 	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
-	leftLink.position.set(bodyWidth / 2, bodyCenter.y, 0);
+	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, 0);
 	body.add(leftLink);
 	
 	var rightLink = Object.defineProperties(new THREE.Object3D(), {
@@ -78,7 +78,7 @@ function Robot(body, racket) {
 	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
-	rightLink.position.set(-bodyWidth / 2, bodyCenter.y, 0);
+	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, 0);
 	body.add(rightLink);
 	
 	var topLink = Object.defineProperties(new THREE.Object3D(), {
