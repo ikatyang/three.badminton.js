@@ -1,12 +1,12 @@
-function Robot(body, racket) {
+function Robot(bodyMesh, racketMesh) {
 
 	THREE.Object3D.call(this);
 	
-	var bodyBox = new THREE.Box3().setFromObject(body);
+	var bodyBox = new THREE.Box3().setFromObject(bodyMesh);
 	var bodySize = bodyBox.max.clone().sub(bodyBox.min);
 	var bodyCenter = bodyBox.max.clone().add(bodyBox.min).divideScalar(2);
 	
-	var racketBox = new THREE.Box3().setFromObject(racket);
+	var racketBox = new THREE.Box3().setFromObject(racketMesh);
 	var racketSize = racketBox.max.clone().sub(racketBox.min);
 	var racketCenter = racketBox.max.clone().add(racketBox.min).divideScalar(2);
 	
@@ -27,7 +27,7 @@ function Robot(body, racket) {
 		racketDepth: racketDepth,
 	};
 	
-	body = body.clone();
+	var body = bodyMesh.clone();
 	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
 	
@@ -49,7 +49,7 @@ function Robot(body, racket) {
 			},
 		},
 	});
-	var leftRacket = racket.clone();
+	var leftRacket = racketMesh.clone();
 	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
@@ -74,7 +74,7 @@ function Robot(body, racket) {
 			},
 		},
 	});
-	var rightRacket = racket.clone();
+	var rightRacket = racketMesh.clone();
 	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
@@ -100,7 +100,7 @@ function Robot(body, racket) {
 		},
 	});
 	var topLinkFrame = new THREE.Object3D();
-	var topRacket = racket.clone();
+	var topRacket = racketMesh.clone();
 	topRacket.position.set(0, racketLength / 2, 0);
 	topLinkFrame.add(topRacket);
 	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
