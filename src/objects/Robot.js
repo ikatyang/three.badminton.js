@@ -128,7 +128,6 @@ function Robot(bodyMesh, racketMesh) {
 	this.impactClock = new THREE.Clock();
 	this.impactClock.start();
 	this.impactDelta = 1;
-	this.impactCount = 0;
 	
 	this.responsibleArea = new THREE.Box3(
 		new THREE.Vector3(0, 0, 0),
@@ -151,17 +150,18 @@ function Robot(bodyMesh, racketMesh) {
 	this.impactType = 'right';
 	this.smashSpeed = Math.PI * 100;
 	
-	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
 	
 	this.record = null;
+	
+	this.init();
 }
 
 Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
 	
-	reset: function () {
+	init: function () {
 		this.topLink.rotation.set(0, 0, 0);
 		this.leftLink.rotation.set(0, 0, 0);
 		this.rightLink.rotation.set(0, 0, 0);

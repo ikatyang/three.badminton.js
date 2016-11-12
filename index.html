@@ -558,10 +558,10 @@
 				animated = false;
 				
 				robot1.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'A'), robot1.parent), true);
-				robot1.reset();
+				robot1.init();
 				
 				robot2.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'B'), robot2.parent), true);
-				robot2.reset();
+				robot2.init();
 				
 				robot1.impactType = robot2.impactType = 'right';
 				
