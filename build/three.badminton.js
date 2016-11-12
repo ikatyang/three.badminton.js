@@ -6,24 +6,15 @@
 
 window.performance = window.performance || Date;
 
-if (THREE.Object3D.prototype.directionLocalToWorld === undefined) {
-	THREE.Object3D.prototype.directionLocalToWorld = function (direction) {
-		var origin = this.localToWorld(new THREE.Vector3(0, 0, 0));
-		return this.localToWorld(direction).sub(origin);
-	}
-}
-
-if (THREE.Object3D.prototype.directionWorldToLocal === undefined) {
-	THREE.Object3D.prototype.directionWorldToLocal = function (direction) {
-		var origin = this.localToWorld(new THREE.Vector3(0, 0, 0));
-		return this.worldToLocal(direction.add(origin));
-	}
-}
-
 if (THREE.Object3D.prototype.localToTarget === undefined) {
-	THREE.Object3D.prototype.localToTarget = function (object, target) {
+	THREE.Object3D.prototype.localToTarget = function (object, target, type) {
 		if (object instanceof THREE.Vector3) {
-			return target.worldToLocal(this.localToWorld(object));
+			switch (type) {
+				case 'direction':
+					return this.localToTarget(object, target).sub(this.localToTarget(new THREE.Vector3(0, 0, 0), target));
+				default:
+					return target.worldToLocal(this.localToWorld(object));
+			}
 		} else if (object instanceof THREE.Box3) {
 			var p1 = this.localToTarget(object.min.clone(), target);
 			var p2 = this.localToTarget(object.max.clone(), target);
@@ -602,7 +593,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.flipAngularVelocity = 0;
 	this.flipAxis = new THREE.Vector3(0, 0, 0);
 	
-	this.stopAngularVelocity = Math.PI * 3;
+	this.toppleAngularVelocity = Math.PI * 3;
 	this.state = 'move';
 	
 	this.lastDelta = 0;
@@ -615,7 +606,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 	getYAxis: function () {
 		this.flipFrame.updateMatrixWorld();
-		return this.flipFrame.directionLocalToWorld(new THREE.Vector3(0, 1, 0)).normalize();
+		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
 	impact: function (velocity, normal, attenuation, isCount) {
@@ -626,7 +617,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.updateMove(0);
 		
 		this.updateMatrixWorld();
-		var flipAxis = this.directionWorldToLocal(this.velocity.clone().cross(yAxis)).normalize();
+		var flipAxis = this.parent.localToTarget(this.velocity.clone().cross(yAxis), this, 'direction').normalize();
 		var flipAngle = this.velocity.angleTo(yAxis);
 		
 		this.flipAngle = flipAngle;
@@ -706,7 +697,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		if (yAxis.clone().negate().angleTo(velocityXZ) > Math.PI / 2)
 			velocityXZ.negate();
 			
-		var flipAxis = this.directionWorldToLocal(yAxis.clone().negate().cross(velocityXZ)).normalize();
+		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
 		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
 			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
 		
@@ -1046,10 +1037,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			robotPosition = this.responsibleArea.min.clone().add(this.responsibleArea.max).divideScalar(2);
 		} else {
 			
-			var bodyDirection = this.directionWorldToLocal(this.targetPosition.clone().sub(impactPosition).setY(0));
+			var bodyDirection = this.parent.localToTarget(this.targetPosition.clone().sub(impactPosition).setY(0), this, 'direction');
 			bodyAngle = bodyDirection.angleTo(new THREE.Vector3(0, 0, 1)) * (bodyDirection.x < 0 ? -1 : 1);
 			
-			var racketPositionDelta = this.body.directionLocalToWorld(localImpactPosition.clone());
+			var racketPositionDelta = this.body.localToTarget(localImpactPosition.clone(), this.parent, 'direction');
 			robotPosition = impactPosition.clone().sub(racketPositionDelta);
 			
 			var fallingTime = this.predictFallingTime(impactHeight);
@@ -1065,7 +1056,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		link.updateMatrixWorld();
 		if (this.checkIntersect(racket, this.shuttle) && 
 			this.impactClock.getDelta() > this.impactDelta) {
-			var normal = link.directionLocalToWorld(new THREE.Vector3(0, 0, 1)).normalize();
+			var normal = link.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * impactLength), normal, this.racketAttenuation);
 			this.impactCount = this.shuttle.impactCount;
 			this.healthPercent *= this.healthAttenuation;
