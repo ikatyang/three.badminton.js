@@ -69,6 +69,7 @@ Record.prototype = {
 	
 	getShuttlecockData: function (shuttlecock) {
 		return {
+			state: shuttlecock.state,
 			position: shuttlecock.position.toArray(),
 			rotation: shuttlecock.rotation.toArray(),
 			velocity: shuttlecock.velocity.toArray(),
@@ -77,7 +78,7 @@ Record.prototype = {
 	},
 	
 	setShuttlecock: function (shuttlecock, data) {
-		shuttlecock.state = 'move';
+		shuttlecock.state = data.state;
 		shuttlecock.position.fromArray(data.position);
 		shuttlecock.rotation.fromArray(data.rotation);
 		shuttlecock.velocity.fromArray(data.velocity);

@@ -268,8 +268,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var bodyAngle;
 		var rotationValue;
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
-			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
-			!impactPosition || 
+			this.shuttle.state !== 'active' || !impactPosition || 
 			(this.responsibleArea.min.x === 0 && impactPosition.x < 0) ||
 			(this.responsibleArea.max.x === 0 && impactPosition.x > 0) ||
 			impactPosition.x < this.responsibleArea.min.x + (this.responsibleArea.min.x - this.responsibleArea.max.x) * this.responsibleAreaEpsilon ||

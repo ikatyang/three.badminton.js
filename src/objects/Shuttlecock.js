@@ -44,7 +44,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.flipAxis = new THREE.Vector3(0, 0, 0);
 	
 	this.toppleAngularVelocity = Math.PI * 3;
-	this.state = 'move';
+	this.state = 'active';
 	
 	this.lastDelta = 0;
 	this.impactCount = 0;
@@ -64,7 +64,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.velocity.reflect(normal).multiplyScalar(1 - attenuation).add(velocity);
 		var yAxis = this.getYAxis();
 		
-		this.updateMove(0);
+		this.updateActive(0);
 		
 		this.updateMatrixWorld();
 		var flipAxis = this.parent.localToTarget(this.velocity.clone().cross(yAxis), this, 'direction').normalize();
@@ -82,16 +82,14 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	update: function (delta) {
-		if (this.state === 'move') {
-			this.updateMove(delta);
-			if (this.position.y < 0)
-				this.state = 'topple';
-		} else if (this.state === 'topple')
-			this.updateTopple(delta);
+		if (this.state === 'active')
+			this.updateActive(delta);
+		else if (this.state === 'toppling')
+			this.updateToppling(delta);
 		this.lastDelta = delta;
 	},
 	
-	updateMove: function (delta) {
+	updateActive: function (delta) {
 		
 		var rho = this.airDensity;
 		var S = this.parameters.skirtCrossSectionalArea;
@@ -128,9 +126,12 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 				this.flipFrame.rotation.set(0, 0, 0);
 			}
 		}
+		
+		if (this.position.y < 0)
+			this.state = 'toppling';
 	},
 	
-	updateTopple: function (delta) {
+	updateToppling: function (delta) {
 		
 		this.rotation.setFromRotationMatrix(
 			new THREE.Matrix4().makeRotationFromEuler(this.rotation).multiply(
@@ -154,7 +155,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
-			this.state = 'stop-ground';
+			this.state = 'toppled';
 	},
 	
 	flipDerivative: function (params) {

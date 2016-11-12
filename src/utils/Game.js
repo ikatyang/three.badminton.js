@@ -25,12 +25,12 @@ Game.prototype = {
 	nextScore: function () {
 		this.nthScore++;
 		this.shuttle.impactCount = 0;
-		this.shuttle.state = 'move';
+		this.shuttle.state = 'active';
 	},
 	
 	update: function (delta) {
 		if (this.nthScore !== this.score1 + this.score2) {
-			if (this.shuttle.state === 'stop-net') {
+			if (this.shuttle.state === 'hung') {
 				if (this.shuttle.impactCount % 2 === 0) {
 					this.lastWinner = this.lastWinner;
 				} else {
@@ -39,7 +39,7 @@ Game.prototype = {
 				this.lastWinnerScore++;
 				this.updateScoreboard();
 				this.onScoreChange();
-			} else if (this.shuttle.state === 'stop-ground') {
+			} else if (this.shuttle.state === 'toppled') {
 				var area = (this.shuttle.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
 						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 

@@ -529,7 +529,7 @@
 					netPosition.y <= 155 &&
 					netPosition.z >= -305 &&
 					netPosition.z <= 305) {
-					shuttle.state = 'stop-net';
+					shuttle.state = 'hung';
 					shuttle.position.copy(scene.localToTarget(netPosition.clone(), shuttle.parent));
 				}
 				checkNetCollision.lastUpdateMul = mul;
