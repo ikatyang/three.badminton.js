@@ -154,21 +154,12 @@ function Robot(bodyMesh, racketMesh) {
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
 	
-	this.court = null;
-	this.player = null;
-	
 	this.record = null;
 }
 
 Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
-	
-	setCourt: function (court, player) {
-		this.court = court;
-		this.player = player;
-		this.setResponsibleArea(court.localToTarget(court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B')), this.parent), true);
-	},
 	
 	reset: function () {
 		this.topLink.rotation.set(0, 0, 0);
@@ -300,12 +291,6 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 					this.record.playRobot();
 				else
 					this.record.recordRobot(this);
-			}
-			
-			if (this.court && this.player) {
-				var area = this.court.getArea('Single' + (this.player === 1 ? 'A' : 'B'));
-				this.court.localToTarget(area, this.parent);
-				this.setResponsibleArea(area);
 			}
 			
 			this.onAfterImpact();
