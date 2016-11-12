@@ -31,8 +31,7 @@
 		</div>
 		<audio id='impactSound' src='audios/impact.mp3'></audio>
 		<script>
-			var camera, scene, renderer;
-			var control, controls;
+			var camera, scene, renderer, controls;
 			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
@@ -78,7 +77,6 @@
 				renderer.setClearColor(0x888888);
 				
 				robot1 = createRobot(shuttle, court, 'textures/playerBody1.jpeg', 'white', 'blue');
-				scene.add(robot1);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
@@ -91,9 +89,9 @@
 						targetPoint2.position.copy(randomPosition);
 					}
 				};
+				scene.add(robot1);
 				
 				robot2 = createRobot(shuttle, court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
-				scene.add(robot2);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
@@ -105,6 +103,7 @@
 							this.impactType = 'right';
 					}
 				};
+				scene.add(robot2);
 				
 				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5);
 				scene.add(targetPoint1);
@@ -118,33 +117,7 @@
 				scene.add(scoreboard);
 				game.scoreboard = scoreboard;
 				
-				var gui = new dat.GUI();
-				
-				gui.add(this, 'delay', 1, 30);
-				
-				control = 'orbit';
-				gui.add(this, 'control', ['orbit', 'deviceOrientation']).onChange(onControlChange);
-				onControlChange(control);
-				
-				function onControlChange(value) {
-					if (controls)
-						controls.dispose();
-					if (value === 'orbit') {
-						controls = new THREE.OrbitControls(camera, renderer.domElement);
-					} else if (value === 'deviceOrientation') {
-						controls = new THREE.DeviceOrientationControls(camera);
-					}
-				}
-				
-				addRobot(robot1, 'P1 (Player)');
-				addRobot(robot2, 'P2 (Computer)');
-				
-				function addRobot(robot, name) {
-					var f = gui.addFolder(name);
-					f.add(robot, 'healthPercent', 0, 100).listen();
-					f.add(robot, 'impactType', ['left', 'right', 'top', 'smash']).listen();
-					f.open();
-				}
+				createGUI(robot1, robot2);
 				
 				record = new THREE.Badminton.Record(shuttle, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2);
 				robot1.record = record;
@@ -152,6 +125,8 @@
 				
 				render();
 				next();
+				
+				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
@@ -178,6 +153,36 @@
 					case 'D':
 						robot1.impactType = 'right';
 						break;
+				}
+			}
+			
+			function createGUI(robot1, robot2) {
+				var gui = new dat.GUI();
+				
+				gui.add(this, 'delay', 1, 30);
+				
+				var gcontrols = {
+					control: 'orbit',
+				};
+				gui.add(gcontrols, 'control', ['orbit', 'deviceOrientation']).onChange(onControlChange);
+				
+				function onControlChange(value) {
+					controls.dispose();
+					if (value === 'orbit') {
+						controls = new THREE.OrbitControls(camera, renderer.domElement);
+					} else if (value === 'deviceOrientation') {
+						controls = new THREE.DeviceOrientationControls(camera);
+					}
+				}
+				
+				addRobot(robot1, 'P1 (Player)');
+				addRobot(robot2, 'P2 (Computer)');
+				
+				function addRobot(robot, name) {
+					var f = gui.addFolder(name);
+					f.add(robot, 'healthPercent', 0, 100).listen();
+					f.add(robot, 'impactType', ['left', 'right', 'top', 'smash']).listen();
+					f.open();
 				}
 			}
 			
@@ -417,7 +422,7 @@
 				monitor.camera = camera;
 				monitor.scene = scene;
 				
-				robot.shuttle = shuttlecock
+				robot.shuttle = shuttlecock;
 				
 				robot.netHeight = court.postHeight;
 				robot.netHeightDelta = court.postHeight / 10;
