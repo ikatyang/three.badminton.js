@@ -269,6 +269,7 @@
 				post2.position.z *= -1;
 				netFrame.add(post2);
 				
+				court.netFrame = netFrame;
 				court.postHeight = postHeight;
 				
 				return court;
@@ -276,7 +277,6 @@
 			
 			function createShuttlecock() {
 				
-				var meter2unit = 100;
 				var corkRadius = 2.5;
 				var skirtRadius = 5;
 				var beltHeight = 1;
@@ -537,8 +537,8 @@
 			}
 			
 			function checkNetCollision() {
-				var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), scene);
-				var lastPosition = shuttle.localToTarget(shuttle.velocity.clone().multiplyScalar(-shuttle.lastDelta), scene);
+				var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), court.netFrame);
+				var lastPosition = shuttle.parent.localToTarget(shuttle.position.clone().addScaledVector(shuttle.velocity, -shuttle.lastDelta), court.netFrame);
 				var positionDelta = lastPosition.clone().sub(position);
 				var mul = -position.x / positionDelta.x;
 				var netPosition = position.clone().addScaledVector(positionDelta, mul);
@@ -548,7 +548,8 @@
 					netPosition.z >= -305 &&
 					netPosition.z <= 305) {
 					shuttle.state = 'hung';
-					shuttle.position.copy(scene.localToTarget(netPosition.clone(), shuttle.parent));
+					shuttle.position.copy(court.netFrame.localToTarget(netPosition.clone(), shuttle.parent));
+					shuttle.flipFrame.rotation.set(0, 0, 0);
 				}
 				checkNetCollision.lastUpdateMul = mul;
 			}
