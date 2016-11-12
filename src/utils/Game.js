@@ -24,8 +24,6 @@ Game.prototype = {
 	
 	nextScore: function () {
 		this.nthScore++;
-		this.shuttle.impactCount = 0;
-		this.shuttle.state = 'active';
 	},
 	
 	update: function (delta) {

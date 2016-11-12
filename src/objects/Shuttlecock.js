@@ -37,22 +37,29 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	
 	this.airDensity = 1.1839;
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
-	this.velocity = new THREE.Vector3(0, 0, 0);
-	
-	this.flipAngle = 0;
-	this.flipAngularVelocity = 0;
-	this.flipAxis = new THREE.Vector3(0, 0, 0);
 	
 	this.toppleAngularVelocity = Math.PI * 3;
-	this.state = 'active';
 	
-	this.lastDelta = 0;
-	this.impactCount = 0;
+	this.init();
 }
 
 Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
+	
+	init: function () {
+		
+		this.state = 'active';
+		this.flipFrame.rotation.set(0, 0, 0);
+		this.velocity = new THREE.Vector3(0, 0, 0);
+		
+		this.flipAngle = 0;
+		this.flipAngularVelocity = 0;
+		this.flipAxis = new THREE.Vector3(0, 0, 0);
+		
+		this.lastDelta = 0;
+		this.impactCount = 0;
+	},
 	
 	getYAxis: function () {
 		this.flipFrame.updateMatrixWorld();

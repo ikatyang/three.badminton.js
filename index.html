@@ -564,6 +564,7 @@
 					court.getArea('SingleFirst' + (game.score1 % 2 == 0 ? 'Right' : 'Left') + 'A') :
 					court.getArea('SingleFirst' + (game.score2 % 2 == 0 ? 'Right' : 'Left') + 'B');
 				court.localToTarget(area, shuttle.parent);
+				shuttle.init();
 				shuttle.rotation.set(0, 0, 0);
 				shuttle.position.copy(area.min.clone().add(area.max).divideScalar(2).add(new THREE.Vector3(0, 120, 0)));
 				shuttle.position.x += 30 * (game.lastWinner === 1 ? 1 : -1);
