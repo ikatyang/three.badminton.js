@@ -44,7 +44,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.flipAngularVelocity = 0;
 	this.flipAxis = new THREE.Vector3(0, 0, 0);
 	
-	this.stopAngularVelocity = Math.PI * 3;
+	this.toppleAngularVelocity = Math.PI * 3;
 	this.state = 'move';
 	
 	this.lastDelta = 0;
