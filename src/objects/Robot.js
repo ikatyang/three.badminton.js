@@ -130,10 +130,10 @@ function Robot(bodyMesh, racketMesh) {
 	this.impactDelta = 1;
 	this.impactCount = 0;
 	
-	this.responsibleArea = {
-		min: new THREE.Vector3(0, 0, 0),
-		max: new THREE.Vector3(0, 0, 0),
-	};
+	this.responsibleArea = new THREE.Box3(
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(0, 0, 0));
+	
 	this.responsibleAreaEpsilon = 0.1;
 	
 	this.shuttle = null;
