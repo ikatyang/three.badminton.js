@@ -77,10 +77,9 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
 				
-				robot1 = createRobot(court, 'textures/playerBody1.jpeg', 'white', 'blue');
+				robot1 = createRobot(shuttle, court, 'textures/playerBody1.jpeg', 'white', 'blue');
 				scene.add(robot1);
-				robot1.setCourt(court, 1);
-				robot1.shuttle = shuttle;
+				robot2.setCourt(court, 1);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					if (!record.playing) {
@@ -92,10 +91,9 @@
 					}
 				};
 				
-				robot2 = createRobot(court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
+				robot2 = createRobot(shuttle, court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
 				scene.add(robot2);
 				robot2.setCourt(court, 2);
-				robot2.shuttle = shuttle;
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
@@ -315,7 +313,7 @@
 				return shuttlecock;
 			}
 			
-			function createRobot(court, texturePath, topColor, bottomColor) {
+			function createRobot(shuttlecock, court, texturePath, topColor, bottomColor) {
 				
 				var racketWidth = 30;
 				var racketHeight = 50;
@@ -415,6 +413,8 @@
 				monitor.renderTarget = renderTarget;
 				monitor.camera = camera;
 				monitor.scene = scene;
+				
+				robot.shuttle = shuttlecock
 				
 				robot.netHeight = court.postHeight;
 				robot.netHeightDelta = court.postHeight / 10;
@@ -548,16 +548,10 @@
 			function next() {
 				animated = false;
 				
-				areaA = court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'A');
-				court.localToTarget(areaA, robot1.parent);
-				
-				robot1.setResponsibleArea(areaA, true);
+				robot1.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'A'), robot1.parent), true);
 				robot1.reset();
 				
-				var areaB = court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'B');
-				court.localToTarget(areaB, robot2.parent);
-				
-				robot2.setResponsibleArea(areaB, true);
+				robot2.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'B'), robot2.parent), true);
 				robot2.reset();
 				
 				robot1.impactType = robot2.impactType = 'right';
