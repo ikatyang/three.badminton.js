@@ -86,6 +86,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		
 		if (isCount !== false)
 			this.impactCount++;
+			
+		this.onAfterImpact();
 	},
 	
 	update: function (delta) {
@@ -205,6 +207,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			params[i] += (f_k1[i] + 2 * f_k2[i] + 2 * f_k3[i] + f_k4[i]) / 6 * dt;
 		return params;
 	},
+	
+	onAfterImpact: function () {},
 	
 });
 
