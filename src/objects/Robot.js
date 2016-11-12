@@ -154,10 +154,6 @@ function Robot(bodyMesh, racketMesh) {
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
 	
-	this.camera = null;
-	this.impactAudio = null;
-	this.impactAudioMaxDistance = 1;
-	
 	this.court = null;
 	this.player = null;
 	
@@ -167,12 +163,6 @@ function Robot(bodyMesh, racketMesh) {
 Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
-	
-	setImpactAudio: function (impactAudio, camera, impactAudioMaxDistance) {
-		this.impactAudio = impactAudio;
-		this.camera = camera;
-		this.impactAudioMaxDistance = impactAudioMaxDistance;
-	},
 	
 	setCourt: function (court, player) {
 		this.court = court;
@@ -310,16 +300,6 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 					this.record.playRobot();
 				else
 					this.record.recordRobot(this);
-			}
-			
-			if (this.impactAudio && this.camera) {
-				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();
-				var volume = 1 - Math.abs(distance / this.impactAudioMaxDistance);
-				if (volume > 0) {
-					this.impactAudio.currentTime = 0;
-					this.impactAudio.volume = volume;
-					this.impactAudio.play();
-				}
 			}
 			
 			if (this.court && this.player) {
