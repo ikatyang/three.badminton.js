@@ -635,6 +635,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		
 		if (isCount !== false)
 			this.impactCount++;
+			
+		this.onAfterImpact();
 	},
 	
 	update: function (delta) {
@@ -755,17 +757,19 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		return params;
 	},
 	
+	onAfterImpact: function () {},
+	
 });
 
-function Robot(body, racket) {
+function Robot(bodyMesh, racketMesh) {
 
 	THREE.Object3D.call(this);
 	
-	var bodyBox = new THREE.Box3().setFromObject(body);
+	var bodyBox = new THREE.Box3().setFromObject(bodyMesh);
 	var bodySize = bodyBox.max.clone().sub(bodyBox.min);
 	var bodyCenter = bodyBox.max.clone().add(bodyBox.min).divideScalar(2);
 	
-	var racketBox = new THREE.Box3().setFromObject(racket);
+	var racketBox = new THREE.Box3().setFromObject(racketMesh);
 	var racketSize = racketBox.max.clone().sub(racketBox.min);
 	var racketCenter = racketBox.max.clone().add(racketBox.min).divideScalar(2);
 	
@@ -786,7 +790,7 @@ function Robot(body, racket) {
 		racketDepth: racketDepth,
 	};
 	
-	body = body.clone();
+	var body = bodyMesh.clone();
 	body.position.set(-bodyCenter.x, -bodyCenter.y + bodySize.y / 2, -bodyCenter.z);
 	this.add(body);
 	
@@ -808,7 +812,7 @@ function Robot(body, racket) {
 			},
 		},
 	});
-	var leftRacket = racket.clone();
+	var leftRacket = racketMesh.clone();
 	leftRacket.rotation.set(0, 0, Math.PI / 2, 'ZXY');
 	leftRacket.position.set(racketLength / 2, 0, 0);
 	leftLink.add(leftRacket);
@@ -833,7 +837,7 @@ function Robot(body, racket) {
 			},
 		},
 	});
-	var rightRacket = racket.clone();
+	var rightRacket = racketMesh.clone();
 	rightRacket.rotation.set(0, 0, -Math.PI / 2, 'ZXY');
 	rightRacket.position.set(-racketLength / 2, 0, 0);
 	rightLink.add(rightRacket);
@@ -859,7 +863,7 @@ function Robot(body, racket) {
 		},
 	});
 	var topLinkFrame = new THREE.Object3D();
-	var topRacket = racket.clone();
+	var topRacket = racketMesh.clone();
 	topRacket.position.set(0, racketLength / 2, 0);
 	topLinkFrame.add(topRacket);
 	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
@@ -889,10 +893,10 @@ function Robot(body, racket) {
 	this.impactDelta = 1;
 	this.impactCount = 0;
 	
-	this.responsibleArea = {
-		min: new THREE.Vector3(0, 0, 0),
-		max: new THREE.Vector3(0, 0, 0),
-	};
+	this.responsibleArea = new THREE.Box3(
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(0, 0, 0));
+	
 	this.responsibleAreaEpsilon = 0.1;
 	
 	this.shuttle = null;
@@ -913,31 +917,12 @@ function Robot(body, racket) {
 	this.healthPercent = 100;
 	this.healthAttenuation = 0.99;
 	
-	this.camera = null;
-	this.impactAudio = null;
-	this.impactAudioMaxDistance = 1;
-	
-	this.court = null;
-	this.player = null;
-	
 	this.record = null;
 }
 
 Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Robot,
-	
-	setImpactAudio: function (impactAudio, camera, impactAudioMaxDistance) {
-		this.impactAudio = impactAudio;
-		this.camera = camera;
-		this.impactAudioMaxDistance = impactAudioMaxDistance;
-	},
-	
-	setCourt: function (court, player) {
-		this.court = court;
-		this.player = player;
-		this.setResponsibleArea(court.localToTarget(court.getArea('SingleFirstRight' + (player === 1 ? 'A' : 'B')), this.parent), true);
-	},
 	
 	reset: function () {
 		this.topLink.rotation.set(0, 0, 0);
@@ -1069,22 +1054,6 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 					this.record.playRobot();
 				else
 					this.record.recordRobot(this);
-			}
-			
-			if (this.impactAudio && this.camera) {
-				var distance = this.localToWorld(new THREE.Vector3(0, 0, 0)).sub(this.camera.localToWorld(new THREE.Vector3(0, 0, 0))).length();
-				var volume = 1 - Math.abs(distance / this.impactAudioMaxDistance);
-				if (volume > 0) {
-					this.impactAudio.currentTime = 0;
-					this.impactAudio.volume = volume;
-					this.impactAudio.play();
-				}
-			}
-			
-			if (this.court && this.player) {
-				var area = this.court.getArea('Single' + (this.player === 1 ? 'A' : 'B'));
-				this.court.localToTarget(area, this.parent);
-				this.setResponsibleArea(area);
 			}
 			
 			this.onAfterImpact();
