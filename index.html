@@ -79,9 +79,10 @@
 				
 				robot1 = createRobot(shuttle, court, 'textures/playerBody1.jpeg', 'white', 'blue');
 				scene.add(robot1);
-				robot2.setCourt(court, 1);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
+					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
+					
 					if (!record.playing) {
 						robot2.impactType = getRandomImpactType();
 						
@@ -93,8 +94,10 @@
 				
 				robot2 = createRobot(shuttle, court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
 				scene.add(robot2);
-				robot2.setCourt(court, 2);
 				robot2.rotation.y = -Math.PI / 2;
+				robot2.onAfterImpact = function () {
+					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
+				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
 						var shuttlePosition = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), court);
