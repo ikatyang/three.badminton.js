@@ -301,6 +301,17 @@
 				shuttlecock.airDensity = airDensity;
 				shuttlecock.gravity.copy(gravity);
 				
+				var impactAudio = document.getElementById('impactSound');
+				shuttlecock.onAfterImpact = function () {
+					var distance = camera.localToTarget(new THREE.Vector3(0, 0, 0), this).length();
+					var volume = Math.max(1 - distance / 2000, 0);
+					if (volume > 0) {
+						impactAudio.currentTime = 0;
+						impactAudio.volume = volume;
+						impactAudio.play();
+					}
+				};
+				
 				return shuttlecock;
 			}
 			
@@ -405,7 +416,6 @@
 				monitor.camera = camera;
 				monitor.scene = scene;
 				
-				robot.setImpactAudio(document.getElementById('impactSound'), window.camera, 2000);
 				robot.netHeight = court.postHeight;
 				robot.netHeightDelta = court.postHeight / 10;
 				
