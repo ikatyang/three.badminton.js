@@ -583,7 +583,6 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.mesh = mesh;
 	
 	this.dragCoefficient = 0.44;
-	this.groundAttenuation = 0.9;
 	
 	this.airDensity = 1.1839;
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
@@ -594,7 +593,7 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.flipAxis = new THREE.Vector3(0, 0, 0);
 	
 	this.toppleAngularVelocity = Math.PI * 3;
-	this.state = 'move';
+	this.state = 'active';
 	
 	this.lastDelta = 0;
 	this.impactCount = 0;
@@ -614,7 +613,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.velocity.reflect(normal).multiplyScalar(1 - attenuation).add(velocity);
 		var yAxis = this.getYAxis();
 		
-		this.updateMove(0);
+		this.updateActive(0);
 		
 		this.updateMatrixWorld();
 		var flipAxis = this.parent.localToTarget(this.velocity.clone().cross(yAxis), this, 'direction').normalize();
@@ -632,19 +631,14 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	update: function (delta) {
-		if (this.state === 'move') {
-			this.updateMove(delta);
-			if (this.position.y < 0) {
-				this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundAttenuation, false);
-				if (this.velocity.y < 0)
-					this.state = 'topple';
-			}
-		} else if (this.state === 'topple')
-			this.updateTopple(delta);
+		if (this.state === 'active')
+			this.updateActive(delta);
+		else if (this.state === 'toppling')
+			this.updateToppling(delta);
 		this.lastDelta = delta;
 	},
 	
-	updateMove: function (delta) {
+	updateActive: function (delta) {
 		
 		var rho = this.airDensity;
 		var S = this.parameters.skirtCrossSectionalArea;
@@ -681,9 +675,12 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 				this.flipFrame.rotation.set(0, 0, 0);
 			}
 		}
+		
+		if (this.position.y < 0)
+			this.state = 'toppling';
 	},
 	
-	updateTopple: function (delta) {
+	updateToppling: function (delta) {
 		
 		this.rotation.setFromRotationMatrix(
 			new THREE.Matrix4().makeRotationFromEuler(this.rotation).multiply(
@@ -707,7 +704,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
-			this.state = 'stop-ground';
+			this.state = 'toppled';
 	},
 	
 	flipDerivative: function (params) {
@@ -1023,8 +1020,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var bodyAngle;
 		var rotationValue;
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
-			this.shuttle.state === 'stop-ground' || this.shuttle.state === 'stop-net' ||
-			!impactPosition || 
+			this.shuttle.state !== 'active' || !impactPosition || 
 			(this.responsibleArea.min.x === 0 && impactPosition.x < 0) ||
 			(this.responsibleArea.max.x === 0 && impactPosition.x > 0) ||
 			impactPosition.x < this.responsibleArea.min.x + (this.responsibleArea.min.x - this.responsibleArea.max.x) * this.responsibleAreaEpsilon ||
@@ -1857,12 +1853,12 @@ Game.prototype = {
 	nextScore: function () {
 		this.nthScore++;
 		this.shuttle.impactCount = 0;
-		this.shuttle.state = 'move';
+		this.shuttle.state = 'active';
 	},
 	
 	update: function (delta) {
 		if (this.nthScore !== this.score1 + this.score2) {
-			if (this.shuttle.state === 'stop-net') {
+			if (this.shuttle.state === 'hung') {
 				if (this.shuttle.impactCount % 2 === 0) {
 					this.lastWinner = this.lastWinner;
 				} else {
@@ -1871,7 +1867,7 @@ Game.prototype = {
 				this.lastWinnerScore++;
 				this.updateScoreboard();
 				this.onScoreChange();
-			} else if (this.shuttle.state === 'stop-ground') {
+			} else if (this.shuttle.state === 'toppled') {
 				var area = (this.shuttle.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
 						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
@@ -1991,6 +1987,7 @@ Record.prototype = {
 	
 	getShuttlecockData: function (shuttlecock) {
 		return {
+			state: shuttlecock.state,
 			position: shuttlecock.position.toArray(),
 			rotation: shuttlecock.rotation.toArray(),
 			velocity: shuttlecock.velocity.toArray(),
@@ -1999,7 +1996,7 @@ Record.prototype = {
 	},
 	
 	setShuttlecock: function (shuttlecock, data) {
-		shuttlecock.state = 'move';
+		shuttlecock.state = data.state;
 		shuttlecock.position.fromArray(data.position);
 		shuttlecock.rotation.fromArray(data.rotation);
 		shuttlecock.velocity.fromArray(data.velocity);
