@@ -34,7 +34,6 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 	this.mesh = mesh;
 	
 	this.dragCoefficient = 0.44;
-	this.groundAttenuation = 0.9;
 	
 	this.airDensity = 1.1839;
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
@@ -85,11 +84,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	update: function (delta) {
 		if (this.state === 'move') {
 			this.updateMove(delta);
-			if (this.position.y < 0) {
-				this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundAttenuation, false);
-				if (this.velocity.y < 0)
-					this.state = 'topple';
-			}
+			if (this.position.y < 0)
+				this.state = 'topple';
 		} else if (this.state === 'topple')
 			this.updateTopple(delta);
 		this.lastDelta = delta;
