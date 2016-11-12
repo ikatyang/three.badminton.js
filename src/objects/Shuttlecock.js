@@ -57,7 +57,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 	getYAxis: function () {
 		this.flipFrame.updateMatrixWorld();
-		return this.flipFrame.directionLocalToWorld(new THREE.Vector3(0, 1, 0)).normalize();
+		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
 	impact: function (velocity, normal, attenuation, isCount) {
@@ -68,7 +68,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.updateMove(0);
 		
 		this.updateMatrixWorld();
-		var flipAxis = this.directionWorldToLocal(this.velocity.clone().cross(yAxis)).normalize();
+		var flipAxis = this.parent.localToTarget(this.velocity.clone().cross(yAxis), this, 'direction').normalize();
 		var flipAngle = this.velocity.angleTo(yAxis);
 		
 		this.flipAngle = flipAngle;
@@ -148,7 +148,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		if (yAxis.clone().negate().angleTo(velocityXZ) > Math.PI / 2)
 			velocityXZ.negate();
 			
-		var flipAxis = this.directionWorldToLocal(yAxis.clone().negate().cross(velocityXZ)).normalize();
+		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
 		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
 			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
 		

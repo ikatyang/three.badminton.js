@@ -282,10 +282,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			robotPosition = this.responsibleArea.min.clone().add(this.responsibleArea.max).divideScalar(2);
 		} else {
 			
-			var bodyDirection = this.directionWorldToLocal(this.targetPosition.clone().sub(impactPosition).setY(0));
+			var bodyDirection = this.parent.localToTarget(this.targetPosition.clone().sub(impactPosition).setY(0), this, 'direction');
 			bodyAngle = bodyDirection.angleTo(new THREE.Vector3(0, 0, 1)) * (bodyDirection.x < 0 ? -1 : 1);
 			
-			var racketPositionDelta = this.body.directionLocalToWorld(localImpactPosition.clone());
+			var racketPositionDelta = this.body.localToTarget(localImpactPosition.clone(), this.parent, 'direction');
 			robotPosition = impactPosition.clone().sub(racketPositionDelta);
 			
 			var fallingTime = this.predictFallingTime(impactHeight);
@@ -301,7 +301,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		link.updateMatrixWorld();
 		if (this.checkIntersect(racket, this.shuttle) && 
 			this.impactClock.getDelta() > this.impactDelta) {
-			var normal = link.directionLocalToWorld(new THREE.Vector3(0, 0, 1)).normalize();
+			var normal = link.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * impactLength), normal, this.racketAttenuation);
 			this.impactCount = this.shuttle.impactCount;
 			this.healthPercent *= this.healthAttenuation;
