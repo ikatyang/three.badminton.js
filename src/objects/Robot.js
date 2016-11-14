@@ -2,11 +2,11 @@ function Robot(bodyMesh, racketMesh) {
 
 	THREE.Object3D.call(this);
 	
-	var bodyBox = new THREE.Box3().setFromObject(bodyMesh);
+	var bodyBox = new THREE.Box3().setFromLocalObject(bodyMesh);
 	var bodySize = bodyBox.getSize();
 	var bodyCenter = bodyBox.getCenter();
 	
-	var racketBox = new THREE.Box3().setFromObject(racketMesh);
+	var racketBox = new THREE.Box3().setFromLocalObject(racketMesh);
 	var racketSize = racketBox.getSize();
 	var racketCenter = racketBox.getCenter();
 	
@@ -362,8 +362,11 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		
 		if (racket.geometry.boundingBox === null)
 			racket.geometry.computeBoundingBox();
+			
+		var box = racket.geometry.boundingBox;
+		var sphere = shuttlecock.geometry.boundingSphere;
 		
-		var spherePosition = shuttlecock.localToTarget(shuttlecock.geometry.boundingSphere.center.clone(), this.parent);
+		var spherePosition = shuttlecock.localToTarget(sphere.center.clone(), this.parent);
 		var lastSpherePosition = spherePosition.clone().addScaledVector(this.shuttle.velocity, -this.shuttle.lastDelta);
 		
 		this.parent.localToTarget(spherePosition, racket);
@@ -375,44 +378,47 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var mul = -spherePosition.z / spherePositionDelta.z;
 		if (Math.abs(mul) <= 1 || mul * this.lastCheckMul < 0) {
 			var circlePosition = spherePosition.clone().addScaledVector(spherePositionDelta, mul);
-			isIntersect = this.checkIntersectPlaneAndCircle({
-				min: {
-					x: racket.geometry.boundingBox.min.x - circlePosition.x,
-					y: racket.geometry.boundingBox.min.y - circlePosition.y
-				},
-				max: {
-					x: racket.geometry.boundingBox.max.x - circlePosition.x,
-					y: racket.geometry.boundingBox.max.y - circlePosition.y
-				},
-			}, shuttlecock.geometry.boundingSphere.radius);
+			isIntersect = this.checkIntersectRectAndCircle(box.clone().translate(circlePosition.clone().negate()), sphere.radius);
 			this.lastCheckMul = mul;
 		}
 		return isIntersect;
 	},
 	
-	checkIntersectPlaneAndCircle: function (r, rad) {
-		if (r.max.x < 0) { // left
-			if (r.max.y < 0) { // left-bottom
+	checkIntersectRectAndCircle: function (r, rad) {
+		if (r.max.x < 0) {
+			// left
+			if (r.max.y < 0) {
+				// left-bottom
 				return (r.max.x * r.max.x + r.max.y * r.max.y < rad * rad);
-			} else if (r.min.y > 0) { // left-top
+			} else if (r.min.y > 0) {
+				// left-top
 				return (r.max.x * r.max.x + r.min.y * r.min.y < rad * rad);
-			} else { // left-center
+			} else {
+				// left-center
 				return (Math.abs(r.max.x) < rad);
 			}
-		} else if (r.min.x > 0) { // right
-			if (r.max.y < 0) { // right-bottom
+		} else if (r.min.x > 0) {
+			// right
+			if (r.max.y < 0) {
+				// right-bottom
 				return (r.min.x * r.min.x + r.max.y * r.max.y < rad * rad);
-			} else if (r.min.y > 0) { // right-top
+			} else if (r.min.y > 0) {
+				// right-top
 				return (r.min.x * r.min.x + r.min.y * r.min.y < rad * rad);
-			} else { // right-center
+			} else {
+				// right-center
 				return (Math.abs(r.min.x) < rad);
 			}
-		} else { // center
-			if (r.max.y < 0) { // center-bottom
+		} else {
+			// center
+			if (r.max.y < 0) {
+				// center-bottom
 				return (Math.abs(r.max.y) < rad);
-			} else if (r.min.y > 0) { // center-top
+			} else if (r.min.y > 0) {
+				// center-top
 				return (Math.abs(r.min.y) < rad);
-			} else { // center-center
+			} else {
+				// center-center
 				return true;
 			}
 		}
