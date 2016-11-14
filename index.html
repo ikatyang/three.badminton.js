@@ -98,7 +98,7 @@
 				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
-						var shuttlePosition = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), court);
+						var shuttlePosition = this.shuttlecock.localToTarget(new THREE.Vector3(0, 0, 0), court);
 						if (shuttlePosition.y < 185 && shuttlePosition.x > 0)
 							this.impactType = 'right';
 					}
@@ -422,7 +422,7 @@
 				monitor.camera = camera;
 				monitor.scene = scene;
 				
-				robot.shuttle = shuttlecock;
+				robot.shuttlecock = shuttlecock;
 				
 				robot.netHeight = court.postHeight;
 				robot.netHeightDelta = court.postHeight / 10;

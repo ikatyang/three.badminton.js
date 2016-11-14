@@ -115,7 +115,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(0, 0, 0),
 		new THREE.Vector3(0, 0, 0));
 	
-	this.shuttle = null;
+	this.shuttlecock = null;
 	this.racketAttenuation = 0.9;
 	
 	this.bodySpeed = 1000;
@@ -156,13 +156,13 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	predictFallingTime: function (y) {
-		return (y - this.shuttle.position.y) / this.shuttle.velocity.y;
+		return (y - this.shuttlecock.position.y) / this.shuttlecock.velocity.y;
 	},
 	
 	predictFallingPosition: function (y) {
 		var time = this.predictFallingTime(y);		
-		return (time < -1e-2) ? null : this.shuttle.position.clone().addScaledVector(this.shuttle.velocity, time)
-			.add(this.shuttle.position).divideScalar(2).setY(y);
+		return (time < -1e-2) ? null : this.shuttlecock.position.clone().addScaledVector(this.shuttlecock.velocity, time)
+			.add(this.shuttlecock.position).divideScalar(2).setY(y);
 	},
 	
 	getRacketImpactLength: function () {
@@ -225,8 +225,8 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var p0p2 = p2.clone().sub(p0);
 		var n = p0p1.clone().cross(p0p2);
 		
-		var l = this.shuttle.velocity;
-		var l0 = this.shuttle.position;
+		var l = this.shuttlecock.velocity;
+		var l0 = this.shuttlecock.position;
 		var d = p0.clone().sub(l0).dot(n) / l.clone().dot(n);
 		var p = l.clone().multiplyScalar(d).add(l0);
 		
@@ -261,8 +261,8 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var rotationValue = 0;
 		var robotPosition = this.responsibleArea.getCenter();
 		
-		if ((this.impactCount === 0 || this.impactCount + 2 === this.shuttle.impactCount + 1) &&
-			this.shuttle.state === 'active' && impactPosition &&
+		if ((this.impactCount === 0 || this.impactCount + 2 === this.shuttlecock.impactCount + 1) &&
+			this.shuttlecock.state === 'active' && impactPosition &&
 			impactPosition.x >= this.responsibleArea.min.x &&
 			impactPosition.x <= this.responsibleArea.max.x &&
 			impactPosition.z >= this.responsibleArea.min.z &&
@@ -287,13 +287,13 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		link.angleB = 0;
 		
 		link.updateMatrixWorld();
-		if (this.checkIntersect(link.racket, this.shuttle) && this.impactClock.getDelta() > this.impactDelta) {
+		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactClock.getDelta() > this.impactDelta) {
 		
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			
-			this.shuttle.impact(normal.clone().multiplyScalar(impactSpeed * this.getRacketImpactLength()), normal, this.racketAttenuation);
+			this.shuttlecock.impact(normal.clone().multiplyScalar(impactSpeed * this.getRacketImpactLength()), normal, this.racketAttenuation);
 			
-			this.impactCount = this.shuttle.impactCount;
+			this.impactCount = this.shuttlecock.impactCount;
 			this.healthPercent *= this.healthAttenuation;
 			
 			if (this.record) {
@@ -339,7 +339,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var sphere = shuttlecock.geometry.boundingSphere;
 		
 		var spherePosition = shuttlecock.localToTarget(sphere.center.clone(), this.parent);
-		var lastSpherePosition = spherePosition.clone().addScaledVector(this.shuttle.velocity, -this.shuttle.lastDelta);
+		var lastSpherePosition = spherePosition.clone().addScaledVector(this.shuttlecock.velocity, -this.shuttlecock.lastDelta);
 		
 		this.parent.localToTarget(spherePosition, racket);
 		this.parent.localToTarget(lastSpherePosition, racket);
@@ -397,7 +397,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getTopImpactSpeed: function (impactHeight) {
-		var hit = this.shuttle.position.clone().setY(0);	//球現在的位置
+		var hit = this.shuttlecock.position.clone().setY(0);	//球現在的位置
 		var move = this.targetPosition.clone().sub(hit);
 		var x0 = move.clone().length();	//水平位移
 		var index = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
@@ -423,7 +423,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var forceTable = this.forceTable;
 
 		var i, j;
-		var hit = this.shuttle.position.clone().setY(0);
+		var hit = this.shuttlecock.position.clone().setY(0);
 		var x0 = this.targetPosition.clone().sub(hit).length(); //水平位移
 		var startX = Math.abs(hit.x);
 
