@@ -84,7 +84,7 @@
 					if (!record.playing) {
 						robot2.impactType = getRandomImpactType();
 						
-						var randomPosition = getRandomPosition(robot1.responsibleArea);
+						var randomPosition = getRandomPosition(robot1.responsibleArea, 0.8);
 						robot2.targetPosition.copy(randomPosition);
 						targetPoint2.position.copy(randomPosition);
 					}
@@ -529,11 +529,14 @@
 					return 'smash';
 			}
 			
-			function getRandomPosition(area) {
+			function getRandomPosition(area, scale) {
+				var center = area.getCenter();
+				var size = area.getSize().multiplyScalar(scale);
+				var min = center.clone().addScaledVector(size, -0.5);
 				return new THREE.Vector3(
-					area.min.x + (area.max.x - area.min.x) * Math.random(),
+					min.x + size.x * Math.random(),
 					0,
-					area.min.z + (area.max.z - area.min.z) * Math.random());
+					min.z + size.z * Math.random());
 			}
 			
 			function checkNetCollision() {
@@ -565,11 +568,11 @@
 				
 				robot1.impactType = robot2.impactType = 'right';
 				
-				var randomPosition1 = getRandomPosition(robot2.responsibleArea);
+				var randomPosition1 = getRandomPosition(robot2.responsibleArea, 0.8);
 				robot1.targetPosition.copy(randomPosition1);
 				targetPoint1.position.copy(randomPosition1);
 				
-				var randomPosition2 = getRandomPosition(robot1.responsibleArea);
+				var randomPosition2 = getRandomPosition(robot1.responsibleArea, 0.8);
 				robot2.targetPosition.copy(randomPosition2);
 				targetPoint2.position.copy(randomPosition2);
 				
