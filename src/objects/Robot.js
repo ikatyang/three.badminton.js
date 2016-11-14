@@ -10,26 +10,11 @@ function Robot(bodyMesh, racketMesh) {
 	var racketSize = racketBox.getSize();
 	var racketCenter = racketBox.getCenter();
 	
-	var bodyWidth = bodySize.x;
-	var bodyHeight = bodySize.y;
-	var bodyDepth = bodySize.z;
-	
-	var racketLength = racketSize.y;
-	var racketWidth = racketSize.x;
-	var racketDepth = racketSize.z;
-	
 	this.parameters = {
 		bodySize: bodySize,
 		bodyCenter: bodyCenter,
 		racketSize: racketSize,
 		racketCenter: racketCenter,
-		
-		bodyWidth: bodyWidth,
-		bodyHeight: bodyHeight, 
-		bodyDepth: bodyDepth,
-		racketLength: racketLength,
-		racketWidth: racketWidth,
-		racketDepth: racketDepth,
 	};
 	
 	var body = bodyMesh.clone();
