@@ -168,61 +168,121 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			.add(this.shuttle.position).divideScalar(2).setY(y);
 	},
 	
+	getImpactParams: function () {
+		switch (this.impactType) {
+			case 'top':
+				return this.getImpactParamsTop();
+			case 'left':
+				return this.getImpactParamsLeft();
+			case 'right':
+				return this.getImpactParamsRight();
+			case 'smash':
+				return this.getImpactParamsSmash();
+		}
+	},
+	
+	getImpactParamsTop: function () {
+		var link = this.topLink;
+		var impactAngle = this.topImpactAngle;
+		var impactLength = this.parameters.racketLength / 2;
+		var localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
+		var impactHeight = localImpactPosition.y;
+		var impactSpeed = this.getTopImpactSpeed(impactHeight);
+		var impactPosition = this.predictFallingPosition(impactHeight);
+		return {
+			link: link,
+			impactAngle: impactAngle,
+			impactLength: impactLength,
+			localImpactPosition: localImpactPosition,
+			impactHeight: impactHeight,
+			impactSpeed: impactSpeed,
+			impactPosition: impactPosition,
+		};
+	},
+	
+	getImpactParamsLeft: function () {
+		var link = this.leftLink;
+		var impactHeight = this.leftImpactHeight;
+		var impactLength = this.leftImpactWidth;
+		var localImpactPosition = new THREE.Vector3(this.leftImpactWidth, this.leftImpactHeight, 0);
+		var impactAngleAndSpeed = this.getImpactAngleAndSpeed(impactHeight);
+		var impactAngle = impactAngleAndSpeed[0];
+		var impactSpeed = impactAngleAndSpeed[1];
+		var impactPosition = this.predictFallingPosition(impactHeight);
+		return {
+			link: link,
+			impactAngle: impactAngle,
+			impactLength: impactLength,
+			localImpactPosition: localImpactPosition,
+			impactHeight: impactHeight,
+			impactSpeed: impactSpeed,
+			impactPosition: impactPosition,
+		};
+	},
+	
+	getImpactParamsRight: function () {
+		var link = this.rightLink;
+		var impactHeight = this.rightImpactHeight;
+		var impactLength = this.rightImpactWidth;
+		var localImpactPosition = new THREE.Vector3(-this.rightImpactWidth, this.rightImpactHeight, 0);
+		var impactAngleAndSpeed = this.getImpactAngleAndSpeed(impactHeight);
+		var impactAngle = impactAngleAndSpeed[0];
+		var impactSpeed = impactAngleAndSpeed[1];
+		var impactPosition = this.predictFallingPosition(impactHeight);
+		return {
+			link: link,
+			impactAngle: impactAngle,
+			impactLength: impactLength,
+			localImpactPosition: localImpactPosition,
+			impactHeight: impactHeight,
+			impactSpeed: impactSpeed,
+			impactPosition: impactPosition,
+		};
+	},
+	
+	getImpactParamsSmash: function () {
+		var p0 = this.targetPosition;
+		var p1 = new THREE.Vector3(0, this.netHeight + this.netHeightDelta, 1);
+		var p2 = new THREE.Vector3(0, this.netHeight + this.netHeightDelta, -1);
+		var p0p1 = p1.clone().sub(p0);
+		var p0p2 = p2.clone().sub(p0);
+		var n = p0p1.clone().cross(p0p2);
+		
+		var l = this.shuttle.velocity;
+		var l0 = this.shuttle.position;
+		var d = p0.clone().sub(l0).dot(n) / l.clone().dot(n);
+		var p = l.clone().multiplyScalar(d).add(l0);
+		
+		var link = this.topLink;
+		var impactAngle = Math.PI / 2 - p.clone().sub(p0).angleTo(new THREE.Vector3(0, 1, 0));
+		var impactSpeed = this.smashSpeed;
+		var impactPosition = (d > -1e4) ? p : null;
+		var impactHeight = p.y;
+		var impactLength = this.parameters.racketLength / 2;
+		var localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
+		return {
+			link: link,
+			impactAngle: impactAngle,
+			impactLength: impactLength,
+			localImpactPosition: localImpactPosition,
+			impactHeight: impactHeight,
+			impactSpeed: impactSpeed,
+			impactPosition: impactPosition,
+		};
+	},
+	
 	update: function (delta) {
 		this.onBeforeUpdate();
+		var impactParams = this.getImpactParams();
+		var link = impactParams.link;
+		var impactAngle = impactParams.impactAngle;
+		var impactSpeed = impactParams.impactSpeed;
+		var impactHeight = impactParams.impactHeight;
+		var impactLength = impactParams.impactLength;
+		var impactPosition = impactParams.impactPosition;
+		var localImpactPosition = impactParams.localImpactPosition;
+		
 		var robotPosition;
-		var link;
-		var impactAngle;
-		var impactSpeed;
-		var impactHeight;
-		var impactLength;
-		var impactPosition;
-		var localImpactPosition;
-		if (this.impactType === 'smash') {
-			var p0 = this.targetPosition;
-			var p1 = new THREE.Vector3(0, this.netHeight + this.netHeightDelta, 1);
-			var p2 = new THREE.Vector3(0, this.netHeight + this.netHeightDelta, -1);
-			var p0p1 = p1.clone().sub(p0);
-			var p0p2 = p2.clone().sub(p0);
-			var n = p0p1.clone().cross(p0p2);
-			
-			var l = this.shuttle.velocity;
-			var l0 = this.shuttle.position;
-			var d = p0.clone().sub(l0).dot(n) / l.clone().dot(n);
-			var p = l.clone().multiplyScalar(d).add(l0);
-			
-			link = this.topLink;
-			impactAngle = Math.PI / 2 - p.clone().sub(p0).angleTo(new THREE.Vector3(0, 1, 0));
-			impactSpeed = this.smashSpeed;
-			impactPosition = (d > -1e4) ? p : null;
-			impactHeight = p.y;
-			impactLength = this.parameters.racketLength / 2;
-			localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
-		} else if (this.impactType === 'top') {
-			link = this.topLink;
-			impactAngle = this.topImpactAngle;
-			impactLength = this.parameters.racketLength / 2;
-			localImpactPosition = new THREE.Vector3(0, this.parameters.bodyHeight + this.parameters.racketLength / 2 * Math.cos(impactAngle), this.parameters.racketLength / 2 * Math.sin(impactAngle));
-			impactHeight = localImpactPosition.y;
-			impactSpeed = this.getTopImpactSpeed(impactHeight);
-			impactPosition = this.predictFallingPosition(impactHeight);
-		} else {
-			if (this.impactType === 'left') {
-				link = this.leftLink;
-				impactHeight = this.leftImpactHeight;
-				impactLength = this.leftImpactWidth;
-				localImpactPosition = new THREE.Vector3(this.leftImpactWidth, this.leftImpactHeight, 0);
-			} else if (this.impactType === 'right') {
-				link = this.rightLink;
-				impactHeight = this.rightImpactHeight;
-				impactLength = this.rightImpactWidth;
-				localImpactPosition = new THREE.Vector3(-this.rightImpactWidth, this.rightImpactHeight, 0);
-			}
-			var impactParams = this.getImpactParams(impactHeight);
-			impactAngle = impactParams[0];
-			impactSpeed = impactParams[1];
-			impactPosition = this.predictFallingPosition(impactHeight);
-		}
 		
 		var bodyAngle;
 		var rotationValue;
@@ -374,7 +434,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		return Math.PI * this.topForceTable[index][1];
 	},
 	
-	getImpactParams: function (impactHeight) {
+	getImpactAngleAndSpeed: function (impactHeight) {
 		var as = this.hitAngleSpeed(); //算力道角度
 		var impactAngle = Math.atan((this.netHeight - impactHeight) / (as[0] * as[2])); //(網高 - 擊球高度)/離網的距離
 		var impactSpeed = Math.PI * as[1]; //手臂旋轉角速度;
