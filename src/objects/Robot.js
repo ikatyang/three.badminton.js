@@ -121,8 +121,6 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(0, 0, 0),
 		new THREE.Vector3(0, 0, 0));
 	
-	this.responsibleAreaEpsilon = 0.1;
-	
 	this.shuttle = null;
 	this.racketAttenuation = 0.9;
 	
@@ -283,16 +281,14 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var rotationValue;
 		if ((this.impactCount !== 0 && this.shuttle.impactCount !== this.impactCount + 1) ||
 			this.shuttle.state !== 'active' || !impactPosition || 
-			(this.responsibleArea.min.x === 0 && impactPosition.x < 0) ||
-			(this.responsibleArea.max.x === 0 && impactPosition.x > 0) ||
-			impactPosition.x < this.responsibleArea.min.x + (this.responsibleArea.min.x - this.responsibleArea.max.x) * this.responsibleAreaEpsilon ||
-			impactPosition.x > this.responsibleArea.max.x + (this.responsibleArea.max.x - this.responsibleArea.min.x) * this.responsibleAreaEpsilon || 
-			impactPosition.z < this.responsibleArea.min.z + (this.responsibleArea.min.z - this.responsibleArea.max.z) * this.responsibleAreaEpsilon ||
-			impactPosition.z > this.responsibleArea.max.z + (this.responsibleArea.max.z - this.responsibleArea.min.z) * this.responsibleAreaEpsilon) {
+			impactPosition.x < this.responsibleArea.min.x ||
+			impactPosition.x > this.responsibleArea.max.x || 
+			impactPosition.z < this.responsibleArea.min.z ||
+			impactPosition.z > this.responsibleArea.max.z) {
 			bodyAngle = 0;
 			impactAngle = 0;
 			rotationValue = 0;
-			robotPosition = this.responsibleArea.min.clone().add(this.responsibleArea.max).divideScalar(2);
+			robotPosition = this.responsibleArea.getCenter();
 		} else {
 			
 			var bodyDirection = this.parent.localToTarget(this.targetPosition.clone().sub(impactPosition).setY(0), this, 'direction');
