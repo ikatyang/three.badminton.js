@@ -1,0 +1,81 @@
+function NetGroup(netMesh, postMesh) {
+	
+	THREE.Object3D.call(this);
+	
+	var netBox = new THREE.Box3().setFromLocalObject(netMesh);
+	var netSize = netBox.getSize();
+	var netCenter = netBox.getCenter();
+	
+	var postBox = new THREE.Box3().setFromLocalObject(postMesh);
+	var postSize = postBox.getSize();
+	var postCenter = postBox.getCenter();
+	
+	this.parameters = {
+		netSize: netSize,
+		netCenter: netCenter,
+		postSize: postSize,
+		postCenter: postCenter,
+	};
+	
+	var net = netMesh.clone();
+	net.position.set(-netCenter.x, -netCenter.y + postSize.y - netSize.y / 2, -netCenter.z);
+	this.add(net);
+	
+	var postLeft = postMesh.clone();
+	postLeft.position.set(-postCenter.z - postSize.z / 2 - netSize.x / 2, -postCenter.y + postSize.y / 2, -postCenter.x);
+	postLeft.rotation.y = Math.PI / 2;
+	this.add(postLeft);
+	
+	var postRight = postLeft.clone();
+	postRight.position.x *= -1;
+	postRight.rotation.y *= -1;
+	this.add(postRight);
+	
+	this.net = net;
+	this.postLeft = postLeft;
+	this.postRight = postRight;
+}
+
+NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+	
+	constructor: NetGroup,
+	
+	checkCollision: function (shuttlecock) {
+		
+		var sphere = new THREE.Sphere(new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0), shuttlecock.geometry.parameters.corkRadius);
+		
+		var position = shuttlecock.localToTarget(sphere.center.clone(), shuttlecock.parent);
+		var lastPosition = position.clone().addScaledVector(shuttlecock.velocity, -shuttlecock.lastDelta);
+		
+		shuttlecock.parent.localToTarget(position, this.net);
+		shuttlecock.parent.localToTarget(lastPosition, this.net);
+		
+		if (position.z * lastPosition.z < 0) {
+			
+			var positionDelta = lastPosition.clone().sub(position);
+			var ratio = -position.z / positionDelta.z;
+			var adjustedPosition = position.clone().addScaledVector(positionDelta, ratio);
+			
+			var netBox = new THREE.Box3().setFromCenterAndSize(this.parameters.netCenter, this.parameters.netSize);
+			
+			if (adjustedPosition.x + sphere.radius >= netBox.min.x &&
+				adjustedPosition.x - sphere.radius <= netBox.max.x &&
+				adjustedPosition.y - sphere.radius <= netBox.max.y) {
+				
+				if (adjustedPosition.y + sphere.radius < netBox.min.y) {
+					
+					shuttlecock.addState('under-net');
+					
+				} else {
+					
+					shuttlecock.replaceState('active', 'hung');
+					shuttlecock.position.copy(this.net.localToTarget(adjustedPosition.clone(), shuttlecock.parent));
+					shuttlecock.flipFrame.rotation.set(0, 0, 0);
+				}
+			}
+		}
+	},
+	
+});
+
+export { NetGroup };
