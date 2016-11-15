@@ -246,30 +246,21 @@
 					new THREE.MeshBasicMaterial({ color: 'white', side: THREE.DoubleSide }));
 				court.rotation.x = -Math.PI / 2;
 				
-				var netFrame = new THREE.Object3D();
-				netFrame.rotation.x = Math.PI / 2;
-				court.add(netFrame);
-				
 				var net = new THREE.Mesh(
 					new THREE.Badminton.NetGeometry(netWidth, netHeight, netOuterTube, netInnerTube, netWidthSegments, netHeightSegments),
 					new THREE.MeshNormalMaterial({
 						side: THREE.DoubleSide
 					}));
-				net.rotation.y = Math.PI / 2;
-				net.position.y = postHeight - netHeight / 2;
-				netFrame.add(net);
 				
-				var post1 = new THREE.Mesh(
+				var post = new THREE.Mesh(
 					new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16),
 					new THREE.MeshNormalMaterial());
-				post1.position.set(0, postHeight / 2, sidelineDouble);
-				netFrame.add(post1);
 				
-				var post2 = post1.clone();
-				post2.position.z *= -1;
-				netFrame.add(post2);
+				var netGroup = new THREE.Badminton.NetGroup(net, post);
+				netGroup.rotation.set(Math.PI / 2, -Math.PI / 2, 0);
+				court.add(netGroup);
 				
-				court.netFrame = netFrame;
+				court.netGroup = netGroup;
 				court.postHeight = postHeight;
 				
 				return court;
@@ -489,7 +480,7 @@
 					shuttle.update(delta);
 					robot1.update(delta);
 					robot2.update(delta);
-					checkNetCollision();
+					court.netGroup.checkCollision(shuttle);
 					game.update(delta);
 					updateEyes();
 				}
@@ -538,24 +529,6 @@
 					0,
 					min.z + size.z * Math.random());
 			}
-			
-			function checkNetCollision() {
-				var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), court.netFrame);
-				var lastPosition = shuttle.parent.localToTarget(shuttle.position.clone().addScaledVector(shuttle.velocity, -shuttle.lastDelta), court.netFrame);
-				var positionDelta = lastPosition.clone().sub(position);
-				var mul = -position.x / positionDelta.x;
-				var netPosition = position.clone().addScaledVector(positionDelta, mul);
-				if ((Math.abs(mul) <= 1 || mul * checkNetCollision.lastUpdateMul < 0) &&
-					netPosition.y >= 0 &&
-					netPosition.y <= 155 &&
-					netPosition.z >= -305 &&
-					netPosition.z <= 305) {
-					shuttle.state = 'hung';
-					shuttle.position.copy(court.netFrame.localToTarget(netPosition.clone(), shuttle.parent));
-					shuttle.flipFrame.rotation.set(0, 0, 0);
-				}
-				checkNetCollision.lastUpdateMul = mul;
-			}
 
 			function next() {
 				animated = false;
@@ -590,7 +563,6 @@
 				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
 				
 				record.init();
-				checkNetCollision.lastUpdateMul = 0;
 			}
 			
 			function replay() {
