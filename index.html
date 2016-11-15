@@ -67,7 +67,7 @@
 				mouse = new THREE.Vector2();
 				raycaster = new THREE.Raycaster();
 				
-				game = new THREE.Badminton.Game(court, shuttle, 2);
+				game = new THREE.Badminton.Game(2);
 				game.onScoreChange = function () {
 					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
 				};
@@ -481,7 +481,7 @@
 					robot1.update(delta);
 					robot2.update(delta);
 					court.netGroup.checkCollision(shuttle);
-					game.update(delta);
+					game.checkScore(shuttle, court);
 					updateEyes();
 				}
 				scoreboard.update(delta);
