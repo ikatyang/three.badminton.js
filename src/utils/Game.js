@@ -28,7 +28,7 @@ Game.prototype = {
 	
 	update: function (delta) {
 		if (this.nthScore !== this.score1 + this.score2) {
-			if (this.shuttle.hasState('hung')) {
+			if (this.shuttle.hasState('hung') || (this.shuttle.hasState('toppled') && this.shuttle.hasState('under-net'))) {
 				if (this.shuttle.impactCount % 2 === 0) {
 					this.lastWinner = this.lastWinner;
 				} else {
