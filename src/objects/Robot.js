@@ -53,7 +53,7 @@ function Robot(bodyMesh, racketMesh) {
 		}
 		
 		var racket = racketMesh.clone();
-		racket.position.y = racketSize.y / 2;
+		racket.position.set(-racketCenter.x, -racketCenter.y + racketSize.y / 2, -racketCenter.z);
 		parent.add(racket);
 		
 		link.racket = racket;
@@ -65,7 +65,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(1, 0, 0),
 		new THREE.Vector3(-1, 0, 0),
 	]);
-	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
+	topLink.position.set(bodyCenter.x, bodyCenter.y + bodySize.y / 2, bodyCenter.z);
 	body.add(topLink);
 	
 	var leftLink = createLink([
@@ -73,7 +73,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(-1, 0, 0),
 	]);
 	leftLink.rotation.z = -Math.PI / 2;
-	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, 0);
+	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, bodyCenter.z);
 	body.add(leftLink);
 	
 	var rightLink = createLink([
@@ -81,7 +81,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(-1, 0, 0),
 	]);
 	rightLink.rotation.z = Math.PI / 2;
-	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, 0);
+	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, bodyCenter.z);
 	body.add(rightLink);
 
 	this.body = body;
@@ -151,7 +151,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getRacketImpactLength: function () {
-		return this.parameters.racketSize.y / 2;
+		return this.parameters.racketSize.y / 2 - this.parameters.racketCenter.y;
 	},
 	
 	getRacketImpactPosition: function (link, impactAngle) {
