@@ -1,33 +1,20 @@
-import { ShuttlecockGeometry } from '../geometries/ShuttlecockGeometry.js';
-
-function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
+function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	
 	THREE.Object3D.call(this);
 	
-	if (geometry instanceof ShuttlecockGeometry) {
-		corkAngle = geometry.parameters.corkAngle;
-		massToCorkTopLength = geometry.parameters.massToCorkTopLength;
-		massToCorkCenterLength = geometry.parameters.massToCorkCenterLength;
-		skirtCrossSectionalArea = geometry.parameters.skirtCrossSectionalArea;
-	}
-	
-	this.geometry = geometry;
+	this.geometry = shuttlecockGeometry;
 	this.material = material;
 	
 	this.parameters = {
 		mass: corkMass + skirtMass,
 		corkMass: corkMass,
 		skirtMass: skirtMass,
-		corkAngle: corkAngle,
-		massToCorkTopLength: massToCorkTopLength,
-		massToCorkCenterLength: massToCorkCenterLength,
-		skirtCrossSectionalArea: skirtCrossSectionalArea
 	};
 	
 	var flipFrame = new THREE.Object3D();
 	this.add(flipFrame);
 	
-	var mesh = new THREE.Mesh(geometry, material);
+	var mesh = new THREE.Mesh(shuttlecockGeometry, material);
 	flipFrame.add(mesh);
 	
 	this.flipFrame = flipFrame;
@@ -101,7 +88,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	updateActive: function (delta) {
 		
 		var rho = this.airDensity;
-		var S = this.parameters.skirtCrossSectionalArea;
+		var S = this.geometry.parameters.skirtCrossSectionalArea;
 		var C_D = this.dragCoefficient;
 		var U = this.velocity.length();
 		
@@ -156,12 +143,12 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			
 		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
 		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
-			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
+			yAxis.clone().negate().angleTo(velocityXZ) - this.geometry.parameters.corkAngle);
 		
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
 		this.rotation.setFromRotationMatrix(flipMatrix.multiply(new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle)));
 		
-		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.parameters.massToCorkTopLength, 0), this.parent).y;
+		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
 			this.state = 'toppled';
@@ -175,8 +162,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var U = this.velocity.length();
 		var M_B = this.parameters.skirtMass;
 		var M_C = this.parameters.corkMass;
-		var l_GC = this.parameters.massToCorkCenterLength;
-		var S = this.parameters.skirtCrossSectionalArea;
+		var l_GC = this.geometry.parameters.massToCorkCenterLength;
+		var S = this.geometry.parameters.skirtCrossSectionalArea;
 		return [
 			/* phi_dot     */ phi_dot,
 			/* phi_dot_dot */ -(rho * S * C_D * U) / (2 * M_B * (1 + M_B / M_C)) * phi_dot - (rho * S * C_D * U * U) / (2 * (M_C + M_B) * l_GC) * Math.sin(phi)
