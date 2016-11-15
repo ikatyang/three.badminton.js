@@ -1902,22 +1902,21 @@ NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 });
 
-function Game(court, shuttle, firstPlayer) {
-
-	this.court = court;
-	this.shuttle = shuttle;
+function Game(firstPlayer) {
 	
-	this.nthScore = 0;
-	this.score1 = 0;
-	this.score2 = 0;
-	this.lastWinner = (firstPlayer !== undefined) ? firstPlayer : 1;
-	
-	this.scoreboard = null;
+	this.init(firstPlayer);
 }
 
 Game.prototype = {
 
 	constructor: Game,
+	
+	init: function (firstPlayer) {
+		this.nthScore = 0;
+		this.score1 = 0;
+		this.score2 = 0;
+		this.lastWinner = (firstPlayer !== undefined) ? firstPlayer : 1;
+	},
 	
 	get lastWinnerScore() {
 		return this['score' + this.lastWinner];
@@ -1930,58 +1929,46 @@ Game.prototype = {
 		this.nthScore++;
 	},
 	
-	update: function (delta) {
+	checkScore: function (shuttlecock, court) {
 		if (this.nthScore !== this.score1 + this.score2) {
-			if (this.shuttle.hasState('hung')) {
-				if (this.shuttle.impactCount % 2 === 0) {
+			if (shuttlecock.hasState('hung') || (shuttlecock.hasState('toppled') && shuttlecock.hasState('under-net'))) {
+				if (shuttlecock.impactCount % 2 === 0) {
 					this.lastWinner = this.lastWinner;
 				} else {
 					this.lastWinner = this.lastWinner % 2 + 1;
 				}
 				this.lastWinnerScore++;
-				this.updateScoreboard();
 				this.onScoreChange();
-			} else if (this.shuttle.hasState('toppled')) {
-				var area = (this.shuttle.impactCount <= 1) ?
+			} else if (shuttlecock.hasState('toppled')) {
+				var area = (shuttlecock.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
-						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
-						this.court.getArea('SingleFirst' + (this.score2 % 2 === 0 ? 'Right' : 'Left') + 'A')) :
+						court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
+						court.getArea('SingleFirst' + (this.score2 % 2 === 0 ? 'Right' : 'Left') + 'A')) :
 					((this.lastWinner === 1) ?
-						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getAreaSingleB() :
-							this.court.getAreaSingleA()) : 
-						((this.shuttle.impactCount % 2 === 1) ?
-							this.court.getAreaSingleA() :
-							this.court.getAreaSingleB()));
-				this.court.localToTarget(area, this.shuttle.parent);
-				var position = this.shuttle.localToTarget(new THREE.Vector3(0, 0, 0), this.court);
+						((shuttlecock.impactCount % 2 === 1) ?
+							court.getAreaSingleB() :
+							court.getAreaSingleA()) : 
+						((shuttlecock.impactCount % 2 === 1) ?
+							court.getAreaSingleA() :
+							court.getAreaSingleB()));
+				court.localToTarget(area, shuttlecock.parent);
+				var position = shuttlecock.localToTarget(new THREE.Vector3(0, 0, 0), court);
 				if (position.x >= area.min.x && position.x <= area.max.x &&
 					position.z >= area.min.z && position.z <= area.max.z) {
-					if (this.shuttle.impactCount % 2 === 1) {
+					if (shuttlecock.impactCount % 2 === 1) {
 						this.lastWinner = this.lastWinner;
 					} else {
 						this.lastWinner = this.lastWinner % 2 + 1;
 					}
 				} else {
-					if (this.shuttle.impactCount % 2 === 0) {
+					if (shuttlecock.impactCount % 2 === 0) {
 						this.lastWinner = this.lastWinner;
 					} else {
 						this.lastWinner = this.lastWinner % 2 + 1;
 					}
 				}
 				this.lastWinnerScore++;
-				this.updateScoreboard();
 				this.onScoreChange();
-			}
-		}
-	},
-	
-	updateScoreboard: function () {
-		if (this.scoreboard) {
-			if (this.lastWinner === 1) {
-				this.scoreboard.setCardAction(0, this.score1.toString(), 'next');
-			} else {
-				this.scoreboard.setCardAction(3, this.score2.toString(), 'next');
 			}
 		}
 	},
