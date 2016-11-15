@@ -43,7 +43,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	addState: function (state) {
-		this.state += ' ' + state;
+		if (!this.hasState(state))
+			this.state += ' ' + state;
 	},
 	
 	replaceState: function (pattern, replacement) {
