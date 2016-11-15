@@ -558,34 +558,23 @@ function PixelMaterial(parameters){
 PixelMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 PixelMaterial.prototype.constructor = PixelMaterial;
 
-function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToCorkTopLength, massToCorkCenterLength, skirtCrossSectionalArea) {
+function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	
 	THREE.Object3D.call(this);
 	
-	if (geometry instanceof ShuttlecockGeometry) {
-		corkAngle = geometry.parameters.corkAngle;
-		massToCorkTopLength = geometry.parameters.massToCorkTopLength;
-		massToCorkCenterLength = geometry.parameters.massToCorkCenterLength;
-		skirtCrossSectionalArea = geometry.parameters.skirtCrossSectionalArea;
-	}
-	
-	this.geometry = geometry;
+	this.geometry = shuttlecockGeometry;
 	this.material = material;
 	
 	this.parameters = {
 		mass: corkMass + skirtMass,
 		corkMass: corkMass,
 		skirtMass: skirtMass,
-		corkAngle: corkAngle,
-		massToCorkTopLength: massToCorkTopLength,
-		massToCorkCenterLength: massToCorkCenterLength,
-		skirtCrossSectionalArea: skirtCrossSectionalArea
 	};
 	
 	var flipFrame = new THREE.Object3D();
 	this.add(flipFrame);
 	
-	var mesh = new THREE.Mesh(geometry, material);
+	var mesh = new THREE.Mesh(shuttlecockGeometry, material);
 	flipFrame.add(mesh);
 	
 	this.flipFrame = flipFrame;
@@ -604,6 +593,27 @@ function Shuttlecock(geometry, material, corkMass, skirtMass, corkAngle, massToC
 Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
+	
+	getStates: function () {
+		return this.state.split(' ');
+	},
+	
+	hasState: function (state) {
+		return (this.getStates().indexOf(state) !== -1);
+	},
+	
+	addState: function (state) {
+		if (!this.hasState(state))
+			this.state += ' ' + state;
+	},
+	
+	replaceState: function (pattern, replacement) {
+		var states = this.getStates();
+		var index = states.indexOf(pattern);
+		if (index !== -1)
+			states[index] = replacement;
+		this.state = states.join(' ');
+	},
 	
 	init: function () {
 		
@@ -649,9 +659,9 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	update: function (delta) {
-		if (this.state === 'active')
+		if (this.hasState('active'))
 			this.updateActive(delta);
-		else if (this.state === 'toppling')
+		else if (this.hasState('toppling'))
 			this.updateToppling(delta);
 		this.lastDelta = delta;
 	},
@@ -659,7 +669,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	updateActive: function (delta) {
 		
 		var rho = this.airDensity;
-		var S = this.parameters.skirtCrossSectionalArea;
+		var S = this.geometry.parameters.skirtCrossSectionalArea;
 		var C_D = this.dragCoefficient;
 		var U = this.velocity.length();
 		
@@ -695,7 +705,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		}
 		
 		if (this.position.y < 0)
-			this.state = 'toppling';
+			this.replaceState('active', 'toppling');
 	},
 	
 	updateToppling: function (delta) {
@@ -714,15 +724,15 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			
 		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
 		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
-			yAxis.clone().negate().angleTo(velocityXZ) - this.parameters.corkAngle);
+			yAxis.clone().negate().angleTo(velocityXZ) - this.geometry.parameters.corkAngle);
 		
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
 		this.rotation.setFromRotationMatrix(flipMatrix.multiply(new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle)));
 		
-		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.parameters.massToCorkTopLength, 0), this.parent).y;
+		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
-			this.state = 'toppled';
+			this.replaceState('toppling', 'toppled');
 	},
 	
 	flipDerivative: function (params) {
@@ -733,8 +743,8 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var U = this.velocity.length();
 		var M_B = this.parameters.skirtMass;
 		var M_C = this.parameters.corkMass;
-		var l_GC = this.parameters.massToCorkCenterLength;
-		var S = this.parameters.skirtCrossSectionalArea;
+		var l_GC = this.geometry.parameters.massToCorkCenterLength;
+		var S = this.geometry.parameters.skirtCrossSectionalArea;
 		return [
 			/* phi_dot     */ phi_dot,
 			/* phi_dot_dot */ -(rho * S * C_D * U) / (2 * M_B * (1 + M_B / M_C)) * phi_dot - (rho * S * C_D * U * U) / (2 * (M_C + M_B) * l_GC) * Math.sin(phi)
@@ -825,7 +835,7 @@ function Robot(bodyMesh, racketMesh) {
 		}
 		
 		var racket = racketMesh.clone();
-		racket.position.y = racketSize.y / 2;
+		racket.position.set(-racketCenter.x, -racketCenter.y + racketSize.y / 2, -racketCenter.z);
 		parent.add(racket);
 		
 		link.racket = racket;
@@ -837,7 +847,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(1, 0, 0),
 		new THREE.Vector3(-1, 0, 0),
 	]);
-	topLink.position.set(0, bodyCenter.y + bodySize.y / 2, 0);
+	topLink.position.set(bodyCenter.x, bodyCenter.y + bodySize.y / 2, bodyCenter.z);
 	body.add(topLink);
 	
 	var leftLink = createLink([
@@ -845,7 +855,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(-1, 0, 0),
 	]);
 	leftLink.rotation.z = -Math.PI / 2;
-	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, 0);
+	leftLink.position.set(bodyCenter.x + bodySize.x / 2, bodyCenter.y, bodyCenter.z);
 	body.add(leftLink);
 	
 	var rightLink = createLink([
@@ -853,7 +863,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(-1, 0, 0),
 	]);
 	rightLink.rotation.z = Math.PI / 2;
-	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, 0);
+	rightLink.position.set(bodyCenter.x - bodySize.x / 2, bodyCenter.y, bodyCenter.z);
 	body.add(rightLink);
 
 	this.body = body;
@@ -923,7 +933,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getRacketImpactLength: function () {
-		return this.parameters.racketSize.y / 2;
+		return this.parameters.racketSize.y / 2 - this.parameters.racketCenter.y;
 	},
 	
 	getRacketImpactPosition: function (link, impactAngle) {
@@ -1019,7 +1029,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var robotPosition = this.responsibleArea.getCenter();
 		
 		if ((this.impactCount === 0 || this.impactCount + 2 === this.shuttlecock.impactCount + 1) &&
-			this.shuttlecock.state === 'active' && impactPosition &&
+			this.shuttlecock.hasState('active') && impactPosition &&
 			impactPosition.x >= this.responsibleArea.min.x &&
 			impactPosition.x <= this.responsibleArea.max.x &&
 			impactPosition.z >= this.responsibleArea.min.z &&
@@ -1812,6 +1822,86 @@ TargetPoint.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 });
 
+function NetGroup(netMesh, postMesh) {
+	
+	THREE.Object3D.call(this);
+	
+	var netBox = new THREE.Box3().setFromLocalObject(netMesh);
+	var netSize = netBox.getSize();
+	var netCenter = netBox.getCenter();
+	
+	var postBox = new THREE.Box3().setFromLocalObject(postMesh);
+	var postSize = postBox.getSize();
+	var postCenter = postBox.getCenter();
+	
+	this.parameters = {
+		netSize: netSize,
+		netCenter: netCenter,
+		postSize: postSize,
+		postCenter: postCenter,
+	};
+	
+	var net = netMesh.clone();
+	net.position.set(-netCenter.x, -netCenter.y + postSize.y - netSize.y / 2, -netCenter.z);
+	this.add(net);
+	
+	var postLeft = postMesh.clone();
+	postLeft.position.set(-postCenter.z - postSize.z / 2 - netSize.x / 2, -postCenter.y + postSize.y / 2, -postCenter.x);
+	postLeft.rotation.y = Math.PI / 2;
+	this.add(postLeft);
+	
+	var postRight = postLeft.clone();
+	postRight.position.x *= -1;
+	postRight.rotation.y *= -1;
+	this.add(postRight);
+	
+	this.net = net;
+	this.postLeft = postLeft;
+	this.postRight = postRight;
+}
+
+NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+	
+	constructor: NetGroup,
+	
+	checkCollision: function (shuttlecock) {
+		
+		var sphere = new THREE.Sphere(new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0), shuttlecock.geometry.parameters.corkRadius);
+		
+		var position = shuttlecock.localToTarget(sphere.center.clone(), shuttlecock.parent);
+		var lastPosition = position.clone().addScaledVector(shuttlecock.velocity, -shuttlecock.lastDelta);
+		
+		shuttlecock.parent.localToTarget(position, this.net);
+		shuttlecock.parent.localToTarget(lastPosition, this.net);
+		
+		if (position.z * lastPosition.z < 0) {
+			
+			var positionDelta = lastPosition.clone().sub(position);
+			var ratio = -position.z / positionDelta.z;
+			var adjustedPosition = position.clone().addScaledVector(positionDelta, ratio);
+			
+			var netBox = new THREE.Box3().setFromCenterAndSize(this.parameters.netCenter, this.parameters.netSize);
+			
+			if (adjustedPosition.x + sphere.radius >= netBox.min.x &&
+				adjustedPosition.x - sphere.radius <= netBox.max.x &&
+				adjustedPosition.y - sphere.radius <= netBox.max.y) {
+				
+				if (adjustedPosition.y + sphere.radius < netBox.min.y) {
+					
+					shuttlecock.addState('under-net');
+					
+				} else {
+					
+					shuttlecock.replaceState('active', 'hung');
+					shuttlecock.position.copy(this.net.localToTarget(adjustedPosition.clone(), shuttlecock.parent));
+					shuttlecock.flipFrame.rotation.set(0, 0, 0);
+				}
+			}
+		}
+	},
+	
+});
+
 function Game(court, shuttle, firstPlayer) {
 
 	this.court = court;
@@ -1842,7 +1932,7 @@ Game.prototype = {
 	
 	update: function (delta) {
 		if (this.nthScore !== this.score1 + this.score2) {
-			if (this.shuttle.state === 'hung') {
+			if (this.shuttle.hasState('hung')) {
 				if (this.shuttle.impactCount % 2 === 0) {
 					this.lastWinner = this.lastWinner;
 				} else {
@@ -1851,7 +1941,7 @@ Game.prototype = {
 				this.lastWinnerScore++;
 				this.updateScoreboard();
 				this.onScoreChange();
-			} else if (this.shuttle.state === 'toppled') {
+			} else if (this.shuttle.hasState('toppled')) {
 				var area = (this.shuttle.impactCount <= 1) ?
 					((this.lastWinner === 1) ?
 						this.court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
@@ -2036,6 +2126,7 @@ exports.Court = Court;
 exports.Scoreboard = Scoreboard;
 exports.ScoreboardCard = ScoreboardCard;
 exports.TargetPoint = TargetPoint;
+exports.NetGroup = NetGroup;
 exports.Game = Game;
 exports.Record = Record;
 
