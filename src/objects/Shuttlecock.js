@@ -34,6 +34,26 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
 	
+	getStates: function () {
+		return this.state.split(' ');
+	},
+	
+	hasState: function (state) {
+		return (this.getStates().indexOf(state) !== -1);
+	},
+	
+	addState: function (state) {
+		this.state += ' ' + state;
+	},
+	
+	replaceState: function (pattern, replacement) {
+		var states = this.getStates();
+		var index = states.indexOf(pattern);
+		if (index !== -1)
+			states[index] = replacement;
+		this.state = states.join(' ');
+	},
+	
 	init: function () {
 		
 		this.state = 'active';
@@ -78,9 +98,9 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	update: function (delta) {
-		if (this.state === 'active')
+		if (this.hasState('active'))
 			this.updateActive(delta);
-		else if (this.state === 'toppling')
+		else if (this.hasState('toppling'))
 			this.updateToppling(delta);
 		this.lastDelta = delta;
 	},
@@ -124,7 +144,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		}
 		
 		if (this.position.y < 0)
-			this.state = 'toppling';
+			this.replaceState('active', 'toppling');
 	},
 	
 	updateToppling: function (delta) {
@@ -151,7 +171,7 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
 		
 		if (flipAngle < 1e-4)
-			this.state = 'toppled';
+			this.replaceState('toppling', 'toppled');
 	},
 	
 	flipDerivative: function (params) {

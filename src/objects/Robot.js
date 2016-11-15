@@ -247,7 +247,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var robotPosition = this.responsibleArea.getCenter();
 		
 		if ((this.impactCount === 0 || this.impactCount + 2 === this.shuttlecock.impactCount + 1) &&
-			this.shuttlecock.state === 'active' && impactPosition &&
+			this.shuttlecock.hasState('active') && impactPosition &&
 			impactPosition.x >= this.responsibleArea.min.x &&
 			impactPosition.x <= this.responsibleArea.max.x &&
 			impactPosition.z >= this.responsibleArea.min.z &&
