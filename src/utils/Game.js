@@ -1,8 +1,6 @@
 function Game(firstPlayer) {
 	
 	this.init(firstPlayer);
-	
-	this.scoreboard = null;
 }
 
 Game.prototype = {
@@ -36,7 +34,6 @@ Game.prototype = {
 					this.lastWinner = this.lastWinner % 2 + 1;
 				}
 				this.lastWinnerScore++;
-				this.updateScoreboard();
 				this.onScoreChange();
 			} else if (shuttlecock.hasState('toppled')) {
 				var area = (shuttlecock.impactCount <= 1) ?
@@ -67,18 +64,7 @@ Game.prototype = {
 					}
 				}
 				this.lastWinnerScore++;
-				this.updateScoreboard();
 				this.onScoreChange();
-			}
-		}
-	},
-	
-	updateScoreboard: function () {
-		if (this.scoreboard) {
-			if (this.lastWinner === 1) {
-				this.scoreboard.setCardAction(0, this.score1.toString(), 'next');
-			} else {
-				this.scoreboard.setCardAction(3, this.score2.toString(), 'next');
 			}
 		}
 	},

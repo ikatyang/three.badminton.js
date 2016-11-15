@@ -67,11 +67,6 @@
 				mouse = new THREE.Vector2();
 				raycaster = new THREE.Raycaster();
 				
-				game = new THREE.Badminton.Game(2);
-				game.onScoreChange = function () {
-					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
-				};
-				
 				renderer = new THREE.WebGLRenderer();
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
@@ -115,7 +110,15 @@
 				scoreboard.rotation.y = -Math.PI / 4;
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
-				game.scoreboard = scoreboard;
+				
+				game = new THREE.Badminton.Game(2);
+				game.onScoreChange = function () {
+					if (this.lastWinner === 1)
+						scoreboard.setCardAction(0, this.score1.toString(), 'next');
+					else
+						scoreboard.setCardAction(3, this.score2.toString(), 'next');
+					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
+				};
 				
 				createGUI(robot1, robot2);
 				
