@@ -1,124 +1,122 @@
-function Record(shuttlecock, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2, data) {
+function Record(shuttlecock, robot1, robot2, data) {
 	
 	this.shuttlecock = shuttlecock;
 	this.robot1 = robot1;
 	this.robot2 = robot2;
-	this.game = game;
-	this.scoreboard = scoreboard;
-	this.targetPoint1 = targetPoint1;
-	this.targetPoint2 = targetPoint2;
 	
-	this.resetCounter();
+	this.counter = 0;
 	this.playing = false;
 	
 	this.init(data);
+	
+	if (!data)
+		this.record();
 }
 
 Record.prototype = {
 
 	constructor: Record,
 	
-	recordRobot: function (robot) {
-		this.data.next.push(this.getRobotData(robot));
-	},
-	
-	resetCounter: function () {
-		this.counter = 0;
-	},
-	
 	init: function (data) {
-		this.data = data || {
-			init: {
-				scoreA: this.game.scoreA,
-				scoreB: this.game.scoreB,
-				nthScore: this.game.nthScore,
-				firstPlayer: this.game.lastWinner,
-				shuttlecock: this.getShuttlecockData(this.shuttlecock),
-				robot1: this.getRobotInitData(this.robot1),
-				robot2: this.getRobotInitData(this.robot2),
-			},
-			next: [],
-		};
+		this.data = data || [];
 	},
 	
-	play: function () {
-		this.resetCounter();
-		
-		this.game.scoreA = this.data.init.scoreA;
-		this.game.scoreB = this.data.init.scoreB;
-		this.game.nthScore = this.data.init.nthScore;
-		this.game.lastWinner = this.data.init.firstPlayer;
-		this.scoreboard.frontCard1.setText(this.game.scoreA.toString());
-		this.scoreboard.frontCard2.setText(this.game.scoreB.toString());
-		this.setRobotInit(this.robot1, this.data.init.robot1, this.targetPoint1);
-		this.setRobotInit(this.robot2, this.data.init.robot2, this.targetPoint2);
-		this.setShuttlecock(this.shuttlecock, this.data.init.shuttlecock);
-		
-		this.playRobot();
-	},
-	
-	playRobot: function () {
-		var data = this.data.next[this.counter];
-		if (data) {
-			var player = (this.counter % 2 === 0) ? this.data.init.firstPlayer : this.data.init.firstPlayer % 2 + 1;
-			var robot = (player === 1) ? this.robot1 : this.robot2;
-			this.setRobot(robot, data);
+	start: function (index) {
+		if (index < 0)
+			index = this.data.length - 1 + index;
+		this.counter = THREE.Math.clamp(index || 0, 0, this.data.length - 1);
+		if (this.counter < this.data.length) {
+			this.setData(this.robot1, this.data[this.counter].robot1.init);
+			this.setData(this.robot2, this.data[this.counter].robot2.init);
+			this.setData(this.shuttlecock, this.data[this.counter].shuttlecock.init);
+			this.next();
 		}
-		this.playing = (++this.counter < this.data.next.length);
 	},
 	
-	getShuttlecockData: function (shuttlecock) {
-		return {
-			state: shuttlecock.state,
-			position: shuttlecock.position.toArray(),
-			rotation: shuttlecock.rotation.toArray(),
-			velocity: shuttlecock.velocity.toArray(),
-			impactCount: shuttlecock.impactCount,
-		};
+	next: function () {
+		if (++this.counter < this.data.length) {
+			this.setData(this.robot1, this.data[this.counter].robot1.play);
+			this.setData(this.robot2, this.data[this.counter].robot2.play);
+		}
+		this.playing = (this.counter + 1 < this.data.length);
 	},
 	
-	setShuttlecock: function (shuttlecock, data) {
-		shuttlecock.state = data.state;
-		shuttlecock.position.fromArray(data.position);
-		shuttlecock.rotation.fromArray(data.rotation);
-		shuttlecock.velocity.fromArray(data.velocity);
-		shuttlecock.impactCount = data.impactCount;
+	record: function () {
+		this.data.push({
+			robot1: {
+				init: this.getData(this.robot1, this.KEYS_ROBOT_INIT),
+				play: this.getData(this.robot1, this.KEYS_ROBOT_PLAY),
+			},
+			robot2: {
+				init: this.getData(this.robot2, this.KEYS_ROBOT_INIT),
+				play: this.getData(this.robot2, this.KEYS_ROBOT_PLAY),
+			},
+			shuttlecock: {
+				init: this.getData(this.shuttlecock, this.KEYS_SHUTTLECOCK_INIT),
+			},
+		});
 	},
 	
-	getRobotInitData: function (robot) {
-		return {
-			responsibleArea: robot.responsibleArea.toArray(),
-			impactCount: robot.impactCount,
-			healthPercent: robot.healthPercent,
-			bodyAngle: robot.body.rotation.y,
-			position: robot.position.toArray(),
-			rotation: robot.rotation.toArray(),
-		};
+	getValue: function (object) {
+		switch (typeof object) {
+			case 'object':
+				if (typeof object.toArray === 'function')
+					return object.toArray();
+			default:
+				return object;
+		}
 	},
 	
-	setRobotInit: function (robot, data) {
-		robot.responsibleArea.fromArray(data.responsibleArea);
-		robot.impactCount = data.impactCount;
-		robot.healthPercent = data.healthPercent;
-		robot.body.rotation.y = data.bodyAngle;
-		robot.position.fromArray(data.position);
-		robot.rotation.fromArray(data.rotation);
+	getData: function (object, keys) {
+		var data = {};
+		for (var i = 0; i < keys.length; i++) {
+			var temp = object;
+			var key = keys[i];
+			key.split('.').forEach(function (name) {
+				temp = temp[name];
+			});
+			data[key] = this.getValue(temp);
+		}
+		return data;
 	},
 	
-	getRobotData: function (robot) {
-		return {
-			impactType: robot.impactType,
-			targetPosition: robot.targetPosition.toArray(),
-		};
+	setData: function (object, data) {
+		for (var key in data) {
+			var temp = object;
+			var value = data[key];
+			key.split('.').forEach(function (name, index, array) {
+				if (index < array.length - 1)
+					temp = temp[name];
+				else if (typeof temp[name].fromArray === 'function')
+					temp[name].fromArray(value);
+				else
+					temp[name] = value;
+			});
+		}
 	},
 	
-	setRobot: function (robot, data) {
-		robot.impactType = data.impactType;
-		robot.targetPosition.fromArray(data.targetPosition);
-		var targetPoint = (robot === this.robot1) ? this.targetPoint1 : this.targetPoint2;
-		if (targetPoint)
-			targetPoint.position.fromArray(data.targetPosition);
-	},
+	KEYS_ROBOT_INIT: [
+		'position',
+		'rotation',
+		'impactCount',
+		'impactElapsed',
+		'healthPercent',
+		'body.rotation.y',
+		'responsibleArea',
+	],
+	
+	KEYS_ROBOT_PLAY: [
+		'impactType',
+		'targetPosition',
+	],
+	
+	KEYS_SHUTTLECOCK_INIT: [
+		'state',
+		'position',
+		'rotation',
+		'velocity',
+		'impactCount',
+	],
 	
 };
 
