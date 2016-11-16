@@ -37,7 +37,7 @@
 			var targetPoint1, targetPoint2;
 			var mouse, raycaster;
 			var animated = false;
-			var delay = 5;
+			var delay = 5, replayIndex = -3;
 			var touchable, intersects;
 
 			init();
@@ -165,6 +165,7 @@
 				var gui = new dat.GUI();
 				
 				gui.add(this, 'delay', 1, 30);
+				gui.add(this, 'replayIndex', -10, 10);
 				
 				var gcontrols = {
 					control: 'orbit',
@@ -565,7 +566,7 @@
 			}
 			
 			function replay() {
-				record.start();
+				record.start(Math.round(replayIndex));
 			}
 		</script>
 	</body>
