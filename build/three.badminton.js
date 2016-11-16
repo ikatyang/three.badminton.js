@@ -867,15 +867,18 @@ function Robot(bodyMesh, racketMesh) {
 	body.add(rightLink);
 
 	this.body = body;
+	this.links = [
+		this.topLink = topLink,
+		this.leftLink = leftLink,
+		this.rightLink = rightLink,
+	];
 	
-	this.topLink = topLink;
 	this.topImpactAngle = -Math.PI / 15;
+	this.smashSpeed = Math.PI * 100;
 	
-	this.leftLink = leftLink;
-	this.rightLink = rightLink;
+	this.defaultImpactType = 'right';
+	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
-	this.impactClock = new THREE.Clock();
-	this.impactClock.start();
 	this.impactDelta = 1;
 	
 	this.responsibleArea = new THREE.Box3(
@@ -892,14 +895,7 @@ function Robot(bodyMesh, racketMesh) {
 	this.netHeight = 1.55;
 	this.netHeightDelta = 0.2;
 	
-	this.targetPosition = new THREE.Vector3(0, 0, 0);
-	
-	this.impactType = 'right';
-	this.smashSpeed = Math.PI * 100;
-	
 	this.healthAttenuation = 0.99;
-	
-	this.record = null;
 	
 	this.init();
 }
@@ -909,7 +905,9 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	constructor: Robot,
 	
 	init: function () {
+		this.impactType = this.defaultImpactType;
 		this.impactCount = 0;
+		this.impactElapsed = this.impactDelta;
 		this.healthPercent = 100;
 		this.topLink.angleA = this.topLink.angleB = 0;
 		this.leftLink.angleA = this.leftLink.angleB = 0;
@@ -1023,6 +1021,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var impactPosition = impactParams.position;
 		var racketImpactPosition = impactParams.racketPosition;
 		
+		for (var i = 0; i < this.links.length; i++)
+			if (this.links[i] !== link)
+				this.links[i].angleA = this.links[i].angleB = 0;
+		
 		var bodyAngle = 0;
 		var impactAngle = 0;
 		var rotationValue = 0;
@@ -1052,9 +1054,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		}
 		
 		link.angleB = 0;
-		
 		link.updateMatrixWorld();
-		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactClock.getDelta() > this.impactDelta) {
+		
+		this.impactElapsed += delta;
+		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactElapsed > this.impactDelta) {
 		
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			
@@ -1063,12 +1066,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			this.impactCount = this.shuttlecock.impactCount;
 			this.healthPercent *= this.healthAttenuation;
 			
-			if (this.record) {
-				if (this.record.playing)
-					this.record.playRobot();
-				else
-					this.record.recordRobot(this);
-			}
+			this.impactElapsed = 0;
 			
 			this.onAfterImpact();
 		}
@@ -1866,9 +1864,10 @@ NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 	checkCollision: function (shuttlecock) {
 		
-		var sphere = new THREE.Sphere(new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0), shuttlecock.geometry.parameters.corkRadius);
+		var corkCenter = new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0);
+		var corkSphere = new THREE.Sphere(corkCenter, shuttlecock.geometry.parameters.corkRadius);
 		
-		var position = shuttlecock.localToTarget(sphere.center.clone(), shuttlecock.parent);
+		var position = shuttlecock.localToTarget(corkCenter.clone(), shuttlecock.parent);
 		var lastPosition = position.clone().addScaledVector(shuttlecock.velocity, -shuttlecock.lastDelta);
 		
 		shuttlecock.parent.localToTarget(position, this.net);
@@ -1878,24 +1877,19 @@ NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			
 			var positionDelta = lastPosition.clone().sub(position);
 			var ratio = -position.z / positionDelta.z;
-			var adjustedPosition = position.clone().addScaledVector(positionDelta, ratio);
+			
+			corkCenter.copy(position.clone().addScaledVector(positionDelta, ratio));
 			
 			var netBox = new THREE.Box3().setFromCenterAndSize(this.parameters.netCenter, this.parameters.netSize);
+			if (netBox.intersectsSphere(corkSphere)) {
 			
-			if (adjustedPosition.x + sphere.radius >= netBox.min.x &&
-				adjustedPosition.x - sphere.radius <= netBox.max.x &&
-				adjustedPosition.y - sphere.radius <= netBox.max.y) {
+				shuttlecock.replaceState('active', 'hung');
+				shuttlecock.position.copy(this.net.localToTarget(corkCenter.clone(), shuttlecock.parent));
+				shuttlecock.flipFrame.rotation.set(0, 0, 0);
 				
-				if (adjustedPosition.y + sphere.radius < netBox.min.y) {
-					
-					shuttlecock.addState('under-net');
-					
-				} else {
-					
-					shuttlecock.replaceState('active', 'hung');
-					shuttlecock.position.copy(this.net.localToTarget(adjustedPosition.clone(), shuttlecock.parent));
-					shuttlecock.flipFrame.rotation.set(0, 0, 0);
-				}
+			} else if (corkCenter.y + corkSphere.radius < netBox.min.y) {
+				
+				shuttlecock.addState('under-net');
 			}
 		}
 	},
@@ -1913,61 +1907,101 @@ Game.prototype = {
 	
 	init: function (firstPlayer) {
 		this.nthScore = 0;
-		this.score1 = 0;
-		this.score2 = 0;
-		this.lastWinner = (firstPlayer !== undefined) ? firstPlayer : 1;
+		this.scoreA = 0;
+		this.scoreB = 0;
+		this.lastWinner = (firstPlayer !== undefined) ? firstPlayer : 'A';
 	},
 	
-	get lastWinnerScore() {
-		return this['score' + this.lastWinner];
-	},
-	set lastWinnerScore(value) {
-		this['score' + this.lastWinner] = value;
+	nextScore: function (score) {
+		this.nthScore = score || this.nthScore + 1;
 	},
 	
-	nextScore: function () {
-		this.nthScore++;
+	getScore: function (player) {
+		return this['score' + player];
+	},
+	
+	setScore: function (player, score) {
+		this['score' + player] = score;
+	},
+	
+	getAnotherPlayer: function (player) {
+		return (player === 'A') ? 'B' : 'A';
+	},
+	
+	getToppledValidAreaName: function (firstPlayer, impactCount) {
+		if (impactCount <= 1)
+			return 'SingleFirst' + (this.getScore(firstPlayer) % 2 === 0 ? 'Right' : 'Left') + this.getAnotherPlayer(firstPlayer);
+		else
+			return 'Single' + (impactCount % 2 === 0 ? firstPlayer : this.getAnotherPlayer(firstPlayer));
+	},
+	
+	initRobot: function (robot, court, player) {
+		
+		var isLastWinnerScoreEven = (this.getScore(this.lastWinner) % 2 === 0);
+		var responsibleAreaName = 'SingleFirst' + (isLastWinnerScoreEven ? 'Right' : 'Left') + player;
+		var responsibleArea = court.localToTarget(court.getArea(responsibleAreaName), robot.parent);
+		
+		robot.init();
+		robot.setResponsibleArea(responsibleArea, true);
+	},
+	
+	initShuttlecock: function (shuttlecock, initFunction) {
+		
+		shuttlecock.init();
+		
+		var initParameters = initFunction();
+		for (var key in initParameters) {
+		
+			var value = initParameters[key];
+			
+			if (typeof value.copy === 'function')
+				shuttlecock[key].copy(value);
+			else
+				shuttlecock[key] = value;
+		}
+			
+		shuttlecock.updateActive(0);
 	},
 	
 	checkScore: function (shuttlecock, court) {
-		if (this.nthScore !== this.score1 + this.score2) {
-			if (shuttlecock.hasState('hung') || (shuttlecock.hasState('toppled') && shuttlecock.hasState('under-net'))) {
-				if (shuttlecock.impactCount % 2 === 0) {
-					this.lastWinner = this.lastWinner;
+		
+		if (this.nthScore !== this.scoreA + this.scoreB) {
+			
+			var isHung = shuttlecock.hasState('hung');
+			var isToppled = shuttlecock.hasState('toppled');
+			
+			if (isHung || isToppled) {
+				
+				var isUnderNet = shuttlecock.hasState('under-net');
+				var isSameHitter = (shuttlecock.impactCount % 2 === 1);
+				
+				var isSameWinner;
+				
+				if (isHung || (isToppled && isUnderNet)) {
+					
+					isSameWinner = !isSameHitter;
+					
 				} else {
-					this.lastWinner = this.lastWinner % 2 + 1;
+					
+					var validAreaName = this.getToppledValidAreaName(this.lastWinner, shuttlecock.impactCount);
+					var validArea = court.getArea(validAreaName);
+					
+					var corkCenter = new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0);
+					var corkSphere = new THREE.Sphere(corkCenter, shuttlecock.geometry.parameters.corkRadius);
+					
+					shuttlecock.localToTarget(corkCenter, court).projectOnPlane(new THREE.Vector3(0, 0, 1));
+					
+					var isInValidArea = validArea.intersectsSphere(corkSphere);
+					
+					isSameWinner = (isInValidArea && isSameHitter) || (!isInValidArea && !isSameHitter);
 				}
-				this.lastWinnerScore++;
-				this.onScoreChange();
-			} else if (shuttlecock.hasState('toppled')) {
-				var area = (shuttlecock.impactCount <= 1) ?
-					((this.lastWinner === 1) ?
-						court.getArea('SingleFirst' + (this.score1 % 2 === 0 ? 'Right' : 'Left') + 'B') : 
-						court.getArea('SingleFirst' + (this.score2 % 2 === 0 ? 'Right' : 'Left') + 'A')) :
-					((this.lastWinner === 1) ?
-						((shuttlecock.impactCount % 2 === 1) ?
-							court.getAreaSingleB() :
-							court.getAreaSingleA()) : 
-						((shuttlecock.impactCount % 2 === 1) ?
-							court.getAreaSingleA() :
-							court.getAreaSingleB()));
-				court.localToTarget(area, shuttlecock.parent);
-				var position = shuttlecock.localToTarget(new THREE.Vector3(0, 0, 0), court);
-				if (position.x >= area.min.x && position.x <= area.max.x &&
-					position.z >= area.min.z && position.z <= area.max.z) {
-					if (shuttlecock.impactCount % 2 === 1) {
-						this.lastWinner = this.lastWinner;
-					} else {
-						this.lastWinner = this.lastWinner % 2 + 1;
-					}
-				} else {
-					if (shuttlecock.impactCount % 2 === 0) {
-						this.lastWinner = this.lastWinner;
-					} else {
-						this.lastWinner = this.lastWinner % 2 + 1;
-					}
-				}
-				this.lastWinnerScore++;
+				
+				var winner = isSameWinner ? this.lastWinner : this.getAnotherPlayer(this.lastWinner);
+				var winnerScore = this.getScore(winner);
+				
+				this.setScore(winner, winnerScore + 1);
+				this.lastWinner = winner;
+					
 				this.onScoreChange();
 			}
 		}
@@ -1977,127 +2011,125 @@ Game.prototype = {
 	
 };
 
-function Record(shuttlecock, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2, data) {
+function Record(shuttlecock, robot1, robot2, data) {
 	
 	this.shuttlecock = shuttlecock;
 	this.robot1 = robot1;
 	this.robot2 = robot2;
-	this.game = game;
-	this.scoreboard = scoreboard;
-	this.targetPoint1 = targetPoint1;
-	this.targetPoint2 = targetPoint2;
 	
-	this.resetCounter();
+	this.counter = 0;
 	this.playing = false;
 	
 	this.init(data);
+	
+	if (!data)
+		this.record();
 }
 
 Record.prototype = {
 
 	constructor: Record,
 	
-	recordRobot: function (robot) {
-		this.data.next.push(this.getRobotData(robot));
-	},
-	
-	resetCounter: function () {
-		this.counter = 0;
-	},
-	
 	init: function (data) {
-		this.data = data || {
-			init: {
-				score1: this.game.score1,
-				score2: this.game.score2,
-				nthScore: this.game.nthScore,
-				firstPlayer: this.game.lastWinner,
-				shuttlecock: this.getShuttlecockData(this.shuttlecock),
-				robot1: this.getRobotInitData(this.robot1),
-				robot2: this.getRobotInitData(this.robot2),
-			},
-			next: [],
-		};
+		this.data = data || [];
 	},
 	
-	play: function () {
-		this.resetCounter();
-		
-		this.game.score1 = this.data.init.score1;
-		this.game.score2 = this.data.init.score2;
-		this.game.nthScore = this.data.init.nthScore;
-		this.game.lastWinner = this.data.init.firstPlayer;
-		this.scoreboard.frontCard1.setText(this.game.score1.toString());
-		this.scoreboard.frontCard2.setText(this.game.score2.toString());
-		this.setRobotInit(this.robot1, this.data.init.robot1, this.targetPoint1);
-		this.setRobotInit(this.robot2, this.data.init.robot2, this.targetPoint2);
-		this.setShuttlecock(this.shuttlecock, this.data.init.shuttlecock);
-		
-		this.playRobot();
-	},
-	
-	playRobot: function () {
-		var data = this.data.next[this.counter];
-		if (data) {
-			var player = (this.counter % 2 === 0) ? this.data.init.firstPlayer : this.data.init.firstPlayer % 2 + 1;
-			var robot = (player === 1) ? this.robot1 : this.robot2;
-			this.setRobot(robot, data);
+	start: function (index) {
+		if (index < 0)
+			index = this.data.length - 1 + index;
+		this.counter = THREE.Math.clamp(index || 0, 0, this.data.length - 1);
+		if (this.counter < this.data.length) {
+			this.setData(this.robot1, this.data[this.counter].robot1.init);
+			this.setData(this.robot2, this.data[this.counter].robot2.init);
+			this.setData(this.shuttlecock, this.data[this.counter].shuttlecock.init);
+			this.next();
 		}
-		this.playing = (++this.counter < this.data.next.length);
 	},
 	
-	getShuttlecockData: function (shuttlecock) {
-		return {
-			state: shuttlecock.state,
-			position: shuttlecock.position.toArray(),
-			rotation: shuttlecock.rotation.toArray(),
-			velocity: shuttlecock.velocity.toArray(),
-			impactCount: shuttlecock.impactCount,
-		};
+	next: function () {
+		if (++this.counter < this.data.length) {
+			this.setData(this.robot1, this.data[this.counter].robot1.play);
+			this.setData(this.robot2, this.data[this.counter].robot2.play);
+		}
+		this.playing = (this.counter + 1 < this.data.length);
 	},
 	
-	setShuttlecock: function (shuttlecock, data) {
-		shuttlecock.state = data.state;
-		shuttlecock.position.fromArray(data.position);
-		shuttlecock.rotation.fromArray(data.rotation);
-		shuttlecock.velocity.fromArray(data.velocity);
-		shuttlecock.impactCount = data.impactCount;
+	record: function () {
+		this.data.push({
+			robot1: {
+				init: this.getData(this.robot1, this.KEYS_ROBOT_INIT),
+				play: this.getData(this.robot1, this.KEYS_ROBOT_PLAY),
+			},
+			robot2: {
+				init: this.getData(this.robot2, this.KEYS_ROBOT_INIT),
+				play: this.getData(this.robot2, this.KEYS_ROBOT_PLAY),
+			},
+			shuttlecock: {
+				init: this.getData(this.shuttlecock, this.KEYS_SHUTTLECOCK_INIT),
+			},
+		});
 	},
 	
-	getRobotInitData: function (robot) {
-		return {
-			responsibleArea: robot.responsibleArea.toArray(),
-			impactCount: robot.impactCount,
-			healthPercent: robot.healthPercent,
-			bodyAngle: robot.body.rotation.y,
-			position: robot.position.toArray(),
-			rotation: robot.rotation.toArray(),
-		};
+	getValue: function (object) {
+		switch (typeof object) {
+			case 'object':
+				if (typeof object.toArray === 'function')
+					return object.toArray();
+			default:
+				return object;
+		}
 	},
 	
-	setRobotInit: function (robot, data) {
-		robot.responsibleArea.fromArray(data.responsibleArea);
-		robot.impactCount = data.impactCount;
-		robot.healthPercent = data.healthPercent;
-		robot.body.rotation.y = data.bodyAngle;
-		robot.position.fromArray(data.position);
-		robot.rotation.fromArray(data.rotation);
+	getData: function (object, keys) {
+		var data = {};
+		for (var i = 0; i < keys.length; i++) {
+			var temp = object;
+			var key = keys[i];
+			key.split('.').forEach(function (name) {
+				temp = temp[name];
+			});
+			data[key] = this.getValue(temp);
+		}
+		return data;
 	},
 	
-	getRobotData: function (robot) {
-		return {
-			impactType: robot.impactType,
-			targetPosition: robot.targetPosition.toArray(),
-		};
+	setData: function (object, data) {
+		for (var key in data) {
+			var temp = object;
+			var value = data[key];
+			key.split('.').forEach(function (name, index, array) {
+				if (index < array.length - 1)
+					temp = temp[name];
+				else if (typeof temp[name].fromArray === 'function')
+					temp[name].fromArray(value);
+				else
+					temp[name] = value;
+			});
+		}
 	},
 	
-	setRobot: function (robot, data) {
-		robot.impactType = data.impactType;
-		robot.targetPosition.fromArray(data.targetPosition);
-		var targetPoint = (robot === this.robot1) ? this.targetPoint1 : this.targetPoint2;
-		if (targetPoint)
-			targetPoint.position.fromArray(data.targetPosition);
-	},
+	KEYS_ROBOT_INIT: [
+		'position',
+		'rotation',
+		'impactCount',
+		'impactElapsed',
+		'healthPercent',
+		'body.rotation.y',
+		'responsibleArea',
+	],
+	
+	KEYS_ROBOT_PLAY: [
+		'impactType',
+		'targetPosition',
+	],
+	
+	KEYS_SHUTTLECOCK_INIT: [
+		'state',
+		'position',
+		'rotation',
+		'velocity',
+		'impactCount',
+	],
 	
 };
 
