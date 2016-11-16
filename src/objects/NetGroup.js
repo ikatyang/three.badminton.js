@@ -42,9 +42,10 @@ NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 	checkCollision: function (shuttlecock) {
 		
-		var sphere = new THREE.Sphere(new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0), shuttlecock.geometry.parameters.corkRadius);
+		var corkCenter = new THREE.Vector3(0, shuttlecock.geometry.parameters.massToCorkCenterLength, 0);
+		var corkSphere = new THREE.Sphere(corkCenter, shuttlecock.geometry.parameters.corkRadius);
 		
-		var position = shuttlecock.localToTarget(sphere.center.clone(), shuttlecock.parent);
+		var position = shuttlecock.localToTarget(corkCenter.clone(), shuttlecock.parent);
 		var lastPosition = position.clone().addScaledVector(shuttlecock.velocity, -shuttlecock.lastDelta);
 		
 		shuttlecock.parent.localToTarget(position, this.net);
@@ -54,24 +55,19 @@ NetGroup.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			
 			var positionDelta = lastPosition.clone().sub(position);
 			var ratio = -position.z / positionDelta.z;
-			var adjustedPosition = position.clone().addScaledVector(positionDelta, ratio);
+			
+			corkCenter.copy(position.clone().addScaledVector(positionDelta, ratio));
 			
 			var netBox = new THREE.Box3().setFromCenterAndSize(this.parameters.netCenter, this.parameters.netSize);
+			if (netBox.intersectsSphere(corkSphere)) {
 			
-			if (adjustedPosition.x + sphere.radius >= netBox.min.x &&
-				adjustedPosition.x - sphere.radius <= netBox.max.x &&
-				adjustedPosition.y - sphere.radius <= netBox.max.y) {
+				shuttlecock.replaceState('active', 'hung');
+				shuttlecock.position.copy(this.net.localToTarget(corkCenter.clone(), shuttlecock.parent));
+				shuttlecock.flipFrame.rotation.set(0, 0, 0);
 				
-				if (adjustedPosition.y + sphere.radius < netBox.min.y) {
-					
-					shuttlecock.addState('under-net');
-					
-				} else {
-					
-					shuttlecock.replaceState('active', 'hung');
-					shuttlecock.position.copy(this.net.localToTarget(adjustedPosition.clone(), shuttlecock.parent));
-					shuttlecock.flipFrame.rotation.set(0, 0, 0);
-				}
+			} else if (corkCenter.y + corkSphere.radius < netBox.min.y) {
+				
+				shuttlecock.addState('under-net');
 			}
 		}
 	},
