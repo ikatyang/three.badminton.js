@@ -112,7 +112,8 @@ function Robot(bodyMesh, racketMesh) {
 	
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
-	this.impactType = 'right';
+	this.defaultImpactType = 'right';
+	
 	this.smashSpeed = Math.PI * 100;
 	
 	this.healthAttenuation = 0.99;
@@ -127,6 +128,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	constructor: Robot,
 	
 	init: function () {
+		this.impactType = this.defaultImpactType;
 		this.impactCount = 0;
 		this.healthPercent = 100;
 		this.topLink.angleA = this.topLink.angleB = 0;
