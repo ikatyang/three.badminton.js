@@ -29,8 +29,8 @@ Record.prototype = {
 	init: function (data) {
 		this.data = data || {
 			init: {
-				score1: this.game.score1,
-				score2: this.game.score2,
+				scoreA: this.game.scoreA,
+				scoreB: this.game.scoreB,
 				nthScore: this.game.nthScore,
 				firstPlayer: this.game.lastWinner,
 				shuttlecock: this.getShuttlecockData(this.shuttlecock),
@@ -44,12 +44,12 @@ Record.prototype = {
 	play: function () {
 		this.resetCounter();
 		
-		this.game.score1 = this.data.init.score1;
-		this.game.score2 = this.data.init.score2;
+		this.game.scoreA = this.data.init.scoreA;
+		this.game.scoreB = this.data.init.scoreB;
 		this.game.nthScore = this.data.init.nthScore;
 		this.game.lastWinner = this.data.init.firstPlayer;
-		this.scoreboard.frontCard1.setText(this.game.score1.toString());
-		this.scoreboard.frontCard2.setText(this.game.score2.toString());
+		this.scoreboard.frontCard1.setText(this.game.scoreA.toString());
+		this.scoreboard.frontCard2.setText(this.game.scoreB.toString());
 		this.setRobotInit(this.robot1, this.data.init.robot1, this.targetPoint1);
 		this.setRobotInit(this.robot2, this.data.init.robot2, this.targetPoint2);
 		this.setShuttlecock(this.shuttlecock, this.data.init.shuttlecock);

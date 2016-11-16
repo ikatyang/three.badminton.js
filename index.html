@@ -111,13 +111,13 @@
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
 				
-				game = new THREE.Badminton.Game(2);
+				game = new THREE.Badminton.Game('B');
 				game.onScoreChange = function () {
-					if (this.lastWinner === 1)
-						scoreboard.setCardAction(0, this.score1.toString(), 'next');
+					if (this.lastWinner === 'A')
+						scoreboard.setCardAction(0, this.scoreA.toString(), 'next');
 					else
-						scoreboard.setCardAction(3, this.score2.toString(), 'next');
-					$('#score').text('[' + this.score1 + ':' + this.score2 + '] P' + this.lastWinner + ' win.');
+						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
+					$('#score').text('[' + this.scoreA + ':' + this.scoreB + '] ' + this.lastWinner + ' win.');
 				};
 				
 				createGUI(robot1, robot2);
@@ -126,7 +126,6 @@
 				robot1.record = record;
 				robot2.record = record;
 				
-				render();
 				next();
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -534,15 +533,12 @@
 			}
 
 			function next() {
+				
 				animated = false;
 				
-				robot1.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'A'), robot1.parent), true);
-				robot1.init();
-				
-				robot2.setResponsibleArea(court.localToTarget(court.getArea('SingleFirst' + (game.lastWinnerScore % 2 === 0 ? 'Right' : 'Left') + 'B'), robot2.parent), true);
-				robot2.init();
-				
-				robot1.impactType = robot2.impactType = 'right';
+				court.updateMatrixWorld();
+				game.initRobot(robot1, court, 'A');
+				game.initRobot(robot2, court, 'B');
 				
 				var randomPosition1 = getRandomPosition(robot2.responsibleArea, 0.8);
 				robot1.targetPosition.copy(randomPosition1);
@@ -552,18 +548,18 @@
 				robot2.targetPosition.copy(randomPosition2);
 				targetPoint2.position.copy(randomPosition2);
 				
-				var area = (game.lastWinner === 1) ?
-					court.getArea('SingleFirst' + (game.score1 % 2 == 0 ? 'Right' : 'Left') + 'A') :
-					court.getArea('SingleFirst' + (game.score2 % 2 == 0 ? 'Right' : 'Left') + 'B');
-				court.localToTarget(area, shuttle.parent);
-				shuttle.init();
-				shuttle.rotation.set(0, 0, 0);
-				shuttle.position.copy(area.min.clone().add(area.max).divideScalar(2).add(new THREE.Vector3(0, 120, 0)));
-				shuttle.position.x += 30 * (game.lastWinner === 1 ? 1 : -1);
-				shuttle.velocity.set(100 * (game.lastWinner === 1 ? 1 : -1), 200, 0);
+				game.initShuttlecock(shuttle, function () {
+					var robot = (game.lastWinner === 'A') ? robot1 : robot2;
+					robot.updateMatrixWorld();
+					return {
+						position: robot.localToTarget(new THREE.Vector3(0, 120, 30), shuttle.parent),
+						velocity: robot.localToTarget(new THREE.Vector3(0, 200, 100), shuttle.parent, 'direction'),
+					};
+				});
+				
 				game.nextScore();
 				
-				$('#score').text('[' + game.score1 + ':' + game.score2 + '] P' + game.lastWinner + ' first.');
+				$('#score').text('[' + game.scoreA + ':' + game.scoreB + '] ' + game.lastWinner + ' first.');
 				
 				record.init();
 			}
