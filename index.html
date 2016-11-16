@@ -35,7 +35,7 @@
 			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
-			var clock, mouse, raycaster;
+			var mouse, raycaster;
 			var animated = false;
 			var delay = 5;
 			var touchable, intersects;
@@ -63,7 +63,6 @@
 					new THREE.MeshBasicMaterial({ visible: false }));
 				court.add(touchable);
 				
-				clock = new THREE.Clock();
 				mouse = new THREE.Vector2();
 				raycaster = new THREE.Raycaster();
 				
@@ -481,7 +480,7 @@
 			}
 
 			function animate() {
-				var delta = clock.getDelta() / delay;
+				var delta = (1 / 60) / delay;
 				if (animated) {
 					shuttle.update(delta);
 					robot1.update(delta);
