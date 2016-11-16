@@ -97,8 +97,6 @@ function Robot(bodyMesh, racketMesh) {
 	this.defaultImpactType = 'right';
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
-	this.impactClock = new THREE.Clock();
-	this.impactClock.start();
 	this.impactDelta = 1;
 	
 	this.responsibleArea = new THREE.Box3(
@@ -117,8 +115,6 @@ function Robot(bodyMesh, racketMesh) {
 	
 	this.healthAttenuation = 0.99;
 	
-	this.record = null;
-	
 	this.init();
 }
 
@@ -129,6 +125,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	init: function () {
 		this.impactType = this.defaultImpactType;
 		this.impactCount = 0;
+		this.impactElapsed = this.impactDelta;
 		this.healthPercent = 100;
 		this.topLink.angleA = this.topLink.angleB = 0;
 		this.leftLink.angleA = this.leftLink.angleB = 0;
@@ -275,9 +272,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		}
 		
 		link.angleB = 0;
-		
 		link.updateMatrixWorld();
-		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactClock.getDelta() > this.impactDelta) {
+		
+		this.impactElapsed += delta;
+		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactElapsed > this.impactDelta) {
 		
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			
@@ -286,12 +284,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			this.impactCount = this.shuttlecock.impactCount;
 			this.healthPercent *= this.healthAttenuation;
 			
-			if (this.record) {
-				if (this.record.playing)
-					this.record.playRobot();
-				else
-					this.record.recordRobot(this);
-			}
+			this.impactElapsed = 0;
 			
 			this.onAfterImpact();
 		}

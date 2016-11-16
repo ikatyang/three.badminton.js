@@ -74,21 +74,29 @@
 				robot1 = createRobot(shuttle, court, 'textures/playerBody1.jpeg', 'white', 'blue');
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
-					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
-					
-					if (!record.playing) {
+					if (record.playing)
+						record.next();
+					else {
+						record.record();
+						
 						robot2.impactType = getRandomImpactType();
 						
 						var randomPosition = getRandomPosition(robot1.responsibleArea, 0.8);
 						robot2.targetPosition.copy(randomPosition);
 						targetPoint2.position.copy(randomPosition);
 					}
+					
+					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
 				};
 				scene.add(robot1);
 				
 				robot2 = createRobot(shuttle, court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
+					if (record.playing)
+						record.next();
+					else
+						record.record();
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
 				};
 				robot2.onBeforeUpdate = function() {
@@ -121,10 +129,6 @@
 				};
 				
 				createGUI(robot1, robot2);
-				
-				record = new THREE.Badminton.Record(shuttle, robot1, robot2, game, scoreboard, targetPoint1, targetPoint2);
-				robot1.record = record;
-				robot2.record = record;
 				
 				next();
 				
@@ -177,8 +181,8 @@
 					}
 				}
 				
-				addRobot(robot1, 'P1 (Player)');
-				addRobot(robot2, 'P2 (Computer)');
+				addRobot(robot1, 'A (Player)');
+				addRobot(robot2, 'B (Computer)');
 				
 				function addRobot(robot, name) {
 					var f = gui.addFolder(name);
@@ -487,6 +491,8 @@
 					updateEyes();
 				}
 				scoreboard.update(delta);
+				targetPoint1.position.copy(robot1.targetPosition);
+				targetPoint2.position.copy(robot2.targetPosition);
 				targetPoint1.update(delta, camera);
 				targetPoint2.update(delta, camera);
 				controls.update();
@@ -540,13 +546,8 @@
 				game.initRobot(robot1, court, 'A');
 				game.initRobot(robot2, court, 'B');
 				
-				var randomPosition1 = getRandomPosition(robot2.responsibleArea, 0.8);
-				robot1.targetPosition.copy(randomPosition1);
-				targetPoint1.position.copy(randomPosition1);
-				
-				var randomPosition2 = getRandomPosition(robot1.responsibleArea, 0.8);
-				robot2.targetPosition.copy(randomPosition2);
-				targetPoint2.position.copy(randomPosition2);
+				robot1.targetPosition.copy(getRandomPosition(robot2.responsibleArea, 0.8));
+				robot2.targetPosition.copy(getRandomPosition(robot1.responsibleArea, 0.8));
 				
 				game.initShuttlecock(shuttle, function () {
 					var robot = (game.lastWinner === 'A') ? robot1 : robot2;
@@ -561,11 +562,11 @@
 				
 				$('#score').text('[' + game.scoreA + ':' + game.scoreB + '] ' + game.lastWinner + ' first.');
 				
-				record.init();
+				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
 			}
 			
 			function replay() {
-				record.play();
+				record.start();
 			}
 		</script>
 	</body>
