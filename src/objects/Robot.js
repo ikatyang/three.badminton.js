@@ -85,12 +85,17 @@ function Robot(bodyMesh, racketMesh) {
 	body.add(rightLink);
 
 	this.body = body;
+	this.links = [
+		this.topLink = topLink,
+		this.leftLink = leftLink,
+		this.rightLink = rightLink,
+	];
 	
-	this.topLink = topLink;
 	this.topImpactAngle = -Math.PI / 15;
+	this.smashSpeed = Math.PI * 100;
 	
-	this.leftLink = leftLink;
-	this.rightLink = rightLink;
+	this.defaultImpactType = 'right';
+	this.targetPosition = new THREE.Vector3(0, 0, 0);
 	
 	this.impactClock = new THREE.Clock();
 	this.impactClock.start();
@@ -109,12 +114,6 @@ function Robot(bodyMesh, racketMesh) {
 	
 	this.netHeight = 1.55;
 	this.netHeightDelta = 0.2;
-	
-	this.targetPosition = new THREE.Vector3(0, 0, 0);
-	
-	this.defaultImpactType = 'right';
-	
-	this.smashSpeed = Math.PI * 100;
 	
 	this.healthAttenuation = 0.99;
 	
@@ -242,6 +241,10 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var impactSpeed = impactParams.speed;
 		var impactPosition = impactParams.position;
 		var racketImpactPosition = impactParams.racketPosition;
+		
+		for (var i = 0; i < this.links.length; i++)
+			if (this.links[i] !== link)
+				this.links[i].angleA = this.links[i].angleB = 0;
 		
 		var bodyAngle = 0;
 		var impactAngle = 0;
