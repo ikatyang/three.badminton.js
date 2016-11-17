@@ -68,43 +68,37 @@ function Scoreboard(width, height, depth, cardGap) {
 		cardRings.add(ring);
 	}
 	
-	var _this = this;
+	this.frontCards = [
+		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
+		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
+		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
+		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
+	];
 	
-	var loader = new THREE.FontLoader();
-	loader.load('https://ikatyang.github.io/three.badminton.js/fonts/gentilis_regular.typeface.json', function (font) {
-		
-		_this.frontCards = [
-			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
-			_this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
-			_this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
-			_this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
-		];
-		
-		_this.backCards = [
-			_this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
-			_this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
-			_this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
-			_this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
-		];
-		
-		_this.animateCards = [
-			_this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
-			_this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
-			_this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
-			_this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
-		];
-		
-		function createCard(text, scale, posX, angle, visible) {
-			var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale, font);
-			card.setText(text);
-			card.position.x = posX;
-			card.rotation.x = angle;
-			card.visible = visible;
-			card.plane.position.y = -cardHeight * scale / 2 - cardGap;
-			cardRings.add(card);
-			return card;
-		}
-	});
+	this.backCards = [
+		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
+		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
+		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
+		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
+	];
+	
+	this.animateCards = [
+		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
+		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
+		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
+		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
+	];
+	
+	function createCard(text, scale, posX, angle, visible) {
+		var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale);
+		card.setText(text);
+		card.position.x = posX;
+		card.rotation.x = angle;
+		card.visible = visible;
+		card.plane.position.y = -cardHeight * scale / 2 - cardGap;
+		cardRings.add(card);
+		return card;
+	}
 	
 	this.speed = Math.PI * 2;
 	this.actions = [null, null, null, null];
