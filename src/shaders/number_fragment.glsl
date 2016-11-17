@@ -15,7 +15,7 @@ mat3 getMask(int num) {
 	if (num == 0)
 		return mat3(1, 1, 1, 1, 1, 1, 0, 0, 0);
 	if (num == 1)
-		return mat3(0, 1, 1, 0, 0, 0, 0, 0, 0);
+		return mat3(0, 0, 0, 0, 0, 0, 0, 1, 1);
 	if (num == 2)
 		return mat3(1, 1, 0, 1, 1, 0, 1, 0, 0);
 	if (num == 3)
@@ -57,7 +57,9 @@ void main() {
 		(mask[1][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMin.y, boxMin.y, line)) ||
 		(mask[1][1] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMin.y, boxMid.y, line)) ||
 		(mask[1][2] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMid.y, boxMax.y, line)) ||
-		(mask[2][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMid.y, boxMid.y, line)))
+		(mask[2][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMid.y, boxMid.y, line)) ||
+		(mask[2][1] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMin.y, boxMid.y, line)) ||
+		(mask[2][2] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMid.y, boxMax.y, line)))
 		gl_FragColor = vec4(numberColor, 1.0);
 	else
 		gl_FragColor = vec4(backgroundColor, 1.0);
