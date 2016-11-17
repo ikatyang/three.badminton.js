@@ -53,7 +53,7 @@ NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prot
 				temp = Math.floor(temp / 10);
 			}
 		}
-		if (numbers.length === 0)
+		if (!numbers || numbers.length === 0)
 			numbers = [0];
 		(params || this).uniforms.numbers.value = numbers;
 		(params || this).fragmentShader = '#define NUMBER_COUNT ' + numbers.length + '\n' + number_fragment_shader;
