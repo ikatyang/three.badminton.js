@@ -558,6 +558,71 @@ function PixelMaterial(parameters){
 PixelMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 PixelMaterial.prototype.constructor = PixelMaterial;
 
+var number_vertex_shader = "varying vec2 vUv;\r\nvoid main() {\r\n\tgl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n\tvUv = uv;\r\n}";
+
+var number_fragment_shader = "varying vec2 vUv;\r\nuniform int numbers[NUMBER_COUNT];\r\nuniform vec2 boxMin;\r\nuniform vec2 boxMax;\r\nuniform vec2 lineSize;\r\nuniform vec3 numberColor;\r\nuniform vec3 backgroundColor;\r\nint getNum(int index) {\r\n\tfor (int i = 0; i < NUMBER_COUNT; i++)\r\n\t\tif (i == index)\r\n\t\t\treturn numbers[i];\r\n\treturn -1;\r\n}\r\nmat3 getMask(int num) {\r\n\tif (num == 0)\r\n\t\treturn mat3(1, 1, 1, 1, 1, 1, 0, 0, 0);\r\n\tif (num == 1)\r\n\t\treturn mat3(0, 0, 0, 0, 0, 0, 0, 1, 1);\r\n\tif (num == 2)\r\n\t\treturn mat3(1, 1, 0, 1, 1, 0, 1, 0, 0);\r\n\tif (num == 3)\r\n\t\treturn mat3(1, 1, 1, 1, 0, 0, 1, 0, 0);\r\n\tif (num == 4)\r\n\t\treturn mat3(0, 1, 1, 0, 0, 1, 1, 0, 0);\r\n\tif (num == 5)\r\n\t\treturn mat3(1, 0, 1, 1, 0, 1, 1, 0, 0);\r\n\tif (num == 6)\r\n\t\treturn mat3(1, 0, 1, 1, 1, 1, 1, 0, 0);\r\n\tif (num == 7)\r\n\t\treturn mat3(1, 1, 1, 0, 0, 0, 0, 0, 0);\r\n\tif (num == 8)\r\n\t\treturn mat3(1, 1, 1, 1, 1, 1, 1, 0, 0);\r\n\tif (num == 9)\r\n\t\treturn mat3(1, 1, 1, 1, 0, 1, 1, 0, 0);\r\n\treturn mat3(0);\r\n}\r\nbool isInside(vec2 start, vec2 size, float minX, float maxX, float minY, float maxY, vec2 line) {\r\n\treturn (vUv.x >= start.x + size.x * minX - line.x / 2.0 && vUv.x <= start.x + size.x * maxX + line.x / 2.0 &&\r\n\t\t\tvUv.y >= start.y + size.y * minY - line.y / 2.0 && vUv.y <= start.y + size.y * maxY + line.y / 2.0);\r\n}\r\nvoid main() {\r\n\t\r\n\tfloat width = 1.0 / float(NUMBER_COUNT);\r\n\tfloat numberIndex = floor(vUv.x / width);\r\n\t\r\n\tvec2 boxStart = vec2(width * numberIndex, 0.0);\r\n\tvec2 boxSize = vec2(width, 1.0);\r\n\t\r\n\tvec2 boxMid = (boxMin + boxMax) / 2.0;\r\n\tvec2 line = lineSize * boxSize;\r\n\t\r\n\tmat3 mask = getMask(getNum(int(numberIndex)));\r\n\t\r\n\tif ((mask[0][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMax.y, boxMax.y, line)) ||\r\n\t\t(mask[0][1] == 1.0 && isInside(boxStart, boxSize, boxMax.x, boxMax.x, boxMid.y, boxMax.y, line)) ||\r\n\t\t(mask[0][2] == 1.0 && isInside(boxStart, boxSize, boxMax.x, boxMax.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[1][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMin.y, boxMin.y, line)) ||\r\n\t\t(mask[1][1] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[1][2] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMid.y, boxMax.y, line)) ||\r\n\t\t(mask[2][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMid.y, boxMid.y, line)) ||\r\n\t\t(mask[2][1] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[2][2] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMid.y, boxMax.y, line)))\r\n\t\tgl_FragColor = vec4(numberColor, 1.0);\r\n\telse\r\n\t\tgl_FragColor = vec4(backgroundColor, 1.0);\r\n}";
+
+function NumberMaterial(parameters){
+	
+	var params = {};
+	
+	for (var key in parameters)
+		params[key] = parameters[key];
+	
+	params.uniforms = {
+		numbers: {},
+		boxMin: {
+			value: parameters.boxMin || new THREE.Vector2(0.2, 0.2)
+		},
+		boxMax: {
+			value: parameters.boxMax || new THREE.Vector2(0.8, 0.8)
+		},
+		lineSize: {
+			value: parameters.lineSize || new THREE.Vector2(0.1, 0.1)
+		},
+		numberColor: {
+			value: (parameters.numberColor && new THREE.Color(parameters.numberColor)) || new THREE.Vector3(0, 0, 0)
+		},
+		backgroundColor: {
+			value: (parameters.backgroundColor && new THREE.Color(parameters.backgroundColor)) || new THREE.Vector3(1, 1, 1)
+		},
+	};
+	
+	params.vertexShader = number_vertex_shader;
+	this.setNumbers(parameters.numbers, params);
+	
+	delete params.numbers;
+	delete params.boxMin;
+	delete params.boxMax;
+	delete params.lineSize;
+	delete params.numberColor;
+	delete params.backgroundColor;
+	
+	THREE.ShaderMaterial.call(this, params);
+}
+
+NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prototype), {
+	
+	constructor: NumberMaterial,
+	
+	setNumbers: function (numbers, params) {
+		if (typeof numbers === 'number') {
+			var temp = numbers;
+			numbers = [];
+			while (temp > 0) {
+				numbers.unshift(temp % 10);
+				temp = Math.floor(temp / 10);
+			}
+		}
+		if (!numbers || numbers.length === 0)
+			numbers = [0];
+		(params || this).uniforms.numbers.value = numbers;
+		(params || this).fragmentShader = '#define NUMBER_COUNT ' + numbers.length + '\n' + number_fragment_shader;
+		this.needsUpdate = true;
+	},
+	
+});
+
 function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	
 	THREE.Object3D.call(this);
@@ -1536,19 +1601,18 @@ Court.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 	
 });
 
-function ScoreboardCard(width, height, font) {
+function ScoreboardCard(width, height) {
 
 	THREE.Object3D.call(this);
 	
 	this.parameters = {
 		width: width,
 		height: height,
-		font: font,
 	};
 	
 	var plane = new THREE.Mesh(
 		new THREE.PlaneGeometry(width, height),
-		new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+		new NumberMaterial({ side: THREE.DoubleSide, numbers: 0 }));
 	this.add(plane);
 	
 	this.plane = plane;
@@ -1561,29 +1625,7 @@ ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype)
 	
 	setText: function (text) {
 		this.text = text;
-		if (this.textMesh) {
-			this.plane.remove(this.textMesh);
-			this.textMesh = null;
-		}
-		if (text !== null) {
-			var mesh = new THREE.Mesh(
-				new THREE.TextGeometry(text, {
-					font: this.parameters.font,
-					height: 0.1,
-				}),
-				new THREE.MeshNormalMaterial());
-				mesh.geometry.computeBoundingBox();
-			var size = {
-				x: mesh.geometry.boundingBox.max.x - mesh.geometry.boundingBox.min.x,
-				y: mesh.geometry.boundingBox.max.y - mesh.geometry.boundingBox.min.y,
-			};
-			mesh.scale.set(this.parameters.width * 0.8 / size.x, this.parameters.height * 0.8 / size.y, 1);		
-			mesh.position.x = -0.5 * this.parameters.width * 0.9;
-			mesh.position.y = -0.5 * this.parameters.height * 0.9;
-			mesh.position.z = 0.1;
-			this.plane.add(mesh);
-			this.textMesh = mesh;
-		}
+		this.plane.material.setNumbers(+text);
 	},
 	
 });
@@ -1656,43 +1698,37 @@ function Scoreboard(width, height, depth, cardGap) {
 		cardRings.add(ring);
 	}
 	
-	var _this = this;
+	this.frontCards = [
+		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
+		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
+		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
+		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
+	];
 	
-	var loader = new THREE.FontLoader();
-	loader.load('https://ikatyang.github.io/three.badminton.js/fonts/gentilis_regular.typeface.json', function (font) {
-		
-		_this.frontCards = [
-			_this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
-			_this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
-			_this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
-			_this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
-		];
-		
-		_this.backCards = [
-			_this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
-			_this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
-			_this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
-			_this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
-		];
-		
-		_this.animateCards = [
-			_this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
-			_this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
-			_this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
-			_this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
-		];
-		
-		function createCard(text, scale, posX, angle, visible) {
-			var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale, font);
-			card.setText(text);
-			card.position.x = posX;
-			card.rotation.x = angle;
-			card.visible = visible;
-			card.plane.position.y = -cardHeight * scale / 2 - cardGap;
-			cardRings.add(card);
-			return card;
-		}
-	});
+	this.backCards = [
+		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
+		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
+		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
+		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
+	];
+	
+	this.animateCards = [
+		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
+		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
+		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
+		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
+	];
+	
+	function createCard(text, scale, posX, angle, visible) {
+		var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale);
+		card.setText(text);
+		card.position.x = posX;
+		card.rotation.x = angle;
+		card.visible = visible;
+		card.plane.position.y = -cardHeight * scale / 2 - cardGap;
+		cardRings.add(card);
+		return card;
+	}
 	
 	this.speed = Math.PI * 2;
 	this.actions = [null, null, null, null];
@@ -2139,6 +2175,7 @@ exports.NetGeometry = NetGeometry;
 exports.CourtGeometry = CourtGeometry;
 exports.RacketGeometry = RacketGeometry;
 exports.PixelMaterial = PixelMaterial;
+exports.NumberMaterial = NumberMaterial;
 exports.Shuttlecock = Shuttlecock;
 exports.Robot = Robot;
 exports.Court = Court;
