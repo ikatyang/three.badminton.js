@@ -28,8 +28,13 @@ function NumberMaterial(parameters){
 	};
 	
 	params.vertexShader = number_vertex_shader;
-	this.setNumbers(parameters.numbers, params);
 	
+	if (parameters.number !== undefined)
+		this.setNumber(parameters.number, params);
+	else
+		this.setNumbers(parameters.numbers, params);
+	
+	delete params.number;
 	delete params.numbers;
 	delete params.boxMin;
 	delete params.boxMax;
@@ -44,19 +49,20 @@ NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prot
 	
 	constructor: NumberMaterial,
 	
+	setNumber: function (number, params) {
+		var temp = number;
+		var numbers = [];
+		do {
+			numbers.unshift(temp % 10);
+			temp = Math.floor(temp / 10);
+		} while (temp > 0);
+		this.setNumbers(numbers, params);
+	},
+	
 	setNumbers: function (numbers, params) {
-		if (typeof numbers === 'number') {
-			var temp = numbers;
-			numbers = [];
-			while (temp > 0) {
-				numbers.unshift(temp % 10);
-				temp = Math.floor(temp / 10);
-			}
-		}
-		if (!numbers || numbers.length === 0)
-			numbers = [0];
-		(params || this).uniforms.numbers.value = numbers;
-		(params || this).fragmentShader = '#define NUMBER_COUNT ' + numbers.length + '\n' + number_fragment_shader;
+		params = params || this;
+		params.uniforms.numbers.value = numbers;
+		params.fragmentShader = '#define NUMBER_COUNT ' + numbers.length + '\n' + number_fragment_shader;
 		this.needsUpdate = true;
 	},
 	
