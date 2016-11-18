@@ -62,8 +62,11 @@ NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prot
 	setNumbers: function (numbers, params) {
 		params = params || this;
 		params.uniforms.numbers.value = numbers;
-		params.fragmentShader = '#define NUMBER_COUNT ' + numbers.length + '\n' + number_fragment_shader;
-		this.needsUpdate = true;
+		if (this.numberCount !== numbers.length) {
+			this.numberCount = numbers.length;
+			params.fragmentShader = '#define NUMBER_COUNT ' + this.numberCount + '\n' + number_fragment_shader;
+			this.needsUpdate = true;
+		}
 	},
 	
 });
