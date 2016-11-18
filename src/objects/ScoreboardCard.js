@@ -24,7 +24,7 @@ ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype)
 	
 	setText: function (text) {
 		this.text = text;
-		this.plane.material.setNumbers(+text);
+		this.plane.material.setNumber(+text);
 	},
 	
 });
