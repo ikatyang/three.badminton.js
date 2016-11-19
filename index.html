@@ -73,6 +73,7 @@
 				<div class='panel-body text-center'>
 					<a href='javascript:resume()' class='btn btn-default btn-block btn-lg'>Resume</a>
 					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>New Game</a>
+					<a href='javascript:replay()' class='btn btn-default btn-block btn-lg btn-replay'>Replay</a>
 				</div>
 			</div>
 		</div>
@@ -214,6 +215,7 @@
 				
 				if (timeout !== null)
 					clearTimeout(timeout.id);
+				$('#pause .btn-replay').toggle(timeout !== null);
 				
 				if (event.keyCode === 27)
 					if ($('#pause').is(':hidden'))
@@ -669,6 +671,8 @@
 			}
 			
 			function replay() {
+				$('.heading').hide();
+				animated = true;
 				record.start(Math.round(replayIndex));
 			}
 			
