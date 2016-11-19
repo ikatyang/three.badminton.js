@@ -7,20 +7,8 @@
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r82/three.min.js'></script>
 		<script src='controls/OrbitControls.js'></script>
 		<script src='controls/DeviceOrientationControls.js'></script>
-		<style>
-			body {
-				margin: 0;
-				overflow: hidden;
-			}
-			.top {
-				position: absolute;
-				top: 1em;
-				left: 0;
-				right: 0;
-				text-align: center;
-			}
-		</style>
 		<script src='build/three.badminton.min.js'></script>
+		<link href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css' rel='stylesheet'/>
 		<script id='robotBody_vertexShader' type='x-shader/x-vertex'>
 			varying vec2 vUv;
 			void main() {
@@ -39,8 +27,61 @@
 					gl_FragColor = vec4(bottomColor, 1.0);
 			}
 		</script>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+			.full-screen {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+			}
+			.overlay {
+				opacity: 0.5;
+				background: black;
+			}
+			.center-screen {
+				position: fixed;
+				top: 30%;
+				left: 30%;
+				right: 30%;
+			}
+			#start {
+				color: yellow;
+			}
+			#countdown .counter {
+				font-size: 60pt;
+				color: yellow;
+			}
+		</style>
 	</head>
 	<body>
+		<div id='start' class='heading' onclick='start()'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen text-center'>
+				<h1>Badminton Game</h1>
+				<h2>Click to Start</h2>
+			</div>
+		</div>
+		<div id='pause' class='heading' style='display: none;'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen panel panel-primary'>
+				<div class='panel-heading'>Paused</div>
+				<div class='panel-body text-center'>
+					<a href='javascript:resume()' class='btn btn-default btn-block btn-lg'>Resume</a>
+					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>New Game</a>
+				</div>
+			</div>
+		</div>
+		<div id='countdown' class='heading' style='display: none;'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen text-center'>
+				<span class='counter'></span>
+			</div>
+		</div>
 		<script>
 			var camera, scene, renderer, controls;
 			var shuttle, court, game, scoreboard, record;
@@ -49,7 +90,7 @@
 			var mouse, raycaster;
 			var animated = false;
 			var delay = 1, replayIndex = -3;
-			var touchable, intersects;
+			var touchable, intersects, timeout_id = null;
 
 			init();
 			animate();
@@ -131,10 +172,23 @@
 				
 				game = new THREE.Badminton.Game('B');
 				game.onScoreChange = function () {
+					
+					if (record.playing)
+						return;
+					
 					if (this.lastWinner === 'A')
 						scoreboard.setCardAction(0, this.scoreA.toString(), 'next');
 					else
 						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
+					
+					timeout_id = setTimeout(function () {
+						timeout_id = null;
+						next();
+						countdown(function () {
+							if ($('#pause').is(':hidden'))
+								resume();
+						});
+					}, 3000);
 				};
 				
 				next();
@@ -144,10 +198,23 @@
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
 				document.body.appendChild(renderer.domElement);
+				document.addEventListener('keyup', onDocumentKeyUp, false);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
 				window.addEventListener('resize', onWindowResize, false);
+			}
+			
+			function onDocumentKeyUp(event) {
+				
+				if (timeout_id !== null)
+					return;
+				
+				if (event.keyCode === 27)
+					if ($('#pause').is(':hidden'))
+						pause();
+					else
+						resume();
 			}
 
 			function onDocumentKeyPress(event) {
@@ -599,6 +666,45 @@
 			function replay() {
 				record.start(Math.round(replayIndex));
 			}
+			
+			function start() {
+				game.init('B');
+				next();
+				countdown(function () {
+					if ($('#pause').is(':hidden'))
+						resume();
+				});
+			}
+			
+			function pause() {
+				animated = false;
+				$('.heading').hide();
+				$('#pause').show();
+			}
+			
+			function resume() {
+				$('.heading').hide();
+				animated = true;
+			}
+			
+			function countdown(callback, count) {
+				$('.heading').hide();
+				$('#countdown').show();
+				var counter = count || 3;
+				var interval_id;
+				function interval() {
+					if (counter === 0) {
+						clearInterval(interval_id);
+						$('#countdown').hide();
+						callback();
+					} else {
+						$('#countdown .counter').text(counter--);
+					}
+				};
+				interval_id = setInterval(interval, 1000);
+				interval();
+			}
+			
 		</script>
 	</body>
 </html>
