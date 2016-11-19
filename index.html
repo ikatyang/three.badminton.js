@@ -138,9 +138,9 @@
 						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
 				};
 				
-				createGUI(robot1, robot2, game);
-				
 				next();
+				
+				createGUI(robot1, robot2, game, record);
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
@@ -152,6 +152,10 @@
 			}
 
 			function onDocumentKeyPress(event) {
+				
+				if (record.playing)
+					return;
+				
 				switch (event.key) {
 					case 'w':
 					case 'W':
@@ -172,18 +176,21 @@
 				}
 			}
 			
-			function createGUI(robot1, robot2, game) {
+			function createGUI(robot1, robot2, game, record) {
 				
 				var gui = new dat.GUI();
+				gui.close();
 				
 				gui.add(this, 'animated').listen();
+				gui.add(this, 'next').name('Next');
 				
 				gui.add(game, 'nthScore').listen();
 				gui.add(game, 'scoreA').listen();
 				gui.add(game, 'scoreB').listen();
 				
-				gui.add(this, 'next').name('Next');
 				gui.add(this, 'replay').name('Replay');
+				gui.add(record, 'playing').name('replaying').listen();
+				
 				gui.add(this, 'delay', 1, 30);
 				gui.add(this, 'replayIndex', -10, 10);
 				
@@ -486,6 +493,10 @@
 			}
 			
 			function onDocumentMouseDown(event) {
+				
+				if (record.playing)
+					return;
+				
 				if (event.which === 1) {
 					var point = getIntersectedPoint();
 					if (point !== null) {
@@ -498,7 +509,7 @@
 			function onDocumentMouseMove(event) {
 				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-				renderer.domElement.style.cursor = (getIntersectedPoint() === null) ? 'default' : 'pointer';
+				renderer.domElement.style.cursor = (getIntersectedPoint() === null || record.playing) ? 'default' : 'pointer';
 			}
 			
 			function onWindowResize() {
