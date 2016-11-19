@@ -41,7 +41,6 @@
 		</script>
 	</head>
 	<body>
-		<audio id='impactSound' src='audios/impact.mp3'></audio>
 		<script>
 			var camera, scene, renderer, controls;
 			var shuttle, court, game, scoreboard, record;
@@ -331,7 +330,7 @@
 				shuttlecock.airDensity = airDensity;
 				shuttlecock.gravity.copy(gravity);
 				
-				var impactAudio = document.getElementById('impactSound');
+				var impactAudio = new Audio('audios/impact.mp3');
 				shuttlecock.onAfterImpact = function () {
 					var distance = camera.localToTarget(new THREE.Vector3(0, 0, 0), this).length();
 					var volume = Math.max(1 - distance / 2000, 0);
