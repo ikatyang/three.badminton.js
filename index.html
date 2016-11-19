@@ -194,6 +194,8 @@
 					timeout.id = setTimeout(timeout.callback, 3000);
 				};
 				
+				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
+				
 				next();
 				
 				createGUI(robot1, robot2, game, record);
@@ -663,7 +665,7 @@
 				
 				game.nextScore();
 				
-				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
+				record.init();
 			}
 			
 			function replay() {
