@@ -67,7 +67,7 @@ Game.prototype = {
 	
 	checkScore: function (shuttlecock, court) {
 		
-		if (this.nthScore !== this.scoreA + this.scoreB) {
+		if (this.nthScore > this.scoreA + this.scoreB) {
 			
 			var isHung = shuttlecock.hasState('hung');
 			var isToppled = shuttlecock.hasState('toppled');
