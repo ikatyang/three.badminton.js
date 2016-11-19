@@ -21,6 +21,24 @@
 			}
 		</style>
 		<script src='build/three.badminton.min.js'></script>
+		<script id='robotBody_vertexShader' type='x-shader/x-vertex'>
+			varying vec2 vUv;
+			void main() {
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+				vUv = uv;
+			}
+		</script>
+		<script id='robotBody_fragmentShader' type='x-shader/x-fragment'>
+			uniform vec3 topColor;
+			uniform vec3 bottomColor;
+			varying vec2 vUv;
+			void main() {
+				if (vUv.y > 0.5)
+					gl_FragColor = vec4(topColor, 1.0);
+				else
+					gl_FragColor = vec4(bottomColor, 1.0);
+			}
+		</script>
 	</head>
 	<body>
 		<div class='top'>
@@ -70,7 +88,7 @@
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
 				
-				robot1 = createRobot(shuttle, court, 'textures/playerBody1.jpeg', 'white', 'blue');
+				robot1 = createRobot('white', 'blue', shuttle, court);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
 					if (record.playing)
@@ -89,7 +107,7 @@
 				};
 				scene.add(robot1);
 				
-				robot2 = createRobot(shuttle, court, 'textures/playerBody2.jpeg', 0xff0000, 0x800000);
+				robot2 = createRobot(0xff0000, 0x800000, shuttle, court);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
 					if (record.playing)
@@ -318,7 +336,7 @@
 				return shuttlecock;
 			}
 			
-			function createRobot(shuttlecock, court, texturePath, topColor, bottomColor) {
+			function createRobot(topColor, bottomColor, shuttlecock, court) {
 				
 				var racketWidth = 30;
 				var racketHeight = 50;
@@ -340,7 +358,14 @@
 				var bodyMesh = new THREE.Mesh(
 					new THREE.Badminton.HyperbolaGeometry(bodyOuterRadius, bodyInnerRadius, bodyHeight, 16, 16),
 					new THREE.MultiMaterial([
-						new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(texturePath) }),
+						new THREE.ShaderMaterial({
+							uniforms: {
+								topColor:    { value: new THREE.Color(topColor)    },
+								bottomColor: { value: new THREE.Color(bottomColor) },
+							},
+							vertexShader: document.getElementById('robotBody_vertexShader').textContent,
+							fragmentShader: document.getElementById('robotBody_fragmentShader').textContent,
+						}),
 						new THREE.MeshBasicMaterial({ color: topColor }),
 						new THREE.MeshBasicMaterial({ color: bottomColor }),
 					]));
