@@ -2062,13 +2062,7 @@ function Record(shuttlecock, robot1, robot2, data) {
 	this.robot1 = robot1;
 	this.robot2 = robot2;
 	
-	this.counter = 0;
-	this.playing = false;
-	
 	this.init(data);
-	
-	if (!data)
-		this.record();
 }
 
 Record.prototype = {
@@ -2076,7 +2070,13 @@ Record.prototype = {
 	constructor: Record,
 	
 	init: function (data) {
+		
+		this.counter = 0;
+		this.playing = false;
+		
 		this.data = data || [];
+		if (!data)
+			this.record();
 	},
 	
 	start: function (index) {
