@@ -41,12 +41,6 @@
 		</script>
 	</head>
 	<body>
-		<div class='top'>
-			<div id='score'>[0:0]</div>
-			<a href='javascript:toggle()'>Start</a>
-			<a href='javascript:next()'>Next</a>
-			<a href='javascript:replay()'>Replay</a>
-		</div>
 		<audio id='impactSound' src='audios/impact.mp3'></audio>
 		<script>
 			var camera, scene, renderer, controls;
@@ -55,7 +49,7 @@
 			var targetPoint1, targetPoint2;
 			var mouse, raycaster;
 			var animated = false;
-			var delay = 5, replayIndex = -3;
+			var delay = 1, replayIndex = -3;
 			var touchable, intersects;
 
 			init();
@@ -142,10 +136,9 @@
 						scoreboard.setCardAction(0, this.scoreA.toString(), 'next');
 					else
 						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
-					$('#score').text('[' + this.scoreA + ':' + this.scoreB + '] ' + this.lastWinner + ' win.');
 				};
 				
-				createGUI(robot1, robot2);
+				createGUI(robot1, robot2, game);
 				
 				next();
 				
@@ -179,9 +172,18 @@
 				}
 			}
 			
-			function createGUI(robot1, robot2) {
+			function createGUI(robot1, robot2, game) {
+				
 				var gui = new dat.GUI();
 				
+				gui.add(this, 'animated').listen();
+				
+				gui.add(game, 'nthScore').listen();
+				gui.add(game, 'scoreA').listen();
+				gui.add(game, 'scoreB').listen();
+				
+				gui.add(this, 'next').name('Next');
+				gui.add(this, 'replay').name('Replay');
 				gui.add(this, 'delay', 1, 30);
 				gui.add(this, 'replayIndex', -10, 10);
 				
@@ -536,10 +538,6 @@
 				renderer.setClearColor(0x888888);
 				renderer.render(scene, camera);
 			}
-
-			function toggle() {
-				animated = !animated;
-			}
 			
 			function getRandomImpactType() {
 				var random = Math.random();
@@ -584,8 +582,6 @@
 				});
 				
 				game.nextScore();
-				
-				$('#score').text('[' + game.scoreA + ':' + game.scoreB + '] ' + game.lastWinner + ' first.');
 				
 				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
 			}
