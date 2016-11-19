@@ -90,7 +90,7 @@
 			var mouse, raycaster;
 			var animated = false;
 			var delay = 1, replayIndex = -3;
-			var touchable, intersects, timeout_id = null;
+			var touchable, intersects, timeout = null;
 
 			init();
 			animate();
@@ -181,14 +181,17 @@
 					else
 						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
 					
-					timeout_id = setTimeout(function () {
-						timeout_id = null;
-						next();
-						countdown(function () {
-							if ($('#pause').is(':hidden'))
-								resume();
-						});
-					}, 3000);
+					timeout = {
+						callback: function () {
+							timeout = null;
+							next();
+							countdown(function () {
+								if ($('#pause').is(':hidden'))
+									resume();
+							});
+						}
+					};
+					timeout.id = setTimeout(timeout.callback, 3000);
 				};
 				
 				next();
@@ -207,8 +210,8 @@
 			
 			function onDocumentKeyUp(event) {
 				
-				if (timeout_id !== null)
-					return;
+				if (timeout !== null)
+					clearTimeout(timeout.id);
 				
 				if (event.keyCode === 27)
 					if ($('#pause').is(':hidden'))
@@ -683,8 +686,12 @@
 			}
 			
 			function resume() {
-				$('.heading').hide();
-				animated = true;
+				if (timeout) {
+					timeout.callback();
+				} else {
+					$('.heading').hide();
+					animated = true;
+				}
 			}
 			
 			function countdown(callback, count) {
