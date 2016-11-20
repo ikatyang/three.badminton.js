@@ -349,13 +349,11 @@
 				
 				var net = new THREE.Mesh(
 					new THREE.Badminton.NetGeometry(netWidth, netHeight, netOuterTube, netInnerTube, netWidthSegments, netHeightSegments),
-					new THREE.MeshNormalMaterial({
-						side: THREE.DoubleSide
-					}));
+					new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0xdddddd }));
 				
 				var post = new THREE.Mesh(
 					new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16),
-					new THREE.MeshNormalMaterial());
+					new THREE.MeshBasicMaterial({ color: 'gray' }));
 				
 				var netGroup = new THREE.Badminton.NetGroup(net, post);
 				netGroup.rotation.set(Math.PI / 2, -Math.PI / 2, 0);
@@ -430,7 +428,10 @@
 				
 				var racketMesh = new THREE.Mesh(
 					new THREE.Badminton.RacketGeometry(racketWidth, racketHeight, racketTube, racketLineWidth, racketWidthSegments, racketHeightSegments),
-					new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+					new THREE.MultiMaterial([
+						new THREE.MeshLambertMaterial({ color: 'orange' }),
+						new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'white' }),
+					]));
 				
 				var bodyMesh = new THREE.Mesh(
 					new THREE.Badminton.HyperbolaGeometry(bodyOuterRadius, bodyInnerRadius, bodyHeight, 16, 16),
