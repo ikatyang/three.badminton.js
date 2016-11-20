@@ -1653,25 +1653,24 @@ function Scoreboard(width, height, depth, cardGap) {
 	var planeAngle = Math.atan((depth / 2) / height);
 	var planeHeight = Math.sqrt(Math.pow(depth / 2, 2) + Math.pow(height, 2));
 	
-	var frontBoard = new THREE.Mesh(
-		new THREE.PlaneGeometry(width, planeHeight),
-		new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+	var material = new THREE.MeshLambertMaterial({
+		color: 0x0066ff,
+		side: THREE.DoubleSide,
+	});
+	
+	var frontBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
 	frontBoard.position.y = height / 2;
 	frontBoard.position.z = depth / 4;
 	frontBoard.rotation.x = -planeAngle;
 	this.add(frontBoard);
 	
-	var backBoard = new THREE.Mesh(
-		new THREE.PlaneGeometry(width, planeHeight),
-		new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+	var backBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
 	backBoard.position.y = height / 2;
 	backBoard.position.z = -depth / 4;
 	backBoard.rotation.x = planeAngle;
 	this.add(backBoard);
 	
-	var bottomBoard = new THREE.Mesh(
-		new THREE.PlaneGeometry(width, depth),
-		new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+	var bottomBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), material);
 	bottomBoard.rotation.x = Math.PI / 2;
 	this.add(bottomBoard);
 	
@@ -1701,40 +1700,41 @@ function Scoreboard(width, height, depth, cardGap) {
 	for (var i = 0; i < ringPositions.length; i++) {
 		var ring = new THREE.Mesh(
 			new THREE.TorusGeometry(ringRadius, ringTub, 16, 16),
-			new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+			new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, color: 'black' }));
 		ring.position.x = ringPositions[i];
 		ring.rotation.y = Math.PI / 2;
 		cardRings.add(ring);
 	}
 	
 	this.frontCards = [
-		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true),
-		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true),
-		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true),
-		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true),
+		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true, 'red'),
+		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true, 'red'),
+		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true, 'black'),
+		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true, 'black'),
 	];
 	
 	this.backCards = [
-		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true),
-		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true),
-		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true),
-		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true),
+		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true, 'red'),
+		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true, 'red'),
+		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true, 'black'),
+		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true, 'black'),
 	];
 	
 	this.animateCards = [
-		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false),
-		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false),
-		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false),
-		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false),
+		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false, 'red'),
+		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false, 'red'),
+		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false, 'black'),
+		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false, 'black'),
 	];
 	
-	function createCard(text, scale, posX, angle, visible) {
+	function createCard(text, scale, posX, angle, visible, color) {
 		var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale);
 		card.setText(text);
 		card.position.x = posX;
 		card.rotation.x = angle;
 		card.visible = visible;
 		card.plane.position.y = -cardHeight * scale / 2 - cardGap;
+		card.plane.material.uniforms.numberColor.value = new THREE.Color(color);
 		cardRings.add(card);
 		return card;
 	}
