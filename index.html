@@ -316,11 +316,6 @@
 				ground.position.y = -150.1;
 				scene.add(ground);
 				
-				var wall = new THREE.Mesh(
-					new THREE.CylinderGeometry(1500, 1500, 500, 64 ,1, true),
-					new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/wall.jpg'), side: THREE.DoubleSide }));
-				scene.add(wall);
-				
 				var light = new THREE.SpotLight(0xffffff, 60, 950, 1, 0.6, 2);
 				light.position.y = 700;
 				scene.add(light);
