@@ -678,6 +678,8 @@
 			
 			function start() {
 				game.init('B');
+				scoreboard.init();
+				timeout = null;
 				next();
 				countdown(function () {
 					if ($('#pause').is(':hidden'))
