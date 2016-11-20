@@ -1747,6 +1747,12 @@ Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Scoreboard,
 	
+	init: function () {
+		var cards = [].concat(this.frontCards, this.backCards, this.animateCards);
+		for (var i = 0; i < cards.length; i++)
+			cards[i].setText('0');
+	},
+	
 	setCardAction: function (cardNo, text, direction) {
 		var frontCard = this.frontCards[cardNo];
 		var backCard = this.backCards[cardNo];
