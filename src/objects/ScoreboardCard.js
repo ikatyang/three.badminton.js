@@ -1,30 +1,24 @@
-import { NumberMaterial } from '../materials/NumberMaterial.js';
+function ScoreboardCard(planeGeometry, numberMaterial) {
 
-function ScoreboardCard(width, height) {
-
-	THREE.Object3D.call(this);
-	
-	this.parameters = {
-		width: width,
-		height: height,
-	};
-	
-	var plane = new THREE.Mesh(
-		new THREE.PlaneGeometry(width, height),
-		new NumberMaterial({ side: THREE.DoubleSide, numbers: 0 }));
-	this.add(plane);
-	
-	this.plane = plane;
-	this.textMesh = null;
+	THREE.Mesh.call(this, planeGeometry, numberMaterial);
 }
 
-ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+ScoreboardCard.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: ScoreboardCard,
 	
-	setText: function (text) {
-		this.text = text;
-		this.plane.material.setNumber(+text);
+}), {
+	
+	number: {
+		
+		get: function () {
+			return this.material.getNumber();
+		},
+		
+		set: function (number) {
+			this.material.setNumber(number);
+		},
+		
 	},
 	
 });
