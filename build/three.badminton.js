@@ -522,6 +522,48 @@ function RacketGeometry(width, height, tube, lineWidth, widthSegments, heightSeg
 RacketGeometry.prototype = Object.create(THREE.Geometry.prototype);
 RacketGeometry.prototype.constructor = RacketGeometry;
 
+function ScoreboardGeometry(width, height, depth) {
+	
+	THREE.Geometry.call(this);
+	
+	this.type = 'ScoreboardGeometry';
+	
+	var planeAngle = Math.atan((depth / 2) / height);
+	var planeHeight = Math.sqrt(Math.pow(depth / 2, 2) + Math.pow(height, 2));
+	
+	this.parameters = {
+		width: width,
+		height: height,
+		depth: depth,
+		planeAngle: planeAngle,
+		planeHeight: planeHeight,
+	};
+	
+	var frontboard = new THREE.PlaneGeometry(width, planeHeight);
+	this.merge(frontboard, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, height / 2, depth / 4),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(-planeAngle, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 0);
+	
+	var backboard = new THREE.PlaneGeometry(width, planeHeight);
+	this.merge(backboard, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, height / 2, -depth / 4),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(planeAngle, Math.PI, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 1);
+	
+	var bottomboard = new THREE.PlaneGeometry(width, depth);
+	this.merge(bottomboard, new THREE.Matrix4().compose(
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0, 'XYZ')),
+		new THREE.Vector3(1, 1, 1)
+	), 2);
+}
+
+ScoreboardGeometry.prototype = Object.create(THREE.Geometry.prototype);
+ScoreboardGeometry.prototype.constructor = ScoreboardGeometry;
+
 var pixel_vertex_shader = "varying vec2 vUv;\r\nvoid main() {\r\n\tgl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n\tvUv = uv;\r\n}";
 
 var pixel_fragment_shader = "uniform sampler2D texture;\r\nuniform vec2 size;\r\nuniform vec2 pixelSize;\r\nvarying vec2 vUv;\r\n\r\nvoid main() {\r\n\t\r\n\tvec2 pixelRatio = pixelSize / size;\r\n\tgl_FragColor = vec4(texture2D(texture, pixelRatio * floor(vUv / pixelRatio)).rgb, 1.0); \r\n}";
@@ -563,6 +605,8 @@ var number_vertex_shader = "varying vec2 vUv;\r\nvoid main() {\r\n\tgl_Position 
 var number_fragment_shader = "varying vec2 vUv;\r\nuniform int numbers[NUMBER_COUNT];\r\nuniform vec2 boxMin;\r\nuniform vec2 boxMax;\r\nuniform vec2 lineSize;\r\nuniform vec3 numberColor;\r\nuniform vec3 backgroundColor;\r\nint getNum(int index) {\r\n\tfor (int i = 0; i < NUMBER_COUNT; i++)\r\n\t\tif (i == index)\r\n\t\t\treturn numbers[i];\r\n\treturn -1;\r\n}\r\nmat3 getMask(int num) {\r\n\tif (num == 0)\r\n\t\treturn mat3(1, 1, 1, 1, 1, 1, 0, 0, 0);\r\n\tif (num == 1)\r\n\t\treturn mat3(0, 0, 0, 0, 0, 0, 0, 1, 1);\r\n\tif (num == 2)\r\n\t\treturn mat3(1, 1, 0, 1, 1, 0, 1, 0, 0);\r\n\tif (num == 3)\r\n\t\treturn mat3(1, 1, 1, 1, 0, 0, 1, 0, 0);\r\n\tif (num == 4)\r\n\t\treturn mat3(0, 1, 1, 0, 0, 1, 1, 0, 0);\r\n\tif (num == 5)\r\n\t\treturn mat3(1, 0, 1, 1, 0, 1, 1, 0, 0);\r\n\tif (num == 6)\r\n\t\treturn mat3(1, 0, 1, 1, 1, 1, 1, 0, 0);\r\n\tif (num == 7)\r\n\t\treturn mat3(1, 1, 1, 0, 0, 0, 0, 0, 0);\r\n\tif (num == 8)\r\n\t\treturn mat3(1, 1, 1, 1, 1, 1, 1, 0, 0);\r\n\tif (num == 9)\r\n\t\treturn mat3(1, 1, 1, 1, 0, 1, 1, 0, 0);\r\n\treturn mat3(0);\r\n}\r\nbool isInside(vec2 start, vec2 size, float minX, float maxX, float minY, float maxY, vec2 line) {\r\n\treturn (vUv.x >= start.x + size.x * minX - line.x / 2.0 && vUv.x <= start.x + size.x * maxX + line.x / 2.0 &&\r\n\t\t\tvUv.y >= start.y + size.y * minY - line.y / 2.0 && vUv.y <= start.y + size.y * maxY + line.y / 2.0);\r\n}\r\nvoid main() {\r\n\t\r\n\tfloat width = 1.0 / float(NUMBER_COUNT);\r\n\tfloat numberIndex = floor(vUv.x / width);\r\n\t\r\n\tvec2 boxStart = vec2(width * numberIndex, 0.0);\r\n\tvec2 boxSize = vec2(width, 1.0);\r\n\t\r\n\tvec2 boxMid = (boxMin + boxMax) / 2.0;\r\n\tvec2 line = lineSize * boxSize;\r\n\t\r\n\tmat3 mask = getMask(getNum(int(numberIndex)));\r\n\t\r\n\tif ((mask[0][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMax.y, boxMax.y, line)) ||\r\n\t\t(mask[0][1] == 1.0 && isInside(boxStart, boxSize, boxMax.x, boxMax.x, boxMid.y, boxMax.y, line)) ||\r\n\t\t(mask[0][2] == 1.0 && isInside(boxStart, boxSize, boxMax.x, boxMax.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[1][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMin.y, boxMin.y, line)) ||\r\n\t\t(mask[1][1] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[1][2] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMin.x, boxMid.y, boxMax.y, line)) ||\r\n\t\t(mask[2][0] == 1.0 && isInside(boxStart, boxSize, boxMin.x, boxMax.x, boxMid.y, boxMid.y, line)) ||\r\n\t\t(mask[2][1] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMin.y, boxMid.y, line)) ||\r\n\t\t(mask[2][2] == 1.0 && isInside(boxStart, boxSize, boxMid.x, boxMid.x, boxMid.y, boxMax.y, line)))\r\n\t\tgl_FragColor = vec4(numberColor, 1.0);\r\n\telse\r\n\t\tgl_FragColor = vec4(backgroundColor, 1.0);\r\n}";
 
 function NumberMaterial(parameters){
+	
+	parameters = parameters || {};
 	
 	var params = {};
 	
@@ -628,6 +672,18 @@ NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prot
 			params.fragmentShader = '#define NUMBER_COUNT ' + this.numberCount + '\n' + number_fragment_shader;
 			this.needsUpdate = true;
 		}
+	},
+	
+	getNumber: function () {
+		var number = 0;
+		var numbers = this.getNumbers();
+		for (var i = 0; i < numbers.length; i++)
+			number = number * 10 + numbers[i];
+		return number;
+	},
+	
+	getNumbers: function () {
+		return this.uniforms.numbers.value;
 	},
 	
 });
@@ -1610,170 +1666,129 @@ Court.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 	
 });
 
-function ScoreboardCard(width, height) {
+function ScoreboardCard(planeGeometry, numberMaterial) {
 
-	THREE.Object3D.call(this);
-	
-	this.parameters = {
-		width: width,
-		height: height,
-	};
-	
-	var plane = new THREE.Mesh(
-		new THREE.PlaneGeometry(width, height),
-		new NumberMaterial({ side: THREE.DoubleSide, numbers: 0 }));
-	this.add(plane);
-	
-	this.plane = plane;
-	this.textMesh = null;
+	THREE.Mesh.call(this, planeGeometry, numberMaterial);
 }
 
-ScoreboardCard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+ScoreboardCard.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: ScoreboardCard,
 	
-	setText: function (text) {
-		this.text = text;
-		this.plane.material.setNumber(+text);
+}), {
+	
+	number: {
+		
+		get: function () {
+			return this.material.getNumber();
+		},
+		
+		set: function (number) {
+			this.material.setNumber(number);
+		},
+		
 	},
 	
 });
 
-function Scoreboard(width, height, depth, cardGap) {
+function Scoreboard(scoreboardGeometry, material) {
 
-	THREE.Object3D.call(this);
+	THREE.Mesh.call(this, scoreboardGeometry, material);
 	
-	this.parameters = {
-		width: width,
-		height: height,
-		depth: depth,
-		cardGap: cardGap,
-	};
-	
-	var planeAngle = Math.atan((depth / 2) / height);
-	var planeHeight = Math.sqrt(Math.pow(depth / 2, 2) + Math.pow(height, 2));
-	
-	var material = new THREE.MeshLambertMaterial({
-		color: 0x0066ff,
-		side: THREE.DoubleSide,
-	});
-	
-	var frontBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
-	frontBoard.position.y = height / 2;
-	frontBoard.position.z = depth / 4;
-	frontBoard.rotation.x = -planeAngle;
-	this.add(frontBoard);
-	
-	var backBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
-	backBoard.position.y = height / 2;
-	backBoard.position.z = -depth / 4;
-	backBoard.rotation.x = planeAngle;
-	this.add(backBoard);
-	
-	var bottomBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), material);
-	bottomBoard.rotation.x = Math.PI / 2;
-	this.add(bottomBoard);
-	
-	var cardHeight = planeHeight - cardGap * 2;
-	var cardWidth = (width - cardGap * 5) / 3;
-	var cardDepth = 2;
-	
-	var ringRadius = 15;
-	var ringTub = 1;
-	var ringPos = 5;
-	
-	var cardRings = new THREE.Object3D();
-	cardRings.position.y = height * 1.01;
-	this.add(cardRings);
-	
-	var ringPositions = [
-		-cardGap * 1.5 - cardWidth * 1.25,
-		-cardGap * 1.5 - cardWidth * 1.00,
-		-cardGap * 1.5 - cardWidth * 0.75,
-		-cardGap * 0.5 - cardWidth * 0.25,
-		+cardGap * 0.5 + cardWidth * 0.25,
-		+cardGap * 1.5 + cardWidth * 0.75,
-		+cardGap * 1.5 + cardWidth * 1.00,
-		+cardGap * 1.5 + cardWidth * 1.25,
-	];
-	
-	for (var i = 0; i < ringPositions.length; i++) {
-		var ring = new THREE.Mesh(
-			new THREE.TorusGeometry(ringRadius, ringTub, 16, 16),
-			new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, color: 'black' }));
-		ring.position.x = ringPositions[i];
-		ring.rotation.y = Math.PI / 2;
-		cardRings.add(ring);
-	}
-	
-	this.frontCards = [
-		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true, 'red'),
-		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true, 'red'),
-		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true, 'black'),
-		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true, 'black'),
-	];
-	
-	this.backCards = [
-		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true, 'red'),
-		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true, 'red'),
-		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true, 'black'),
-		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true, 'black'),
-	];
-	
-	this.animateCards = [
-		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false, 'red'),
-		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false, 'red'),
-		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false, 'black'),
-		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false, 'black'),
-	];
-	
-	function createCard(text, scale, posX, angle, visible, color) {
-		var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale);
-		card.setText(text);
-		card.position.x = posX;
-		card.rotation.x = angle;
-		card.visible = visible;
-		card.plane.position.y = -cardHeight * scale / 2 - cardGap;
-		card.plane.material.uniforms.numberColor.value = new THREE.Color(color);
-		cardRings.add(card);
-		return card;
-	}
+	this.actions = [];
+	this.frontCards = [];
+	this.backCards = [];
+	this.transitionCards = [];
 	
 	this.speed = Math.PI * 2;
-	this.actions = [null, null, null, null];
 }
 
-Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+Scoreboard.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: Scoreboard,
 	
 	init: function () {
-		var cards = [].concat(this.frontCards, this.backCards, this.animateCards);
-		for (var i = 0; i < cards.length; i++)
-			cards[i].setText('0');
+		for (var i = 0; i < this.frontCards.length; i++) {
+			this.frontCards[i].number = 0;
+			this.transitionCards[i].number = this.backCards[i].number = 1;
+			this.transitionCards[i].visible = false;
+		}
 	},
 	
-	setCardAction: function (cardNo, text, direction) {
-		var frontCard = this.frontCards[cardNo];
-		var backCard = this.backCards[cardNo];
-		var animateCard = this.animateCards[cardNo];
-		if (direction === 'next') {
-			animateCard.setText(text);
-			animateCard.rotation.x = backCard.rotation.x;
-			animateCard.visible = true;
-		} else {
-			animateCard.setText(frontCard.text);
-			animateCard.rotation.x = frontCard.rotation.x;
-			animateCard.visible = true;
-			frontCard.setText(text);
+	addCard: function (width, height, position, numberMaterialParameters) {
+		
+		var parameters = {};
+		for (var key in numberMaterialParameters)
+			parameters[key] = numberMaterialParameters[key];
+		parameters.number = parameters.number || 0;
+		
+		var frontCardFrame = new THREE.Object3D();
+		frontCardFrame.position.set(position.x, this.geometry.parameters.height * 1.01, 0);
+		frontCardFrame.rotation.set(Math.PI * 2 - this.geometry.parameters.planeAngle, 0, 0);
+		this.add(frontCardFrame);
+		
+		var backCardFrame = frontCardFrame.clone();
+		backCardFrame.rotation.x = this.geometry.parameters.planeAngle;
+		this.add(backCardFrame);
+		
+		var transitionFrame = backCardFrame.clone();
+		this.add(transitionFrame);
+		
+		var frontCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		frontCard.position.set(0, -position.y - height / 2, 0);
+		frontCardFrame.add(frontCard);
+		this.frontCards.push(frontCard);
+		
+		parameters.number++;
+		
+		var backCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		backCard.position.copy(frontCard.position);
+		backCardFrame.add(backCard);
+		this.backCards.push(backCard);
+		
+		var transitionCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		transitionCard.position.copy(frontCard.position);
+		transitionFrame.add(transitionCard);
+		this.transitionCards.push(transitionCard);
+		
+		transitionCard.visible = false;
+		
+		this.actions.push(null);
+	},
+	
+	addRings: function (ring, ringXs) {
+		for (var i = 0; i < ringXs.length; i++) {
+			var ringX = ringXs[i];
+			var ringCloned = ring.clone();
+			ringCloned.position.set(ringX, this.geometry.parameters.height, 0);
+			this.add(ringCloned);
 		}
-		this.actions[cardNo] = {
-			text: text,
-			cardNo: cardNo,
+	},
+	
+	setAction: function (index, number, direction) {
+		var frontCard = this.frontCards[index];
+		var backCard = this.backCards[index];
+		var transitionCard = this.transitionCards[index];
+		if (direction === 'next') {
+			backCard.number = number + 1;
+			transitionCard.number = number;
+			transitionCard.parent.rotation.x = backCard.parent.rotation.x;
+		} else {
+			transitionCard.number = frontCard.number;
+			transitionCard.parent.rotation.x = frontCard.parent.rotation.x;
+			frontCard.number = number;
+		}
+		transitionCard.visible = true;
+		this.actions[index] = {
+			index: index,
+			number: number,
 			direction: direction,
-			frontCard: frontCard,
-			backCard: backCard,
-			animateCard: animateCard,
 		};
 	},
 	
@@ -1784,18 +1799,23 @@ Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	updateCard: function (delta, action) {
-		var targetCard = (action.direction === 'next') ? action.frontCard : action.backCard;
+		var frontCard = this.frontCards[action.index];
+		var backCard = this.backCards[action.index];
+		var transitionCard = this.transitionCards[action.index];
+		var targetCard = (action.direction === 'next') ? frontCard : backCard;
 		
-		var cardAngleDeltaFull = targetCard.rotation.x - action.animateCard.rotation.x;
+		var cardAngleDeltaFull = targetCard.parent.rotation.x - transitionCard.parent.rotation.x;
 		var cardAngleDeltaPart = this.speed * delta * (cardAngleDeltaFull < 0 ? -1 : 1);
 		var cardAngleDelta = Math.abs(cardAngleDeltaFull) < Math.abs(cardAngleDeltaPart) ? cardAngleDeltaFull : cardAngleDeltaPart;
-		action.animateCard.rotation.x += cardAngleDelta;
+		transitionCard.parent.rotation.x += cardAngleDelta;
 		
-		if (action.animateCard.rotation.x === targetCard.rotation.x) {
+		if (transitionCard.parent.rotation.x === targetCard.parent.rotation.x) {
 			if (action.direction === 'next')
-				action.frontCard.setText(action.text);
-			action.animateCard.visible = false;
-			this.actions[action.cardNo] = null;
+				frontCard.number = action.number;
+			else
+				backCard.number = transitionCard.number;
+			transitionCard.visible = false;
+			this.actions[action.index] = null;
 		}
 	},
 	
@@ -2189,6 +2209,7 @@ exports.HyperbolaGeometry = HyperbolaGeometry;
 exports.NetGeometry = NetGeometry;
 exports.CourtGeometry = CourtGeometry;
 exports.RacketGeometry = RacketGeometry;
+exports.ScoreboardGeometry = ScoreboardGeometry;
 exports.PixelMaterial = PixelMaterial;
 exports.NumberMaterial = NumberMaterial;
 exports.Shuttlecock = Shuttlecock;
