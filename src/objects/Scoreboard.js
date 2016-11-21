@@ -1,140 +1,104 @@
-import { ScoreboardCard } from './ScoreboardCard.js';
+import { ScoreboardCard } from './ScoreboardCard.js'
+import { NumberMaterial } from '../materials/NumberMaterial.js';
 
-function Scoreboard(width, height, depth, cardGap) {
+function Scoreboard(scoreboardGeometry, material) {
 
-	THREE.Object3D.call(this);
+	THREE.Mesh.call(this, scoreboardGeometry, material);
 	
-	this.parameters = {
-		width: width,
-		height: height,
-		depth: depth,
-		cardGap: cardGap,
-	};
-	
-	var planeAngle = Math.atan((depth / 2) / height);
-	var planeHeight = Math.sqrt(Math.pow(depth / 2, 2) + Math.pow(height, 2));
-	
-	var material = new THREE.MeshLambertMaterial({
-		color: 0x0066ff,
-		side: THREE.DoubleSide,
-	});
-	
-	var frontBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
-	frontBoard.position.y = height / 2;
-	frontBoard.position.z = depth / 4;
-	frontBoard.rotation.x = -planeAngle;
-	this.add(frontBoard);
-	
-	var backBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, planeHeight), material);
-	backBoard.position.y = height / 2;
-	backBoard.position.z = -depth / 4;
-	backBoard.rotation.x = planeAngle;
-	this.add(backBoard);
-	
-	var bottomBoard = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), material);
-	bottomBoard.rotation.x = Math.PI / 2;
-	this.add(bottomBoard);
-	
-	var cardHeight = planeHeight - cardGap * 2;
-	var cardWidth = (width - cardGap * 5) / 3;
-	var cardDepth = 2;
-	
-	var ringRadius = 15;
-	var ringTub = 1;
-	var ringPos = 5;
-	
-	var cardRings = new THREE.Object3D();
-	cardRings.position.y = height * 1.01;
-	this.add(cardRings);
-	
-	var ringPositions = [
-		-cardGap * 1.5 - cardWidth * 1.25,
-		-cardGap * 1.5 - cardWidth * 1.00,
-		-cardGap * 1.5 - cardWidth * 0.75,
-		-cardGap * 0.5 - cardWidth * 0.25,
-		+cardGap * 0.5 + cardWidth * 0.25,
-		+cardGap * 1.5 + cardWidth * 0.75,
-		+cardGap * 1.5 + cardWidth * 1.00,
-		+cardGap * 1.5 + cardWidth * 1.25,
-	];
-	
-	for (var i = 0; i < ringPositions.length; i++) {
-		var ring = new THREE.Mesh(
-			new THREE.TorusGeometry(ringRadius, ringTub, 16, 16),
-			new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 'black' }));
-		ring.position.x = ringPositions[i];
-		ring.rotation.y = Math.PI / 2;
-		cardRings.add(ring);
-	}
-	
-	this.frontCards = [
-		this.frontCard1 = createCard('0', 1.0, ringPositions[1], Math.PI * 2 - planeAngle, true, 'red'),
-		this.frontSmallCard1 = createCard('0', 0.5, ringPositions[3], Math.PI * 2 - planeAngle, true, 'red'),
-		this.frontSmallCard2 = createCard('0', 0.5, ringPositions[4], Math.PI * 2 - planeAngle, true, 'black'),
-		this.frontCard2 = createCard('0', 1.0, ringPositions[6], Math.PI * 2 - planeAngle, true, 'black'),
-	];
-	
-	this.backCards = [
-		this.backCard1 = createCard(null, 1.0, ringPositions[1], planeAngle, true, 'red'),
-		this.backSmallCard1 = createCard(null, 0.5, ringPositions[3], planeAngle, true, 'red'),
-		this.backSmallCard2 = createCard(null, 0.5, ringPositions[4], planeAngle, true, 'black'),
-		this.backCard2 = createCard(null, 1.0, ringPositions[6], planeAngle, true, 'black'),
-	];
-	
-	this.animateCards = [
-		this.animateCard1 = createCard(null, 1.0, ringPositions[1], 0, false, 'red'),
-		this.animateSmallCard1 = createCard(null, 0.5, ringPositions[3], 0, false, 'red'),
-		this.animateSmallCard2 = createCard(null, 0.5, ringPositions[4], 0, false, 'black'),
-		this.animateCard2 = createCard(null, 1.0, ringPositions[6], 0, false, 'black'),
-	];
-	
-	function createCard(text, scale, posX, angle, visible, color) {
-		var card = new ScoreboardCard(cardWidth * scale, cardHeight * scale);
-		card.setText(text);
-		card.position.x = posX;
-		card.rotation.x = angle;
-		card.visible = visible;
-		card.plane.position.y = -cardHeight * scale / 2 - cardGap;
-		card.plane.material.uniforms.numberColor.value = new THREE.Color(color);
-		cardRings.add(card);
-		return card;
-	}
+	this.actions = [];
+	this.frontCards = [];
+	this.backCards = [];
+	this.transitionCards = [];
 	
 	this.speed = Math.PI * 2;
-	this.actions = [null, null, null, null];
 }
 
-Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+Scoreboard.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 
 	constructor: Scoreboard,
 	
 	init: function () {
-		var cards = [].concat(this.frontCards, this.backCards, this.animateCards);
-		for (var i = 0; i < cards.length; i++)
-			cards[i].setText('0');
+		for (var i = 0; i < this.frontCards.length; i++) {
+			this.frontCards[i].number = 0;
+			this.transitionCards[i].number = this.backCards[i].number = 1;
+			this.transitionCards[i].visible = false;
+		}
 	},
 	
-	setCardAction: function (cardNo, text, direction) {
-		var frontCard = this.frontCards[cardNo];
-		var backCard = this.backCards[cardNo];
-		var animateCard = this.animateCards[cardNo];
-		if (direction === 'next') {
-			animateCard.setText(text);
-			animateCard.rotation.x = backCard.rotation.x;
-			animateCard.visible = true;
-		} else {
-			animateCard.setText(frontCard.text);
-			animateCard.rotation.x = frontCard.rotation.x;
-			animateCard.visible = true;
-			frontCard.setText(text);
+	addCard: function (width, height, position, numberMaterialParameters) {
+		
+		var parameters = {};
+		for (var key in numberMaterialParameters)
+			parameters[key] = numberMaterialParameters[key];
+		parameters.number = parameters.number || 0;
+		
+		var frontCardFrame = new THREE.Object3D();
+		frontCardFrame.position.set(position.x, this.geometry.parameters.height * 1.01, 0);
+		frontCardFrame.rotation.set(Math.PI * 2 - this.geometry.parameters.planeAngle, 0, 0);
+		this.add(frontCardFrame);
+		
+		var backCardFrame = frontCardFrame.clone();
+		backCardFrame.rotation.x = this.geometry.parameters.planeAngle;
+		this.add(backCardFrame);
+		
+		var transitionFrame = backCardFrame.clone();
+		this.add(transitionFrame);
+		
+		var frontCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		frontCard.position.set(0, -position.y - height / 2, 0);
+		frontCardFrame.add(frontCard);
+		this.frontCards.push(frontCard);
+		
+		parameters.number++;
+		
+		var backCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		backCard.position.copy(frontCard.position);
+		backCardFrame.add(backCard);
+		this.backCards.push(backCard);
+		
+		var transitionCard = new ScoreboardCard(
+			new THREE.PlaneGeometry(width, height),
+			new NumberMaterial(parameters));
+		transitionCard.position.copy(frontCard.position);
+		transitionFrame.add(transitionCard);
+		this.transitionCards.push(transitionCard);
+		
+		transitionCard.visible = false;
+		
+		this.actions.push(null);
+	},
+	
+	addRings: function (ring, ringXs) {
+		for (var i = 0; i < ringXs.length; i++) {
+			var ringX = ringXs[i];
+			var ringCloned = ring.clone();
+			ringCloned.position.set(ringX, this.geometry.parameters.height, 0);
+			this.add(ringCloned);
 		}
-		this.actions[cardNo] = {
-			text: text,
-			cardNo: cardNo,
+	},
+	
+	setAction: function (index, number, direction) {
+		var frontCard = this.frontCards[index];
+		var backCard = this.backCards[index];
+		var transitionCard = this.transitionCards[index];
+		if (direction === 'next') {
+			backCard.number = number + 1;
+			transitionCard.number = number;
+			transitionCard.parent.rotation.x = backCard.parent.rotation.x;
+		} else {
+			transitionCard.number = frontCard.number;
+			transitionCard.parent.rotation.x = frontCard.parent.rotation.x;
+			frontCard.number = number;
+		}
+		transitionCard.visible = true;
+		this.actions[index] = {
+			index: index,
+			number: number,
 			direction: direction,
-			frontCard: frontCard,
-			backCard: backCard,
-			animateCard: animateCard,
 		};
 	},
 	
@@ -145,18 +109,23 @@ Scoreboard.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	updateCard: function (delta, action) {
-		var targetCard = (action.direction === 'next') ? action.frontCard : action.backCard;
+		var frontCard = this.frontCards[action.index];
+		var backCard = this.backCards[action.index];
+		var transitionCard = this.transitionCards[action.index];
+		var targetCard = (action.direction === 'next') ? frontCard : backCard;
 		
-		var cardAngleDeltaFull = targetCard.rotation.x - action.animateCard.rotation.x;
+		var cardAngleDeltaFull = targetCard.parent.rotation.x - transitionCard.parent.rotation.x;
 		var cardAngleDeltaPart = this.speed * delta * (cardAngleDeltaFull < 0 ? -1 : 1);
 		var cardAngleDelta = Math.abs(cardAngleDeltaFull) < Math.abs(cardAngleDeltaPart) ? cardAngleDeltaFull : cardAngleDeltaPart;
-		action.animateCard.rotation.x += cardAngleDelta;
+		transitionCard.parent.rotation.x += cardAngleDelta;
 		
-		if (action.animateCard.rotation.x === targetCard.rotation.x) {
+		if (transitionCard.parent.rotation.x === targetCard.parent.rotation.x) {
 			if (action.direction === 'next')
-				action.frontCard.setText(action.text);
-			action.animateCard.visible = false;
-			this.actions[action.cardNo] = null;
+				frontCard.number = action.number;
+			else
+				backCard.number = transitionCard.number;
+			transitionCard.visible = false;
+			this.actions[action.index] = null;
 		}
 	},
 	
