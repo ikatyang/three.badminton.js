@@ -166,7 +166,7 @@
 				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5);
 				scene.add(targetPoint2);
 				
-				scoreboard = new THREE.Badminton.Scoreboard(200, 100, 50, 10);
+				scoreboard = createScoreboard();
 				scoreboard.rotation.y = -Math.PI / 4;
 				scoreboard.position.z = -400;
 				scene.add(scoreboard);
@@ -178,9 +178,9 @@
 						return;
 					
 					if (this.lastWinner === 'A')
-						scoreboard.setCardAction(0, this.scoreA.toString(), 'next');
+						scoreboard.setAction(0, this.scoreA, 'next');
 					else
-						scoreboard.setCardAction(3, this.scoreB.toString(), 'next');
+						scoreboard.setAction(3, this.scoreB, 'next');
 					
 					timeout = {
 						callback: function () {
@@ -547,6 +547,29 @@
 						monitor.eyebrowRight.rotation.z = 0;
 					}
 				}
+			}
+			
+			function createScoreboard() {
+				var scoreboard = new THREE.Badminton.Scoreboard(
+					new THREE.Badminton.ScoreboardGeometry(200, 100, 50),
+					new THREE.MeshLambertMaterial({
+						color: 0x0066ff,
+						side: THREE.DoubleSide,
+					}));
+				scene.add(scoreboard);
+				
+				scoreboard.addCard(50, 80, new THREE.Vector2(-65, 10), { side: THREE.DoubleSide, numberColor: 'red' });
+				scoreboard.addCard(25, 40, new THREE.Vector2(-17.5, 10), { side: THREE.DoubleSide, numberColor: 'red' });
+				scoreboard.addCard(25, 40, new THREE.Vector2(17.5, 10), { side: THREE.DoubleSide, numberColor: 'black' });
+				scoreboard.addCard(50, 80, new THREE.Vector2(65, 10), { side: THREE.DoubleSide, numberColor: 'black' });
+				
+				var ring = new THREE.Mesh(
+					new THREE.TorusGeometry(12, 1, 16, 16),
+					new THREE.MeshBasicMaterial({ color: 'black' }));
+				ring.rotation.y = Math.PI / 2;
+				scoreboard.addRings(ring, [-80, -65, -50, -17.5, 17.5, 50, 65, 80]);
+				
+				return scoreboard;
 			}
 			
 			function getIntersectedPoint() {
