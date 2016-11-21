@@ -69,6 +69,18 @@ NumberMaterial.prototype = Object.assign(Object.create(THREE.ShaderMaterial.prot
 		}
 	},
 	
+	getNumber: function () {
+		var number = 0;
+		var numbers = this.getNumbers();
+		for (var i = 0; i < numbers.length; i++)
+			number = number * 10 + numbers[i];
+		return number;
+	},
+	
+	getNumbers: function () {
+		return this.uniforms.numbers.value;
+	},
+	
 });
 
 export { NumberMaterial };
