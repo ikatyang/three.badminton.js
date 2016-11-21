@@ -3,6 +3,8 @@ import number_fragment_shader from '../shaders/number_fragment.glsl';
 
 function NumberMaterial(parameters){
 	
+	parameters = parameters || {};
+	
 	var params = {};
 	
 	for (var key in parameters)
