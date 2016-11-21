@@ -5,6 +5,7 @@ export { HyperbolaGeometry } from './geometries/HyperbolaGeometry.js';
 export { NetGeometry } from './geometries/NetGeometry.js';
 export { CourtGeometry } from './geometries/CourtGeometry.js';
 export { RacketGeometry } from './geometries/RacketGeometry.js';
+export { ScoreboardGeometry } from './geometries/ScoreboardGeometry.js';
 
 export { PixelMaterial } from './materials/PixelMaterial.js';
 export { NumberMaterial } from './materials/NumberMaterial.js';
