@@ -216,6 +216,36 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		return params;
 	},
 	
+	copy: function (source) {
+		
+		THREE.Object3D.prototype.copy.call(this, source, false);
+		
+		this.state = source.state;
+		
+		this.flipFrame.rotation.copy(source.flipFrame.rotation);
+		this.velocity.copy(source.velocity);
+		
+		this.flipAngle = source.flipAngle;
+		this.flipAngularVelocity = source.flipAngularVelocity;
+		this.flipAxis.copy(source.flipAxis);
+		
+		this.lastDelta = source.lastDelta;
+		this.impactCount = source.impactCount;
+		
+		this.dragCoefficient = source.dragCoefficient;
+		
+		this.airDensity = source.airDensity;
+		this.gravity.copy(source.gravity);
+		
+		this.toppleAngularVelocity = source.toppleAngularVelocity;
+		
+		return this;
+	},
+	
+	clone: function () {
+		return new this.constructor(this.geometry, this.material, this.parameters.corkMass, this.parameters.skirtMass).copy(this);
+	},
+	
 	onAfterImpact: function () {},
 	
 });
