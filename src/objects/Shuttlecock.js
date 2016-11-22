@@ -2,9 +2,6 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	
 	THREE.Object3D.call(this);
 	
-	this.geometry = shuttlecockGeometry;
-	this.material = material;
-	
 	this.parameters = {
 		mass: corkMass + skirtMass,
 		corkMass: corkMass,
@@ -30,7 +27,7 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	this.init();
 }
 
-Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
+Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THREE.Object3D.prototype), {
 
 	constructor: Shuttlecock,
 	
@@ -247,6 +244,26 @@ Shuttlecock.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	onAfterImpact: function () {},
+	
+}), {
+	
+	geometry: {
+		get: function () {
+			return this.mesh.geometry;
+		},
+		set: function (value) {
+			this.mesh.geometry = value;
+		},
+	},
+	
+	material: {
+		get: function () {
+			return this.mesh.material;
+		},
+		set: function (value) {
+			this.mesh.material = value;
+		},
+	},
 	
 });
 
