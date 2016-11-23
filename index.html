@@ -5,6 +5,7 @@
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js'></script>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r82/three.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js'></script>
 		<script src='controls/OrbitControls.js'></script>
 		<script src='controls/DeviceOrientationControls.js'></script>
 		<script src='build/three.badminton.min.js'></script>
@@ -31,6 +32,11 @@
 			body {
 				margin: 0;
 				overflow: hidden;
+			}
+			#stats {
+				position: fixed;
+				top: 0;
+				left: 0;
 			}
 			.full-screen {
 				position: fixed;
@@ -84,7 +90,7 @@
 			</div>
 		</div>
 		<script>
-			var camera, scene, renderer, controls;
+			var camera, scene, renderer, controls, stats;
 			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
@@ -213,6 +219,10 @@
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
+				stats = new Stats();
+				stats.domElement.setAttribute('id', 'stats');
+				
+				document.body.appendChild(stats.domElement);
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keyup', onDocumentKeyUp, false);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
@@ -638,6 +648,7 @@
 				targetPoint2.position.copy(robot2.targetPosition);
 				targetPoint1.update(delta, camera);
 				targetPoint2.update(delta, camera);
+				stats.update();
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
