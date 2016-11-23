@@ -90,7 +90,7 @@
 			</div>
 		</div>
 		<script>
-			var camera, scene, renderer, controls, stats;
+			var camera, scene, renderer, controls, stats, clock;
 			var shuttle, court, game, scoreboard, record;
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
@@ -110,6 +110,8 @@
 				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
 				camera.position.set(-800, 300, 0);
 				scene.add(camera);
+				
+				clock = new THREE.Clock();
 				
 				shuttle = createShuttlecock();
 				scene.add(shuttle);
@@ -634,7 +636,7 @@
 			}
 
 			function animate() {
-				var delta = (1 / 60) / delay;
+				var delta = clock.getDelta() / delay;
 				if (animated) {
 					shuttle.update(delta);
 					robot1.update(delta);
