@@ -92,6 +92,7 @@
 			var animated = false;
 			var delay = 1, replayIndex = -3;
 			var touchable, intersects, timeout = null;
+			var allRecordData;
 
 			init();
 			animate();
@@ -174,6 +175,9 @@
 				game = new THREE.Badminton.Game('B');
 				game.onScoreChange = function () {
 					
+					if (!$('#start').is(':hidden'))
+						return startBackgroundReplay();
+					
 					if (record.playing)
 						return;
 					
@@ -199,6 +203,12 @@
 				
 				next();
 				
+				$.getJSON('recordData.json', function (json) {
+					allRecordData = json;
+					if (!$('#start').is(':hidden'))
+						startBackgroundReplay();
+				});
+				
 				createGUI(robot1, robot2, game, record);
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -212,6 +222,9 @@
 			}
 			
 			function onDocumentKeyUp(event) {
+				
+				if (!$('#start').is(':hidden'))
+					return;
 				
 				if (timeout !== null)
 					clearTimeout(timeout.id);
@@ -737,6 +750,20 @@
 				};
 				interval_id = setInterval(interval, 1000);
 				interval();
+			}
+			
+			function startBackgroundReplay() {
+				game.init();
+				game.nextScore();
+				record.init(getRandomRecordData());
+				record.start(0);
+				animated = true;
+			}
+			
+			function getRandomRecordData() {
+				var names = Object.keys(allRecordData);
+				var index = Math.floor(Math.random() * names.length);
+				return allRecordData[names[index]];
 			}
 			
 		</script>
