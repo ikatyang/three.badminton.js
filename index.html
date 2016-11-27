@@ -637,19 +637,21 @@
 
 			function animate() {
 				var delta = clock.getDelta() / delay;
-				if (animated) {
-					shuttle.update(delta);
-					robot1.update(delta);
-					robot2.update(delta);
-					court.netGroup.checkCollision(shuttle);
-					game.checkScore(shuttle, court);
-					updateEyes();
+				if (delta < 1) {
+					if (animated) {
+						shuttle.update(delta);
+						robot1.update(delta);
+						robot2.update(delta);
+						court.netGroup.checkCollision(shuttle);
+						game.checkScore(shuttle, court);
+						updateEyes();
+					}
+					scoreboard.update(delta);
+					targetPoint1.position.copy(robot1.targetPosition);
+					targetPoint2.position.copy(robot2.targetPosition);
+					targetPoint1.update(delta, camera);
+					targetPoint2.update(delta, camera);
 				}
-				scoreboard.update(delta);
-				targetPoint1.position.copy(robot1.targetPosition);
-				targetPoint2.position.copy(robot2.targetPosition);
-				targetPoint1.update(delta, camera);
-				targetPoint2.update(delta, camera);
 				stats.update();
 				controls.update();
 				requestAnimationFrame(animate);
