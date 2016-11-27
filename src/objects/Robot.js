@@ -395,10 +395,16 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		return Math.PI * this.topForceTable[index][1];
 	},
 	
-	getImpactAngleAndSpeed: function (impactHeight, hitDist, targetDist) {
-		hitDist = hitDist === undefined ? this.position.x : hitDist;
-		targetDist = targetDist === undefined ? -this.position.x : targetDist;
-		var as = this.angleAndSpeed(Math.abs(hitDist), Math.abs(targetDist));
+	getImpactAngleAndSpeed: function (impactHeight) {
+		
+		if (this.targetPosition.x * this.shuttlecock.position.x >= 0)
+			return [0, 0];
+		
+		var offset = this.targetPosition.clone().sub(this.shuttlecock.position).setY(0);
+		var hitDist = offset.clone().multiplyScalar(this.shuttlecock.position.x / offset.x).length();
+		var targetDist = offset.length() - hitDist;
+		
+		var as = this.angleAndSpeed(hitDist, targetDist);
 		var impactSpeed = as[0];
 		var impactAngle = as[1];
 		return [impactAngle, impactSpeed];
