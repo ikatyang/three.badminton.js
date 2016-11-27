@@ -396,10 +396,9 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getImpactAngleAndSpeed: function (impactHeight, hitDist, targetDist) {
-
 		hitDist = hitDist === undefined ? this.position.x : hitDist;
 		targetDist = targetDist === undefined ? -this.position.x : targetDist;
-		var as = this.angleAndSpeed(hitDist, targetDist);
+		var as = this.angleAndSpeed(Math.abs(hitDist), Math.abs(targetDist));
 		var impactSpeed = as[0];
 		var impactAngle = as[1];
 		return [impactAngle, impactSpeed];
