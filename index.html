@@ -583,22 +583,18 @@
 				return robot;
 			}
 			
-			function updateEyes() {
-				var robots = [robot1, robot2];
-				for (var i = 0; i < robots.length; i++) {
-					var robot = robots[i];
-					var monitor = robot.monitor;
-					if (robot.impactType === 'smash') {
-						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = 0;
-						monitor.eyebrowLeft.rotation.z = Math.PI / 8;
-						monitor.eyebrowRight.rotation.z = -Math.PI / 8;
-					} else {
-						var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
-						var angle = Math.atan(position.x / Math.max(position.z, 0));
-						monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
-						monitor.eyebrowLeft.rotation.z = 0;
-						monitor.eyebrowRight.rotation.z = 0;
-					}
+			function updateEyes(robot) {
+				var monitor = robot.monitor;
+				if (robot.impactType === 'smash') {
+					monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = 0;
+					monitor.eyebrowLeft.rotation.z = Math.PI / 8;
+					monitor.eyebrowRight.rotation.z = -Math.PI / 8;
+				} else {
+					var position = shuttle.localToTarget(new THREE.Vector3(0, 0, 0), robot);
+					var angle = Math.atan(position.x / Math.max(position.z, 0));
+					monitor.eyeballLeft.position.x = monitor.eyeballRight.position.x = THREE.Math.clamp(angle / (Math.PI / 4), -1, 1) * monitor.eyeballScope;
+					monitor.eyebrowLeft.rotation.z = 0;
+					monitor.eyebrowRight.rotation.z = 0;
 				}
 			}
 			
@@ -668,28 +664,32 @@
 				if (delta < 1) {
 					if (animated) {
 						shuttle.update(delta);
-						robot1.update(delta);
-						robot2.update(delta);
+						updateRobot(robot1, delta);
+						updateRobot(robot2, delta);
 						court.netGroup.checkCollision(shuttle);
 						game.checkScore(shuttle, court);
-						updateEyes();
 					}
 					scoreboard.update(delta);
-					targetPoint1.position.copy(robot1.targetPosition);
-					targetPoint2.position.copy(robot2.targetPosition);
-					targetPoint1.update(delta, camera);
-					targetPoint2.update(delta, camera);
-					robot1.spriteHealthPercent.material.uniforms.healthPercent.value = robot1.healthPercent;
-					robot1.spriteHealthPercent.position.copy(robot1.position.clone().add(new THREE.Vector3(0, 250, 0)));
-					robot1.spriteHealthPercent.lookAt(camera.position);
-					robot2.spriteHealthPercent.material.uniforms.healthPercent.value = robot2.healthPercent;
-					robot2.spriteHealthPercent.position.copy(robot2.position.clone().add(new THREE.Vector3(0, 250, 0)));
-					robot2.spriteHealthPercent.lookAt(camera.position);
+					updateTargetPoint(targetPoint1, robot1, delta);
+					updateTargetPoint(targetPoint2, robot2, delta);
 				}
 				stats.update();
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
+			}
+			
+			function updateRobot(robot, delta) {
+				robot.update(delta);
+				robot.spriteHealthPercent.material.uniforms.healthPercent.value = robot.healthPercent;
+				robot.spriteHealthPercent.position.copy(robot.position.clone().add(new THREE.Vector3(0, 250, 0)));
+				robot.spriteHealthPercent.lookAt(camera.position);
+				updateEyes(robot);
+			}
+			
+			function updateTargetPoint(targetPoint, robot, delta) {
+				targetPoint.position.copy(robot.targetPosition);
+				targetPoint.update(delta, camera);
 			}
 			
 			function render() {
