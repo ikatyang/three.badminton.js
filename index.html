@@ -28,6 +28,23 @@
 					gl_FragColor = vec4(bottomColor, 1.0);
 			}
 		</script>
+		<script id='healthPercent_vertexShader' type='x-shader/x-vertex'>
+			varying vec2 vUv;
+			void main() {
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+				vUv = uv;
+			}
+		</script>
+		<script id='healthPercent_fragmentShader' type='x-shader/x-fragment'>
+			uniform float healthPercent;
+			varying vec2 vUv;
+			void main() {
+				if (vUv.x < healthPercent / 100.0)
+					gl_FragColor = vec4(1, 0, 0, 0.6);
+				else
+					gl_FragColor = vec4(1, 1, 1, 0.6);
+			}
+		</script>
 		<style>
 			body {
 				margin: 0;
@@ -552,6 +569,17 @@
 				robot.netHeight = court.postHeight;
 				robot.netHeightDelta = court.postHeight / 10;
 				
+				window.scene.add(robot.spriteHealthPercent = new THREE.Mesh(
+					new THREE.PlaneGeometry(100, 20),
+					new THREE.ShaderMaterial({
+						transparent: true,
+						uniforms: {
+							healthPercent: { value: 100 },
+						},
+						vertexShader: document.getElementById('healthPercent_vertexShader').textContent,
+						fragmentShader: document.getElementById('healthPercent_fragmentShader').textContent,
+					})));
+				
 				return robot;
 			}
 			
@@ -651,6 +679,12 @@
 					targetPoint2.position.copy(robot2.targetPosition);
 					targetPoint1.update(delta, camera);
 					targetPoint2.update(delta, camera);
+					robot1.spriteHealthPercent.material.uniforms.healthPercent.value = robot1.healthPercent;
+					robot1.spriteHealthPercent.position.copy(robot1.position.clone().add(new THREE.Vector3(0, 250, 0)));
+					robot1.spriteHealthPercent.lookAt(camera.position);
+					robot2.spriteHealthPercent.material.uniforms.healthPercent.value = robot2.healthPercent;
+					robot2.spriteHealthPercent.position.copy(robot2.position.clone().add(new THREE.Vector3(0, 250, 0)));
+					robot2.spriteHealthPercent.lookAt(camera.position);
 				}
 				stats.update();
 				controls.update();
