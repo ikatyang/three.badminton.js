@@ -669,6 +669,8 @@
 						court.netGroup.checkCollision(shuttle);
 						game.checkScore(shuttle, court);
 					}
+					updateRobotHUD(robot1);
+					updateRobotHUD(robot2);
 					scoreboard.update(delta);
 					updateTargetPoint(targetPoint1, robot1, delta);
 					updateTargetPoint(targetPoint2, robot2, delta);
@@ -679,11 +681,14 @@
 				render();
 			}
 			
-			function updateRobot(robot, delta) {
-				robot.update(delta);
+			function updateRobotHUD(robot) {
 				robot.spriteHealthPercent.material.uniforms.healthPercent.value = robot.healthPercent;
 				robot.spriteHealthPercent.position.copy(robot.position.clone().add(new THREE.Vector3(0, 250, 0)));
 				robot.spriteHealthPercent.lookAt(camera.position);
+			}
+			
+			function updateRobot(robot, delta) {
+				robot.update(delta);
 				updateEyes(robot);
 			}
 			
