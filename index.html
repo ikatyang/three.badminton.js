@@ -89,6 +89,12 @@
 				<h2>Click to Start</h2>
 			</div>
 		</div>
+		<div id='countdown' class='heading' style='display: none;'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen text-center'>
+				<span class='counter'></span>
+			</div>
+		</div>
 		<div id='pause' class='heading' style='display: none;'>
 			<div class='full-screen overlay'></div>
 			<div class='center-screen panel panel-primary'>
@@ -96,14 +102,8 @@
 				<div class='panel-body text-center'>
 					<a href='javascript:resume()' class='btn btn-default btn-block btn-lg'>Resume</a>
 					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>New Game</a>
-					<a href='javascript:replay()' class='btn btn-default btn-block btn-lg btn-replay'>Replay</a>
+					<a href='javascript:replay()' class='btn btn-default btn-block btn-lg btn-replay' style='display: none;'>Replay</a>
 				</div>
-			</div>
-		</div>
-		<div id='countdown' class='heading' style='display: none;'>
-			<div class='full-screen overlay'></div>
-			<div class='center-screen text-center'>
-				<span class='counter'></span>
 			</div>
 		</div>
 		<script>
@@ -112,9 +112,10 @@
 			var robot1, robot2;
 			var targetPoint1, targetPoint2;
 			var mouse, raycaster;
-			var animated = false;
+			var animated = false, paused = false, isOpening = true;
+			var countdown = false, counter = 0, countEnding = null;
 			var delay = 1, replayIndex = -3;
-			var touchable, intersects, timeout = null;
+			var touchable, intersects;
 			var allRecordData;
 
 			init();
@@ -200,7 +201,7 @@
 				game = new THREE.Badminton.Game('B');
 				game.onScoreChange = function () {
 					
-					if (!$('#start').is(':hidden'))
+					if (isOpening)
 						return startBackgroundReplay();
 					
 					if (record.playing)
@@ -211,17 +212,14 @@
 					else
 						scoreboard.setAction(3, this.scoreB, 'next');
 					
-					timeout = {
-						callback: function () {
-							timeout = null;
-							next();
-							countdown(function () {
-								if ($('#pause').is(':hidden'))
-									resume();
-							});
-						}
-					};
-					timeout.id = setTimeout(timeout.callback, 3000);
+					$('#pause .btn-replay').show();
+					startCountdown(function () {
+						$('#pause .btn-replay').hide();
+						next();
+						startCountdown(function () {
+							animated = true;
+						}, 3);
+					}, 3, false);
 				};
 				
 				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
@@ -252,23 +250,18 @@
 			
 			function onDocumentKeyUp(event) {
 				
-				if (!$('#start').is(':hidden'))
-					return;
-				
-				if (timeout !== null)
-					clearTimeout(timeout.id);
-				$('#pause .btn-replay').toggle(timeout !== null);
-				
-				if (event.keyCode === 27)
-					if ($('#pause').is(':hidden'))
-						pause();
-					else
-						resume();
+				if (event.keyCode === 27) {
+					
+					if (isOpening)
+						return;
+					
+					paused = !paused;
+				}
 			}
 
 			function onDocumentKeyPress(event) {
 				
-				if (record.playing)
+				if (isOpening || paused)
 					return;
 				
 				switch (event.key) {
@@ -635,7 +628,7 @@
 			
 			function onDocumentMouseDown(event) {
 				
-				if (record.playing)
+				if (isOpening || paused)
 					return;
 				
 				if (event.which === 1) {
@@ -660,14 +653,19 @@
 			}
 
 			function animate() {
-				var delta = clock.getDelta() / delay;
+				var realDelta = clock.getDelta();
+				var delta = realDelta / delay;
 				if (delta < 1) {
-					if (animated) {
-						shuttle.update(delta);
-						updateRobot(robot1, delta);
-						updateRobot(robot2, delta);
-						court.netGroup.checkCollision(shuttle);
-						game.checkScore(shuttle, court);
+					if (!paused) {
+						if (animated) {
+							shuttle.update(delta);
+							updateRobot(robot1, delta);
+							updateRobot(robot2, delta);
+							court.netGroup.checkCollision(shuttle);
+							game.checkScore(shuttle, court);
+						}
+						if (countdown)
+							updateCountdown(realDelta);
 					}
 					updateRobotHUD(robot1);
 					updateRobotHUD(robot2);
@@ -675,10 +673,23 @@
 					updateTargetPoint(targetPoint1, robot1, delta);
 					updateTargetPoint(targetPoint2, robot2, delta);
 				}
+				$('#pause').toggle(paused);
+				$('#start').toggle(isOpening);
 				stats.update();
 				controls.update();
 				requestAnimationFrame(animate);
 				render();
+			}
+			
+			function updateCountdown(delta) {
+				counter -= delta;
+				$('#countdown .counter').text(Math.round(counter));
+				if (counter < 0) {
+					$('#countdown').hide();
+					countdown = false;
+					if (typeof countEnding === 'function')
+						countEnding();
+				}
 			}
 			
 			function updateRobotHUD(robot) {
@@ -757,53 +768,33 @@
 			}
 			
 			function replay() {
-				$('.heading').hide();
+				
+				paused = false;
 				animated = true;
+				
+				replay.countEnding = countEnding || replay.countEnding;
+				countEnding = null;
+				
 				record.start(Math.round(replayIndex));
 			}
 			
-			function start() {
-				game.init('B');
-				scoreboard.init();
-				timeout = null;
-				next();
-				countdown(function () {
-					if ($('#pause').is(':hidden'))
-						resume();
-				});
-			}
-			
-			function pause() {
-				animated = false;
-				$('.heading').hide();
-				$('#pause').show();
-			}
-			
 			function resume() {
-				if (timeout) {
-					timeout.callback();
-				} else {
-					$('.heading').hide();
-					animated = true;
+				paused = false;
+				if (replay.countEnding) {
+					replay.countEnding();
+					replay.countEnding = null;
 				}
 			}
 			
-			function countdown(callback, count) {
-				$('.heading').hide();
-				$('#countdown').show();
-				var counter = count || 3;
-				var interval_id;
-				function interval() {
-					if (counter === 0) {
-						clearInterval(interval_id);
-						$('#countdown').hide();
-						callback();
-					} else {
-						$('#countdown .counter').text(counter--);
-					}
-				};
-				interval_id = setInterval(interval, 1000);
-				interval();
+			function start() {
+				paused = false;
+				isOpening = false;
+				game.init('B');
+				scoreboard.init();
+				next();
+				startCountdown(function () {
+					animated = true;
+				}, 3);
 			}
 			
 			function startBackgroundReplay() {
@@ -818,6 +809,13 @@
 				var names = Object.keys(allRecordData);
 				var index = Math.floor(Math.random() * names.length);
 				return allRecordData[names[index]];
+			}
+			
+			function startCountdown(ending, second, show) {
+				countEnding = ending;
+				counter = second;
+				countdown = true;
+				$('#countdown').toggle(show !== undefined ? show : true);
 			}
 			
 		</script>
