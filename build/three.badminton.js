@@ -1072,7 +1072,8 @@ function Robot(bodyMesh, racketMesh) {
 	this.netHeight = 1.55;
 	this.netHeightDelta = 0.2;
 	
-	this.healthAttenuation = 0.99;
+	this.healthPercentRatio = 0.001;
+	this.healthPercentMaxDecrease = 10;
 	
 	this.init();
 }
@@ -1237,11 +1238,13 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactElapsed > this.impactDelta) {
 		
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
+			var strength = impactSpeed * this.getRacketImpactLength();
 			
-			this.shuttlecock.impact(normal.clone().multiplyScalar(impactSpeed * this.getRacketImpactLength()), normal, this.racketAttenuation);
+			this.shuttlecock.impact(normal.clone().multiplyScalar(strength), normal, this.racketAttenuation);
 			
 			this.impactCount = this.shuttlecock.impactCount;
-			this.healthPercent *= this.healthAttenuation;
+			
+			this.healthPercent = THREE.Math.clamp(this.healthPercent - Math.min(strength * this.healthPercentRatio, this.healthPercentMaxDecrease), 0, 100);
 			
 			this.impactElapsed = 0;
 			
