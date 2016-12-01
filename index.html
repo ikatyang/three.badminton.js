@@ -622,7 +622,7 @@
 					if (point.x >= area.min.x &&
 						point.x <= area.max.x &&
 						point.y >= area.min.y &&
-						point.y <= area.max.y) return point;
+						point.y <= area.max.y) return point.setZ(0);
 				}
 				return null;
 			}
