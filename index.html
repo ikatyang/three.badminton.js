@@ -635,7 +635,7 @@
 			
 			function onDocumentMouseUp(event) {
 				
-				if (isOpening || paused)
+				if (isOpening || paused || record.playing)
 					return;
 					
 				if (event.which === 1 && onDocumentMouseDown.clientX === event.clientX && onDocumentMouseDown.clientY === event.clientY) {
