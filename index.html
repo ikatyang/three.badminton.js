@@ -243,6 +243,7 @@
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keyup', onDocumentKeyUp, false);
 				document.addEventListener('keypress', onDocumentKeyPress, false);
+				document.addEventListener('mouseup', onDocumentMouseUp, false);
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
 				window.addEventListener('resize', onWindowResize, false);
@@ -628,10 +629,16 @@
 			
 			function onDocumentMouseDown(event) {
 				
+				onDocumentMouseDown.clientX = event.clientX;
+				onDocumentMouseDown.clientY = event.clientY;
+			}
+			
+			function onDocumentMouseUp(event) {
+				
 				if (isOpening || paused)
 					return;
-				
-				if (event.which === 1) {
+					
+				if (event.which === 1 && onDocumentMouseDown.clientX === event.clientX && onDocumentMouseDown.clientY === event.clientY) {
 					var point = getIntersectedPoint();
 					if (point !== null) {
 						robot1.targetPosition.copy(court.localToTarget(point.clone(), robot1.parent));
