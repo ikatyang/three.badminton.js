@@ -115,7 +115,7 @@
 			var animated = false, paused = false, isOpening = true;
 			var countdown = false, counter = 0, countEnding = null;
 			var delay = 1, replayIndex = -3;
-			var touchable, intersects;
+			var touchable, intersects, touchableTip;
 			var allRecordData;
 
 			init();
@@ -177,6 +177,10 @@
 					else
 						record.record();
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
+						
+					scene.remove(touchableTip);
+					touchableTip = createTouchableTip();
+					scene.add(touchableTip);
 				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
@@ -614,6 +618,41 @@
 				return scoreboard;
 			}
 			
+			function createTouchableTip() {
+				
+				var length = 5;
+				
+				var box = robot2.parent.localToTarget(robot2.responsibleArea.clone(), scene);
+				
+				var size = box.getSize();
+				var center = box.getCenter();
+				
+				var touchableTip = new THREE.Object3D();
+				touchableTip.position.y = 1;
+				
+				var material = new THREE.MeshBasicMaterial({ color: 'blue', side: THREE.DoubleSide });
+				
+				var left = new THREE.Mesh(new THREE.PlaneGeometry(length, size.z), material);
+				left.rotation.x = -Math.PI / 2;
+				left.position.copy(center).add(new THREE.Vector3(-size.x / 2 + length / 2, 0, 0));
+				touchableTip.add(left);
+				
+				var right = left.clone();
+				right.position.copy(center).add(new THREE.Vector3(size.x / 2 - length / 2, 0, 0));
+				touchableTip.add(right);
+				
+				var top = new THREE.Mesh(new THREE.PlaneGeometry(size.x, length), material);
+				top.rotation.x = -Math.PI / 2;
+				top.position.copy(center).add(new THREE.Vector3(0, 0, -size.z / 2 + length / 2));
+				touchableTip.add(top);
+				
+				var bottom = top.clone();
+				bottom.position.copy(center).add(new THREE.Vector3(0, 0, size.z / 2 - length / 2));
+				touchableTip.add(bottom);
+				
+				return touchableTip;
+			}
+			
 			function getIntersectedPoint() {
 				if (intersects.length > 0) {
 					var point = court.worldToLocal(intersects[0].point);
@@ -755,6 +794,11 @@
 				court.updateMatrixWorld();
 				game.initRobot(robot1, court, 'A');
 				game.initRobot(robot2, court, 'B');
+				
+				if (touchableTip)
+					scene.remove(touchableTip);
+				touchableTip = createTouchableTip();
+				scene.add(touchableTip);
 				
 				robot1.targetPosition.copy(getRandomPosition(robot2.responsibleArea, 0.8));
 				robot2.targetPosition.copy(getRandomPosition(robot1.responsibleArea, 0.8));
