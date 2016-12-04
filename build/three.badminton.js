@@ -1965,7 +1965,7 @@ Scoreboard.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 	
 });
 
-function TargetPoint(radius, tube) {
+function TargetPoint(radius, tube, torusMaterial, arrowMaterial) {
 	
 	THREE.Object3D.call(this);
 	
@@ -1974,9 +1974,7 @@ function TargetPoint(radius, tube) {
 		tube: tube,
 	};
 	
-	var ring = new THREE.Mesh(
-		new THREE.TorusGeometry(radius, tube, 16, 12),
-		new THREE.MeshNormalMaterial());
+	var ring = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 12), torusMaterial);
 	ring.rotation.x = Math.PI / 2;
 	
 	this.add(ring);
@@ -1998,7 +1996,7 @@ function TargetPoint(radius, tube) {
 	geometry.computeFaceNormals();
 	geometry.computeVertexNormals();
 	
-	var arrow = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial());
+	var arrow = new THREE.Mesh(geometry, arrowMaterial);
 	arrow.scale.set(radius, radius, radius);
 	arrow.position.y = radius * 1.5;
 	this.add(arrow);
