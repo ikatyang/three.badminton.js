@@ -191,10 +191,14 @@
 				};
 				scene.add(robot2);
 				
-				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5);
+				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5, 
+					new THREE.MeshNormalMaterial(), 
+					new THREE.MeshNormalMaterial());
 				scene.add(targetPoint1);
 				
-				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5);
+				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5, 
+					new THREE.MeshNormalMaterial(), 
+					new THREE.MeshNormalMaterial());
 				scene.add(targetPoint2);
 				
 				scoreboard = createScoreboard();
