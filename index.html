@@ -80,14 +80,23 @@
 				font-size: 60pt;
 				color: yellow;
 			}
+			
+			#start .btn-container {
+				margin: 0 25%;
+			}
 		</style>
 	</head>
 	<body>
-		<div id='start' class='heading' onclick='start()'>
+		<div id='start' class='heading'>
 			<div class='full-screen overlay'></div>
 			<div class='center-screen text-center'>
 				<h1>Badminton Game</h1>
-				<h2>Click to Start</h2>
+				<div class='btn-container'>
+					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>Start</a>
+					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg' disabled='disabled'>Custom</a>
+					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg' disabled='disabled'>Tutorial</a>
+					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg' disabled='disabled'>Ranking</a>
+				</div>
 			</div>
 		</div>
 		<div id='countdown' class='heading' style='display: none;'>
