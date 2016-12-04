@@ -102,8 +102,8 @@
 				<div class='panel-heading'>Paused</div>
 				<div class='panel-body text-center'>
 					<a href='javascript:resume()' class='btn btn-default btn-block btn-lg'>Resume</a>
-					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>New Game</a>
 					<a href='javascript:replay()' class='btn btn-default btn-block btn-lg btn-replay' style='display: none;'>Replay</a>
+					<a href='javascript:backToHome()' class='btn btn-default btn-block btn-lg'>Back to Home</a>
 				</div>
 			</div>
 		</div>
@@ -237,7 +237,7 @@
 				
 				$.getJSON('recordData.json', function (json) {
 					allRecordData = json;
-					if (!$('#start').is(':hidden'))
+					if (isOpening)
 						startBackgroundReplay();
 				});
 				
@@ -855,9 +855,11 @@
 			function startBackgroundReplay() {
 				game.init();
 				game.nextScore();
-				record.init(getRandomRecordData());
-				record.start(0);
-				animated = true;
+				if (allRecordData) {
+					record.init(getRandomRecordData());
+					record.start(0);
+					animated = true;
+				}
 			}
 			
 			function getRandomRecordData() {
@@ -871,6 +873,14 @@
 				counter = second;
 				countdown = true;
 				$('#countdown').toggle(show !== undefined ? show : true);
+			}
+			
+			function backToHome() {
+				isOpening = true;
+				paused = false;
+				countdown = false;
+				$('#countdown').hide();
+				startBackgroundReplay();
 			}
 			
 		</script>
