@@ -314,7 +314,7 @@
 				var readyPositionSum = new THREE.Vector3(0, 0, 0);
 				for (var i = 0; i < readyPositions.length; i++)
 					readyPositionSum.add(readyPositions[i]);
-				robot.readyPosition = readyPositionSum.divideScalar(readyPositions.length);
+				robot.readyPosition = readyPositionSum.divideScalar(readyPositions.length).setY(0);
 				
 				if (readyPositions.length > 3)
 					readyPositions.shift();
