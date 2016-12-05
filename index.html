@@ -95,6 +95,14 @@
 				top: 1em;
 				left: 1em;
 			}
+			
+			#assistant .click-assistant {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				width: 305px;
+				height: 335px;
+			}
 		</style>
 	</head>
 	<body>
@@ -129,6 +137,7 @@
 		</div>
 		<div id='assistant' style='display: none;'>
 			<a href='javascript:paused = true' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
+			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
 		</div>
 		<script>
 			var camera, scene, renderer, controls, stats, clock;
@@ -142,6 +151,7 @@
 			var touchable, intersects, touchableTip;
 			var allRecordData;
 			var readyPositions1, readyPositions2;
+			var assistantCamera;
 
 			init();
 			animate();
@@ -153,6 +163,10 @@
 				camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
 				camera.position.set(-800, 300, 0);
 				scene.add(camera);
+				
+				assistantCamera = new THREE.OrthographicCamera(-305, 305, 670, 0, 1, 1000);
+				assistantCamera.position.y = 100;
+				assistantCamera.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
 				
 				clock = new THREE.Clock();
 				
@@ -174,6 +188,7 @@
 				renderer = new THREE.WebGLRenderer();
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setClearColor(0x888888);
+				renderer.setScissorTest(true);
 				
 				robot1 = createRobot('white', 'blue', shuttle, court);
 				robot1.rotation.y = Math.PI / 2;
@@ -283,6 +298,10 @@
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
 				window.addEventListener('resize', onWindowResize, false);
+			}
+			
+			function onAssistantClick(event) {
+				robot1.targetPosition.set(670 - event.offsetY * 2, 0, -305 + event.offsetX * 2);
 			}
 			
 			function onDocumentKeyUp(event) {
@@ -817,12 +836,21 @@
 				raycaster.setFromCamera(mouse, camera);
 				intersects = raycaster.intersectObject(touchable);
 				
+				renderer.setScissor(0, 0, window.innerWidth, window.innerHeight);
+				renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+				
 				renderer.setClearColor(0x000000);
 				renderer.render(robot1.monitor.scene, robot1.monitor.camera, robot1.monitor.renderTarget);
 				renderer.render(robot2.monitor.scene, robot2.monitor.camera, robot2.monitor.renderTarget);
 				
 				renderer.setClearColor(0x888888);
 				renderer.render(scene, camera);
+				
+				if (!(isOpening || paused)) {
+					renderer.setScissor(window.innerWidth - 305, 0, 305, 335);
+					renderer.setViewport(window.innerWidth - 305, 0, 305, 335);
+					renderer.render(scene, assistantCamera);
+				}
 			}
 			
 			function getRandomImpactType() {
