@@ -127,6 +127,7 @@
 			var delay = 1, replayIndex = -3;
 			var touchable, intersects, touchableTip;
 			var allRecordData;
+			var readyPositions1, readyPositions2;
 
 			init();
 			animate();
@@ -176,6 +177,8 @@
 					}
 					
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
+					
+					updateReadyPosition(this, readyPositions1);
 				};
 				scene.add(robot1);
 				
@@ -191,6 +194,8 @@
 					scene.remove(touchableTip);
 					touchableTip = createTouchableTip();
 					scene.add(touchableTip);
+					
+					updateReadyPosition(this, readyPositions2);
 				};
 				robot2.onBeforeUpdate = function() {
 					if(this.impactType === 'smash' || this.impactType === 'top') {
@@ -301,6 +306,19 @@
 						robot1.impactType = 'right';
 						break;
 				}
+			}
+			
+			function updateReadyPosition(robot, readyPositions) {
+				
+				readyPositions.push(robot.position.clone());
+				
+				var readyPositionSum = new THREE.Vector3(0, 0, 0);
+				for (var i = 0; i < readyPositions.length; i++)
+					readyPositionSum.add(readyPositions[i]);
+				robot.readyPosition = readyPositionSum.divideScalar(readyPositions.length);
+				
+				if (readyPositions.length > 3)
+					readyPositions.shift();
 			}
 			
 			function createGUI(robot1, robot2, game, record) {
@@ -808,6 +826,10 @@
 				court.updateMatrixWorld();
 				game.initRobot(robot1, court, 'A');
 				game.initRobot(robot2, court, 'B');
+				
+				robot1.readyPosition = robot2.readyPosition = null;
+				readyPositions1 = [];
+				readyPositions2 = [];
 				
 				if (touchableTip)
 					scene.remove(touchableTip);
