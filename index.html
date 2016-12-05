@@ -180,6 +180,9 @@
 					
 					updateReadyPosition(this, readyPositions1);
 				};
+				robot1.onBeforeUpdate = function () {
+					updateImpactType(this);
+				};
 				scene.add(robot1);
 				
 				robot2 = createRobot(0xff0000, 0x800000, shuttle, court);
@@ -197,12 +200,8 @@
 					
 					updateReadyPosition(this, readyPositions2);
 				};
-				robot2.onBeforeUpdate = function() {
-					if(this.impactType === 'smash' || this.impactType === 'top') {
-						var shuttlePosition = this.shuttlecock.localToTarget(new THREE.Vector3(0, 0, 0), court);
-						if (shuttlePosition.y < 185 && shuttlePosition.x > 0)
-							this.impactType = 'right';
-					}
+				robot2.onBeforeUpdate = function () {
+					updateImpactType(this);
 				};
 				scene.add(robot2);
 				
@@ -319,6 +318,20 @@
 				
 				if (readyPositions.length > 3)
 					readyPositions.shift();
+			}
+			
+			function updateImpactType(robot) {
+				
+				var shuttlePosition = robot.shuttlecock.localToTarget(new THREE.Vector3(0, 0, 0), court);
+				if ((robot === robot2 && shuttlePosition.x > 0) || (robot === robot1 && shuttlePosition.x < 0))
+					if (shuttlePosition.z > 250)
+						robot.impactType = 'smash';
+					else if (shuttlePosition.z > 200)
+						robot.impactType = 'top';
+					else
+						robot.impactType = ((shuttlePosition.y > 0 && robot === robot1) || (shuttlePosition.y < 0 && robot === robot2)) ? 'left' : 'right';
+				else
+					robot.impactType = 'right';
 			}
 			
 			function createGUI(robot1, robot2, game, record) {
