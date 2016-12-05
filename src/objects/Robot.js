@@ -147,8 +147,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	
 	predictFallingPosition: function (y) {
 		var time = this.predictFallingTime(y);		
-		return (time < -1e-2) ? null : this.shuttlecock.position.clone().addScaledVector(this.shuttlecock.velocity, time)
-			.add(this.shuttlecock.position).divideScalar(2).setY(y);
+		return (time < -1e-2) ? null : this.shuttlecock.position.clone().addScaledVector(this.shuttlecock.velocity, time).setY(y);
 	},
 	
 	getRacketImpactLength: function () {
