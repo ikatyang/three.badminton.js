@@ -1075,6 +1075,8 @@ function Robot(bodyMesh, racketMesh) {
 	this.healthPercentRatio = 0.001;
 	this.healthPercentMaxDecrease = 10;
 	
+	this.readyPosition = null;
+	
 	this.init();
 }
 
@@ -1206,7 +1208,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var bodyAngle = 0;
 		var impactAngle = 0;
 		var rotationValue = 0;
-		var robotPosition = this.responsibleArea.getCenter();
+		var robotPosition = this.readyPosition || this.responsibleArea.getCenter();
 		
 		if ((this.impactCount === 0 || this.impactCount + 2 === this.shuttlecock.impactCount + 1) &&
 			this.shuttlecock.hasState('active') && impactPosition &&
