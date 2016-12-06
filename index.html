@@ -78,6 +78,7 @@
 				color: yellow;
 			}
 			#countdown .counter {
+				font-family: 'Indie Flower', cursive;
 				font-size: 60pt;
 				color: yellow;
 			}
@@ -146,7 +147,7 @@
 			var targetPoint1, targetPoint2;
 			var mouse, raycaster;
 			var animated = false, paused = false, isOpening = true;
-			var countdown = false, counter = 0, countEnding = null;
+			var countdown = false, counter = 0, countEnding = null, countText;
 			var delay = 1, replayIndex = -3;
 			var touchable, intersects, touchableTip;
 			var allRecordData;
@@ -269,7 +270,9 @@
 						next();
 						startCountdown(function () {
 							animated = true;
-						}, 3);
+						}, 2, true, function (counter) {
+							return counter > 1 ? 'Ready' : 'Go!';
+						});
 					}, 3, false);
 				};
 				
@@ -807,7 +810,7 @@
 			
 			function updateCountdown(delta) {
 				counter -= delta;
-				$('#countdown .counter').text(Math.round(counter));
+				$('#countdown .counter').text(countText(counter));
 				if (counter < 0) {
 					$('#countdown').hide();
 					countdown = false;
@@ -936,7 +939,9 @@
 				next();
 				startCountdown(function () {
 					animated = true;
-				}, 3);
+				}, 2, true, function (counter) {
+					return counter > 1 ? 'Ready' : 'Go!';
+				});
 			}
 			
 			function startBackgroundReplay() {
@@ -955,10 +960,11 @@
 				return allRecordData[names[index]];
 			}
 			
-			function startCountdown(ending, second, show) {
+			function startCountdown(ending, second, show, formatter) {
 				countEnding = ending;
 				counter = second;
 				countdown = true;
+				countText = formatter || Math.round;
 				$('#countdown').toggle(show !== undefined ? show : true);
 			}
 			
