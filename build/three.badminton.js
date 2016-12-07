@@ -2351,7 +2351,8 @@ function AudioChannel(audio) {
 	
 	this.audio = audio;
 	
-	var context = new AudioContext();
+	var audioContext = this.constructor.support();
+	var context = new audioContext();
 	
 	var media = context.createMediaElementSource(audio);
 	
@@ -2420,6 +2421,10 @@ AudioChannel.prototype = {
 		this.updateVolume();
 	},
 	
+};
+
+AudioChannel.support = function () {
+	return window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext || false;
 };
 
 exports.ShuttlecockGeometry = ShuttlecockGeometry;
