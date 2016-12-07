@@ -70,9 +70,6 @@
 			}
 			.center-screen {
 				position: fixed;
-				top: 20%;
-				left: 25%;
-				right: 25%;
 			}
 			#start {
 				color: yellow;
@@ -104,6 +101,10 @@
 				right: 0;
 				width: 305px;
 				height: 335px;
+			}
+			
+			.panel {
+				min-width: 30%;
 			}
 		</style>
 	</head>
@@ -809,6 +810,15 @@
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
 				$('#start').toggle(isOpening);
+				$('.center-screen').each(function () {
+					var $this = $(this);
+					var width = $this.width();
+					var height = $this.height();
+					var vertical = (window.innerHeight - height) / 2;
+					var horizontal = (window.innerWidth - width) / 2;
+					$this.css('top', vertical + 'px');
+					$this.css('left', horizontal + 'px');
+				});
 				stats.update();
 				controls.update();
 				requestAnimationFrame(animate);
