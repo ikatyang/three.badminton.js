@@ -395,8 +395,14 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		for( ; index < this.topForceTable.length; index++){
 			if(this.topForceTable[index][0] > x0) break;	//找相應的水平位移
 		}
-		if(index !== 0) index--;
-		return Math.PI * this.topForceTable[index][1];
+		if(index === 0) return Math.PI * this.topForceTable[index][1];
+		else{
+			var min = this.topForceTable[index-1][0];
+			var max = this.topForceTable[index][0];
+			var percent = this.diff(min, max, x0);
+			var speedRange = this.topForceTable[index][1] - this.topForceTable[index-1][1];
+			return Math.PI * (this.topForceTable[index-1][1] + speedRange * percent);
+		}
 	},
 	
 	getImpactAngleAndSpeed: function (impactHeight) {
@@ -756,7 +762,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		[1217.301, 100],
 		[1233.056, 105],
 		[1248.758, 110],
-		[1261.102, 115],	//600 end (1270)
+		[1261.102, 115], //600 end (1270)
 		[1274.775, 120],
 		[1287.784, 125],
 		[1298.189, 130],
