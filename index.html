@@ -89,7 +89,7 @@
 				font-family: 'Indie Flower', cursive;
 			}
 			
-			#assistant .btn {
+			#assistant .top-left {
 				position: absolute;
 				top: 1em;
 				left: 1em;
@@ -101,6 +101,13 @@
 				right: 0;
 				width: 305px;
 				height: 335px;
+			}
+			
+			#assistant #pts {
+				margin-left: 1em;
+				font-size: 20pt;
+				font-family: 'Indie Flower', cursive;
+				color: yellow;
 			}
 			
 			.panel {
@@ -139,7 +146,10 @@
 			</div>
 		</div>
 		<div id='assistant' style='display: none;'>
-			<a href='javascript:paused = true' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
+			<div class='top-left'>
+				<a href='javascript:paused = true' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
+				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score</span>
+			</div>
 			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
 		</div>
 		<script>
@@ -155,6 +165,8 @@
 			var allRecordData;
 			var readyPositions1, readyPositions2;
 			var assistantCamera;
+			var playerPts = 0;
+			var playerLastImpactType;
 
 			init();
 			animate();
@@ -196,6 +208,9 @@
 				robot1 = createRobot('white', 'blue', shuttle, court);
 				robot1.rotation.y = Math.PI / 2;
 				robot1.onAfterImpact = function () {
+					
+					playerLastImpactType = this.impactType;
+					
 					if (record.playing)
 						record.next();
 					else {
@@ -206,6 +221,9 @@
 						var randomPosition = getRandomPosition(robot1.responsibleArea, 0.8);
 						robot2.targetPosition.copy(randomPosition);
 						targetPoint2.position.copy(randomPosition);
+						
+						if (this.impactType === 'smash')
+							playerPts += 500;
 					}
 					
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleA(), this.parent));
@@ -220,10 +238,15 @@
 				robot2 = createRobot(0xff0000, 0x800000, shuttle, court);
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
-					if (record.playing)
+					
+					if (record.playing) {
 						record.next();
-					else
+					} else {
 						record.record();
+					
+						if (readyPositions2.length > 0 && this.position.clone().sub(readyPositions2[readyPositions2.length - 1]).length() > 400)
+							playerPts += 500;
+					}
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
 						
 					scene.remove(touchableTip);
@@ -261,10 +284,32 @@
 					if (record.playing)
 						return;
 					
-					if (this.lastWinner === 'A')
+					if (this.lastWinner === 'A') {
+					
+						if (readyPositions2.length >= 2 && readyPositions2[readyPositions2.length - 1].clone().sub(readyPositions2[readyPositions2.length - 2]).length() > 400)
+							playerPts += 3000;
+							
+						if (playerLastImpactType === 'smash')
+							playerPts += 5000;
+						
+						var impactCount = Math.floor((robot1.impactCount + 1) / 2);
+						if (impactCount === 1)
+							playerPts += 10000;
+						else if (impactCount === 2)
+							playerPts += 5000;
+						else if (impactCount === 3)
+							playerPts += 2000;
+						else if (impactCount <= 5)
+							playerPts += 1000;
+						else if (impactCount <= 10)
+							playerPts += 500;
+						else
+							playerPts += 100;
+							
 						scoreboard.setAction(0, this.scoreA, 'next');
-					else
+					} else {
 						scoreboard.setAction(3, this.scoreB, 'next');
+					}
 					
 					$('#pause .btn-replay').show();
 					startCountdown(function () {
@@ -807,6 +852,8 @@
 					updateTargetPoint(targetPoint1, robot1, delta);
 					updateTargetPoint(targetPoint2, robot2, delta);
 				}
+				$('#pts .content').text(playerPts.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ','));
+				$('#pts .score').text(game.nthScore);
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
 				$('#start').toggle(isOpening);
@@ -949,6 +996,8 @@
 			}
 			
 			function start() {
+				playerPts = 0;
+				playerLastImpactType = null;
 				paused = false;
 				isOpening = false;
 				game.init('B');
