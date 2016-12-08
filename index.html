@@ -118,7 +118,7 @@
 	<body>
 		<div id='start' class='heading'>
 			<div class='full-screen overlay'></div>
-			<div class='center-screen text-center'>
+			<div class='center-screen text-center main'>
 				<h1>Badminton Soul</h1>
 				<div class='btn-container'>
 					<a href='javascript:startGame(3, 21)' class='btn btn-default btn-block btn-lg' title='Best of 3 games of 21 points'>Start</a>
@@ -1058,10 +1058,12 @@
 			}
 			
 			function openCustomPanel() {
+				$('#start .main').hide();
 				$('#start .panel').show();
 			}
 			
 			function closeCustomPanel() {
+				$('#start .main').show();
 				$('#start .panel').hide();
 			}
 			
