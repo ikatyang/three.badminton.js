@@ -121,7 +121,7 @@
 			<div class='center-screen text-center'>
 				<h1>Badminton Soul</h1>
 				<div class='btn-container'>
-					<a href='javascript:start()' class='btn btn-default btn-block btn-lg'>Start</a>
+					<a href='javascript:startGame()' class='btn btn-default btn-block btn-lg'>Start</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Custom</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Tutorial</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Ranking</a>
@@ -165,7 +165,7 @@
 			var allRecordData;
 			var readyPositions1, readyPositions2;
 			var assistantCamera;
-			var playerPts = 0;
+			var playerPts, playerScores;
 			var playerLastImpactType;
 
 			init();
@@ -852,8 +852,8 @@
 					updateTargetPoint(targetPoint1, robot1, delta);
 					updateTargetPoint(targetPoint2, robot2, delta);
 				}
-				$('#pts .content').text(playerPts.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ','));
-				$('#pts .score').text(game.nthScore);
+				$('#pts .content').text(playerPts && playerPts.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ','));
+				$('#pts .score').text(playerScores);
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
 				$('#start').toggle(isOpening);
@@ -972,6 +972,7 @@
 				});
 				
 				game.nextScore();
+				playerScores++;
 				
 				record.init();
 			}
@@ -995,8 +996,13 @@
 				}
 			}
 			
-			function start() {
+			function startGame() {
 				playerPts = 0;
+				playerScores = 0;
+				start();
+			}
+			
+			function start() {
 				playerLastImpactType = null;
 				paused = false;
 				isOpening = false;
