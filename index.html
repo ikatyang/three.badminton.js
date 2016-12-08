@@ -167,6 +167,7 @@
 			var assistantCamera;
 			var playerPts, playerScores;
 			var playerLastImpactType;
+			var winGame, winScore;
 
 			init();
 			animate();
@@ -311,16 +312,45 @@
 						scoreboard.setAction(3, this.scoreB, 'next');
 					}
 					
-					$('#pause .btn-replay').show();
-					startCountdown(function () {
-						$('#pause .btn-replay').hide();
-						next();
+					var isWinA = (game.scoreA === winScore);
+					var isWinB = (game.scoreB === winScore);
+					if (isWinA || isWinB) {
 						startCountdown(function () {
-							animated = true;
-						}, 2, true, function (counter) {
-							return counter > 1 ? 'Ready' : 'Go!';
-						});
-					}, 3, false);
+						
+							var winGameA = scoreboard.frontCards[1].number;
+							var winGameB = scoreboard.frontCards[2].number;
+							
+							if (isWinA)
+								scoreboard.setAction(1, winGameA + 1, 'next');
+							else
+								scoreboard.setAction(2, winGameB + 1, 'next');
+								
+							if (game.scoreA > 0)
+								scoreboard.setAction(0, 0, 'prev');
+							if (game.scoreB > 0)
+								scoreboard.setAction(3, 0, 'prev');
+							
+							startCountdown(function () {
+								if (isWinA && winGameA + 1 === winGame)
+									winner();
+								else if (isWinB && winGameB + 1 === winGame)
+									loser();
+								else
+									start();
+							}, 3, false);
+						}, 3, false);
+					} else {
+						$('#pause .btn-replay').show();
+						startCountdown(function () {
+							$('#pause .btn-replay').hide();
+							next();
+							startCountdown(function () {
+								animated = true;
+							}, 2, true, function (counter) {
+								return counter > 1 ? 'Ready' : 'Go!';
+							});
+						}, 3, false);
+					}
 				};
 				
 				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
@@ -977,6 +1007,14 @@
 				record.init();
 			}
 			
+			function winner() {
+				// TODO
+			}
+			
+			function loser() {
+				// TODO
+			}
+			
 			function replay() {
 				
 				paused = false;
@@ -996,9 +1034,12 @@
 				}
 			}
 			
-			function startGame() {
+			function startGame(winGame, winScore) {
 				playerPts = 0;
 				playerScores = 0;
+				window.winGame = winGame || 2;
+				window.winScore = winScore || 21;
+				scoreboard.init();
 				start();
 			}
 			
@@ -1007,7 +1048,6 @@
 				paused = false;
 				isOpening = false;
 				game.init('B');
-				scoreboard.init();
 				next();
 				startCountdown(function () {
 					animated = true;
