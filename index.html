@@ -71,7 +71,7 @@
 			.center-screen {
 				position: fixed;
 			}
-			#start {
+			#start h1 {
 				color: yellow;
 			}
 			#countdown .counter {
@@ -121,10 +121,26 @@
 			<div class='center-screen text-center'>
 				<h1>Badminton Soul</h1>
 				<div class='btn-container'>
-					<a href='javascript:startGame()' class='btn btn-default btn-block btn-lg'>Start</a>
-					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Custom</a>
+					<a href='javascript:startGame(3, 21)' class='btn btn-default btn-block btn-lg' title='Best of 3 games of 21 points'>Start</a>
+					<a href='javascript:openCustomPanel()' class='btn btn-default btn-block btn-lg' title='Best of X games of Y points'>Custom</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Tutorial</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Ranking</a>
+				</div>
+			</div>
+			<div class='center-screen panel panel-primary' style='display: none;'>
+				<div class='panel-heading'>Custom Game</div>
+				<div class='panel-body text-center'>
+					<p>Best of X game of Y points.</p>
+					<div>
+						<label>X</label>
+						<input type='number' id='customX' placeholder='X' value='3' min='1' step='2'/>
+					</div>
+					<div>
+						<label>Y</label>
+						<input type='number' id='customY' placeholder='Y' value='21' min='1' step='1'/>
+					</div>
+					<a href='javascript:closeCustomPanel()' class='btn btn-default'>Back</a>
+					<a href='javascript:startCustomGame()' class='btn btn-default'>Start</a>
 				</div>
 			</div>
 		</div>
@@ -1034,11 +1050,26 @@
 				}
 			}
 			
-			function startGame(winGame, winScore) {
+			function startCustomGame() {
+				closeCustomPanel();
+				var winGame = Math.floor((Number($('#customX').val()) + 1) / 2);
+				var winScore = Number($('#customY').val());
+				startGame(winGame, winScore)
+			}
+			
+			function openCustomPanel() {
+				$('#start .panel').show();
+			}
+			
+			function closeCustomPanel() {
+				$('#start .panel').hide();
+			}
+			
+			function startGame(customX, customY) {
 				playerPts = 0;
 				playerScores = 0;
-				window.winGame = winGame || 2;
-				window.winScore = winScore || 21;
+				window.winGame = Math.floor((customX + 1) / 2);
+				window.winScore = customY;
 				scoreboard.init();
 				start();
 			}
