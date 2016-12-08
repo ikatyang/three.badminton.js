@@ -384,24 +384,30 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getTopImpactSpeed: function (impactHeight) {
+		
 		var hit = this.shuttlecock.position.clone().setY(0);	//球現在的位置
 		var move = this.targetPosition.clone().sub(hit);
 		var x0 = move.clone().length();	//水平位移
-		var index = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
+		var distance = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
 
-		// 200->0, 300->1, 400->2, 500->3, 600->4, 670->5
-		index = Math.ceil(index / 100) - 2;
-		if(index < 0) index = 0;
-		for( ; index < this.topForceTable.length; index++){
-			if(this.topForceTable[index][0] > x0) break;	//找相應的水平位移
-		}
-		if(index === 0) return Math.PI * this.topForceTable[index][1];
-		else{
-			var min = this.topForceTable[index-1][0];
+		// 200 -> 0, 300 -> 1, 400 -> 2, 500 -> 3, 600 -> 4, 670 -> 5
+		var index = Math.ceil(distance / 100) - 2;
+		
+		if (index < 0)
+			index = 0;
+		
+		for (; index < this.topForceTable.length; index++)
+			if (this.topForceTable[index][0] > x0)
+				break;	//找相應的水平位移
+			
+		if (index === 0) {
+			return Math.PI * this.topForceTable[index][1];
+		} else {
+			var min = this.topForceTable[index - 1][0];
 			var max = this.topForceTable[index][0];
 			var percent = this.diff(min, max, x0);
-			var speedRange = this.topForceTable[index][1] - this.topForceTable[index-1][1];
-			return Math.PI * (this.topForceTable[index-1][1] + speedRange * percent);
+			var speedRange = this.topForceTable[index][1] - this.topForceTable[index - 1][1];
+			return Math.PI * (this.topForceTable[index - 1][1] + speedRange * percent);
 		}
 	},
 	
