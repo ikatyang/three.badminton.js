@@ -88,6 +88,9 @@
 			#winner .avgPts-best {
 				font-size: 40pt;
 			}
+			#pts .info {
+				font-size: 12pt;
+			}
 			#loser .btn, #winner .btn {
 			    max-width: 10em;
 				margin: auto;
@@ -196,7 +199,7 @@
 		<div id='assistant' style='display: none;'>
 			<div class='top-left'>
 				<a href='javascript:paused = true' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
-				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score</span>
+				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score <span class='info'></span></span>
 			</div>
 			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
 		</div>
@@ -955,6 +958,7 @@
 				}
 				$('#pts .content').text(playerPts && formatNumber(playerPts));
 				$('#pts .score').text(playerScores);
+				$('#pts .info').text(!isCustomGame ? '' : '( bo' + (winGame * 2 - 1) + ' of ' + winScore + ')');
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
 				$('#start').toggle(isOpening);
