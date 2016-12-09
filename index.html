@@ -373,10 +373,12 @@
 						scoreboard.setAction(3, this.scoreB, 'next');
 					}
 					
+					$('#pause .btn-replay').show();
 					var isWinA = (game.scoreA === winScore);
 					var isWinB = (game.scoreB === winScore);
 					if (isWinA || isWinB) {
 						startCountdown(function () {
+							$('#pause .btn-replay').hide();
 						
 							var winGameA = scoreboard.frontCards[1].number;
 							var winGameB = scoreboard.frontCards[2].number;
@@ -401,7 +403,7 @@
 							}, 3, false);
 						}, 3, false);
 					} else {
-						$('#pause .btn-replay').show();
+						
 						startCountdown(function () {
 							$('#pause .btn-replay').hide();
 							next();
