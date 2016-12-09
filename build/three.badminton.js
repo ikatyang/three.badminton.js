@@ -1343,19 +1343,31 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 	},
 	
 	getTopImpactSpeed: function (impactHeight) {
+		
 		var hit = this.shuttlecock.position.clone().setY(0);	//球現在的位置
 		var move = this.targetPosition.clone().sub(hit);
 		var x0 = move.clone().length();	//水平位移
-		var index = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
+		var distance = Math.abs(hit.clone().distanceTo(move));	//擊球點到網子的距離(擊球方場地中的水平位移
 
-		// 200->0, 300->1, 400->2, 500->3, 600->4, 670->5
-		index = Math.ceil(index / 100) - 2;
-		if(index < 0) index = 0;
-		for( ; index < this.topForceTable.length; index++){
-			if(this.topForceTable[index][0] > x0) break;	//找相應的水平位移
+		// 200 -> 0, 300 -> 1, 400 -> 2, 500 -> 3, 600 -> 4, 670 -> 5
+		var index = Math.ceil(distance / 100) - 2;
+		
+		if (index < 0)
+			index = 0;
+		
+		for (; index < this.topForceTable.length; index++)
+			if (this.topForceTable[index][0] > x0)
+				break;	//找相應的水平位移
+			
+		if (index === 0) {
+			return Math.PI * this.topForceTable[index][1];
+		} else {
+			var min = this.topForceTable[index - 1][0];
+			var max = this.topForceTable[index][0];
+			var percent = this.diff(min, max, x0);
+			var speedRange = this.topForceTable[index][1] - this.topForceTable[index - 1][1];
+			return Math.PI * (this.topForceTable[index - 1][1] + speedRange * percent);
 		}
-		if(index !== 0) index--;
-		return Math.PI * this.topForceTable[index][1];
 	},
 	
 	getImpactAngleAndSpeed: function (impactHeight) {
@@ -1715,7 +1727,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		[1217.301, 100],
 		[1233.056, 105],
 		[1248.758, 110],
-		[1261.102, 115],	//600 end (1270)
+		[1261.102, 115], //600 end (1270)
 		[1274.775, 120],
 		[1287.784, 125],
 		[1298.189, 130],
@@ -2427,6 +2439,49 @@ AudioChannel.support = function () {
 	return window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext || false;
 };
 
+function Ranking(localStorage) {
+	
+	this.localStorage = localStorage;
+	
+	this.separaor = ',';
+	this.namespace = 'three.badminton.js::ranking';
+	this.maxCount = Infinity;
+}
+
+Ranking.prototype = {
+
+	constructor: Ranking,
+	
+	getRanks: function () {
+		var ranksString = this.localStorage.getItem(this.namespace);
+		if (ranksString) {
+			var ranks = ranksString.split(this.separaor);
+			for (var i = 0; i < ranks.length; i++)
+				ranks[i] = Number(ranks[i]);
+			return ranks;
+		} else {
+			return [];
+		}
+	},
+	
+	addRank: function (rank) {
+		var ranks = this.getRanks();
+		ranks.push(rank);
+		ranks.sort(function (a, b) {
+			return b - a;
+		});
+		if (ranks.length > this.maxCount)
+			ranks.length = this.maxCount;
+		this.localStorage.setItem(this.namespace, ranks.join(this.separaor));
+	},
+	
+	getBestRank: function () {
+		var ranks = this.getRanks();
+		return ranks[0] || 0;
+	},
+	
+};
+
 exports.ShuttlecockGeometry = ShuttlecockGeometry;
 exports.HyperbolaGeometry = HyperbolaGeometry;
 exports.NetGeometry = NetGeometry;
@@ -2445,6 +2500,7 @@ exports.NetGroup = NetGroup;
 exports.Game = Game;
 exports.Record = Record;
 exports.AudioChannel = AudioChannel;
+exports.Ranking = Ranking;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
