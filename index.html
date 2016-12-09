@@ -96,6 +96,10 @@
 				margin: 0 25%;
 			}
 			
+			#start .ranking th, #start .ranking td {
+				text-align: right;
+			}
+			
 			#assistant .top-left {
 				position: absolute;
 				top: 1em;
@@ -131,10 +135,10 @@
 					<a href='javascript:startGame(3, 21)' class='btn btn-default btn-block btn-lg' title='Best of 3 games of 21 points'>Start</a>
 					<a href='javascript:openCustomPanel()' class='btn btn-default btn-block btn-lg' title='Best of X games of Y points'>Custom</a>
 					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Tutorial</a>
-					<a href='javascript:void(0)' class='btn btn-default btn-block btn-lg'>Ranking</a>
+					<a href='javascript:openRankingPanel()' class='btn btn-default btn-block btn-lg'>Ranking</a>
 				</div>
 			</div>
-			<div class='center-screen panel panel-primary' style='display: none;'>
+			<div class='custom center-screen panel panel-primary' style='display: none;'>
 				<div class='panel-heading'>Custom Game</div>
 				<div class='panel-body text-center'>
 					<p>Best of X game of Y points.</p>
@@ -148,6 +152,21 @@
 					</div>
 					<a href='javascript:closeCustomPanel()' class='btn btn-default'>Back</a>
 					<a href='javascript:startCustomGame()' class='btn btn-default'>Start</a>
+				</div>
+			</div>
+			<div class='ranking center-screen panel panel-primary' style='display: none;'>
+				<div class='panel-heading'>Ranking</div>
+				<div class='panel-body text-center'>
+					<table class='table'>
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>pts</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+					<a href='javascript:closeRankingPanel()' class='btn btn-default'>Back</a>
 				</div>
 			</div>
 		</div>
@@ -206,6 +225,7 @@
 			var playerPts, playerScores;
 			var playerLastImpactType;
 			var winGame, winScore;
+			var ranking;
 
 			init();
 			animate();
@@ -223,6 +243,9 @@
 				assistantCamera.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
 				
 				clock = new THREE.Clock();
+				
+				ranking = new THREE.Badminton.Ranking(localStorage);
+				ranking.maxCount = 5;
 				
 				shuttle = createShuttlecock();
 				scene.add(shuttle);
@@ -1046,7 +1069,10 @@
 			}
 			
 			function winner() {
-				$('#winner .avgPts').text(formatNumber(Math.floor(playerPts / playerScores)));
+				var rank = Math.floor(playerPts / playerScores);
+				ranking.addRank(rank);
+				
+				$('#winner .avgPts').text(formatNumber(rank));
 				$('#winner').show();
 			}
 			
@@ -1077,6 +1103,22 @@
 				return number.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ',');
 			}
 			
+			function openRankingPanel() {
+				var $tbody = $('#start .panel.ranking tbody').empty();
+				
+				var ranks = ranking.getRanks();
+				for (var i = 0; i < ranks.length; i++)
+					$tbody.append('<tr><td>' + (i + 1) + '</td><td>' + formatNumber(ranks[i]) + '</td></tr>');
+				
+				$('#start .main').hide();
+				$('#start .panel.ranking').show();
+			}
+			
+			function closeRankingPanel() {
+				$('#start .main').show();
+				$('#start .panel.ranking').hide();
+			}
+			
 			function startCustomGame() {
 				closeCustomPanel();
 				var winGame = Math.floor((Number($('#customX').val()) + 1) / 2);
@@ -1086,12 +1128,12 @@
 			
 			function openCustomPanel() {
 				$('#start .main').hide();
-				$('#start .panel').show();
+				$('#start .panel.custom').show();
 			}
 			
 			function closeCustomPanel() {
 				$('#start .main').show();
-				$('#start .panel').hide();
+				$('#start .panel.custom').hide();
 			}
 			
 			function startGame(customX, customY) {
