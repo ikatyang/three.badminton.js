@@ -71,8 +71,20 @@
 			.center-screen {
 				position: fixed;
 			}
-			#start h1 {
+			#start h1, #loser h1, #winner h1, #winner .pts {
 				color: yellow;
+				font-size: 60pt;
+				font-family: 'Indie Flower', cursive;
+			}
+			#winner .pts {
+				font-size: 40pt;
+			}
+			#winner .avgPts {
+				font-size: 50pt;
+			}
+			#loser .btn, #winner .btn {
+			    max-width: 10em;
+				margin: auto;
 			}
 			#countdown .counter {
 				font-family: 'Indie Flower', cursive;
@@ -82,11 +94,6 @@
 			
 			#start .btn-container {
 				margin: 0 25%;
-			}
-			
-			#start h1 {
-				font-size: 60pt;
-				font-family: 'Indie Flower', cursive;
 			}
 			
 			#assistant .top-left {
@@ -167,6 +174,21 @@
 				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score</span>
 			</div>
 			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
+		</div>
+		<div id='loser' class='heading' style='display: none;'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen text-center'>
+				<h1>You Lose</h1>
+				<a href='javascript:backToHome()' class='btn btn-default btn-block btn-lg'>Back</a>
+			</div>
+		</div>
+		<div id='winner' class='heading' style='display: none;'>
+			<div class='full-screen overlay'></div>
+			<div class='center-screen text-center'>
+				<h1>You Win</h1>
+				<div class='pts'>points: <span class='avgPts'>0</span></div>
+				<a href='javascript:backToHome()' class='btn btn-default btn-block btn-lg'>Back</a>
+			</div>
 		</div>
 		<script>
 			var camera, scene, renderer, controls, stats, clock;
@@ -898,7 +920,7 @@
 					updateTargetPoint(targetPoint1, robot1, delta);
 					updateTargetPoint(targetPoint2, robot2, delta);
 				}
-				$('#pts .content').text(playerPts && playerPts.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ','));
+				$('#pts .content').text(playerPts && formatNumber(playerPts));
 				$('#pts .score').text(playerScores);
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
@@ -1024,11 +1046,12 @@
 			}
 			
 			function winner() {
-				// TODO
+				$('#winner .avgPts').text(formatNumber(Math.floor(playerPts / playerScores)));
+				$('#winner').show();
 			}
 			
 			function loser() {
-				// TODO
+				$('#loser').show();
 			}
 			
 			function replay() {
@@ -1048,6 +1071,10 @@
 					replay.countEnding();
 					replay.countEnding = null;
 				}
+			}
+			
+			function formatNumber(number) {
+				return number.toString().replace(/\B(?=([0-9]{3})+(?![0-9]))/g, ',');
 			}
 			
 			function startCustomGame() {
@@ -1117,7 +1144,7 @@
 				isOpening = true;
 				paused = false;
 				countdown = false;
-				$('#countdown').hide();
+				$('#countdown, #winner, #loser').hide();
 				startBackgroundReplay();
 			}
 			
