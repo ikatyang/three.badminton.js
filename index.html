@@ -1046,14 +1046,22 @@
 				renderer.render(robot1.monitor.scene, robot1.monitor.camera, robot1.monitor.renderTarget);
 				renderer.render(robot2.monitor.scene, robot2.monitor.camera, robot2.monitor.renderTarget);
 				
+				setHeelthPercentVisible(true);
+				
 				renderer.setClearColor(0x888888);
 				renderer.render(scene, camera);
 				
 				if (!(isOpening || paused)) {
+					setHeelthPercentVisible(false);
 					renderer.setScissor(window.innerWidth - 305, 0, 305, 335);
 					renderer.setViewport(window.innerWidth - 305, 0, 305, 335);
 					renderer.render(scene, assistantCamera);
 				}
+			}
+			
+			function setHeelthPercentVisible(visible) {
+				robot1.spriteHealthPercent.visible = visible;
+				robot2.spriteHealthPercent.visible = visible;
 			}
 			
 			function getRandomImpactType() {
