@@ -1139,9 +1139,9 @@
 			
 			function startCustomGame() {
 				closeCustomPanel();
-				var winGame = Math.floor((Number($('#customX').val()) + 1) / 2);
-				var winScore = Number($('#customY').val());
-				startGame(winGame, winScore)
+				var customX = Number($('#customX').val());
+				var customY = Number($('#customY').val());
+				startGame(customX, customY);
 				isCustomGame = true;
 			}
 			
