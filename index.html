@@ -71,7 +71,7 @@
 			.center-screen {
 				position: fixed;
 			}
-			#start h1, #loser h1, #winner h1, #winner .pts {
+			#start h1, #loser h1, #winner h1, #winner .pts, #winner .pts-best {
 				color: yellow;
 				font-size: 60pt;
 				font-family: 'Indie Flower', cursive;
@@ -81,6 +81,12 @@
 			}
 			#winner .avgPts {
 				font-size: 50pt;
+			}
+			#winner .pts-best {
+				font-size: 30pt;
+			}
+			#winner .avgPts-best {
+				font-size: 40pt;
 			}
 			#loser .btn, #winner .btn {
 			    max-width: 10em;
@@ -206,6 +212,7 @@
 			<div class='center-screen text-center'>
 				<h1>You Win</h1>
 				<div class='pts'>points: <span class='avgPts'>0</span></div>
+				<div class='pts-best'>best: <span class='avgPts-best'>0</span></div>
 				<a href='javascript:backToHome()' class='btn btn-default btn-block btn-lg'>Back</a>
 			</div>
 		</div>
@@ -1072,10 +1079,12 @@
 			
 			function winner() {
 				var rank = Math.floor(playerPts / playerScores);
-				ranking.addRank(rank);
 				
 				$('#winner .avgPts').text(formatNumber(rank));
+				$('#winner .avgPts-best').text(formatNumber(ranking.getBestRank()));
 				$('#winner').show();
+				
+				ranking.addRank(rank);
 			}
 			
 			function loser() {
