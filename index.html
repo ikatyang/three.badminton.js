@@ -11,22 +11,40 @@
 		<script src='build/three.badminton.min.js'></script>
 		<link href='https://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet'/>
 		<link href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css' rel='stylesheet'/>
-		<script id='robotBody_vertexShader' type='x-shader/x-vertex'>
+		<script id='hyperbola_vertexShader' type='x-shader/x-vertex'>
 			varying vec2 vUv;
 			void main() {
 				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 				vUv = uv;
 			}
 		</script>
-		<script id='robotBody_fragmentShader' type='x-shader/x-fragment'>
-			uniform vec3 topColor;
-			uniform vec3 bottomColor;
+		<script id='hyperbola_fragmentShader' type='x-shader/x-fragment'>
+			uniform vec3 color1;
+			uniform vec3 color2;
+			varying vec2 vUv;
+			void main() {
+				if ((vUv.x < 0.5 && vUv.y > 0.5) || (vUv.x > 0.5 && vUv.y < 0.5))
+					gl_FragColor = vec4(color1, 1.0);
+				else
+					gl_FragColor = vec4(color2, 1.0);
+			}
+		</script>
+		<script id='circle_vertexShader' type='x-shader/x-vertex'>
+			varying vec2 vUv;
+			void main() {
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+				vUv = uv;
+			}
+		</script>
+		<script id='circle_fragmentShader' type='x-shader/x-fragment'>
+			uniform vec3 color1;
+			uniform vec3 color2;
 			varying vec2 vUv;
 			void main() {
 				if (vUv.y > 0.5)
-					gl_FragColor = vec4(topColor, 1.0);
+					gl_FragColor = vec4(color1, 1.0);
 				else
-					gl_FragColor = vec4(bottomColor, 1.0);
+					gl_FragColor = vec4(color2, 1.0);
 			}
 		</script>
 		<script id='healthPercent_vertexShader' type='x-shader/x-vertex'>
@@ -689,7 +707,7 @@
 				return shuttlecock;
 			}
 			
-			function createRobot(topColor, bottomColor, shuttlecock, court) {
+			function createRobot(color1, color2, shuttlecock, court) {
 				
 				var racketWidth = 30;
 				var racketHeight = 50;
@@ -716,14 +734,27 @@
 					new THREE.MultiMaterial([
 						new THREE.ShaderMaterial({
 							uniforms: {
-								topColor:    { value: new THREE.Color(topColor)    },
-								bottomColor: { value: new THREE.Color(bottomColor) },
+								color1: { value: new THREE.Color(color1) },
+								color2: { value: new THREE.Color(color2) },
 							},
-							vertexShader: document.getElementById('robotBody_vertexShader').textContent,
-							fragmentShader: document.getElementById('robotBody_fragmentShader').textContent,
+							vertexShader: document.getElementById('hyperbola_vertexShader').textContent,
+							fragmentShader: document.getElementById('hyperbola_fragmentShader').textContent,
 						}),
-						new THREE.MeshBasicMaterial({ color: topColor }),
-						new THREE.MeshBasicMaterial({ color: bottomColor }),
+						new THREE.ShaderMaterial({
+							uniforms: {
+								color1: { value: new THREE.Color(color1) },
+								color2: { value: new THREE.Color(color2) },
+							},
+							vertexShader: document.getElementById('circle_vertexShader').textContent,
+							fragmentShader: document.getElementById('circle_fragmentShader').textContent,
+						}),new THREE.ShaderMaterial({
+							uniforms: {
+								color1: { value: new THREE.Color(color1) },
+								color2: { value: new THREE.Color(color2) },
+							},
+							vertexShader: document.getElementById('circle_vertexShader').textContent,
+							fragmentShader: document.getElementById('circle_fragmentShader').textContent,
+						}),
 					]));
 				
 				var headFrame = new THREE.Object3D();
