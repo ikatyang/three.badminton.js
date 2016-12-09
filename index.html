@@ -233,6 +233,7 @@
 			var playerLastImpactType;
 			var winGame, winScore;
 			var ranking;
+			var isCustomGame;
 
 			init();
 			animate();
@@ -1084,7 +1085,9 @@
 				$('#winner .avgPts-best').text(formatNumber(ranking.getBestRank()));
 				$('#winner').show();
 				
-				ranking.addRank(rank);
+				$('#winner .pts-best').toggle(!isCustomGame);
+				if (!isCustomGame)
+					ranking.addRank(rank);
 			}
 			
 			function loser() {
@@ -1135,6 +1138,7 @@
 				var winGame = Math.floor((Number($('#customX').val()) + 1) / 2);
 				var winScore = Number($('#customY').val());
 				startGame(winGame, winScore)
+				isCustomGame = true;
 			}
 			
 			function openCustomPanel() {
@@ -1154,6 +1158,7 @@
 				window.winScore = customY;
 				scoreboard.init();
 				start();
+				isCustomGame = false;
 			}
 			
 			function start() {
