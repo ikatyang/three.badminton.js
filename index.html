@@ -215,7 +215,7 @@
 		</div>
 		<div id='assistant' style='display: none;'>
 			<div class='top-left'>
-				<a href='javascript:paused = true' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
+				<a href='javascript:pause()' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
 				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score <span class='info'></span></span>
 			</div>
 			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
@@ -1160,6 +1160,10 @@
 				countEnding = null;
 				
 				record.start(Math.round(replayIndex));
+			}
+			
+			function pause() {
+				paused = true;
 			}
 			
 			function resume() {
