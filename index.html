@@ -7,7 +7,6 @@
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r82/three.min.js'></script>
 		<script src='https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js'></script>
 		<script src='controls/OrbitControls.js'></script>
-		<script src='controls/DeviceOrientationControls.js'></script>
 		<script src='build/three.badminton.min.js'></script>
 		<link href='https://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet'/>
 		<link href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css' rel='stylesheet'/>
@@ -457,8 +456,6 @@
 						startBackgroundReplay();
 				});
 				
-				createGUI(robot1, robot2, game, record);
-				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
 				stats = new Stats();
@@ -513,49 +510,6 @@
 						robot.impactType = ((shuttlePosition.y > 0 && robot === robot1) || (shuttlePosition.y < 0 && robot === robot2)) ? 'left' : 'right';
 				else
 					robot.impactType = 'right';
-			}
-			
-			function createGUI(robot1, robot2, game, record) {
-				
-				var gui = new dat.GUI();
-				gui.close();
-				
-				gui.add(this, 'animated').listen();
-				gui.add(this, 'next').name('Next');
-				
-				gui.add(game, 'nthScore').listen();
-				gui.add(game, 'scoreA').listen();
-				gui.add(game, 'scoreB').listen();
-				
-				gui.add(this, 'replay').name('Replay');
-				gui.add(record, 'playing').name('replaying').listen();
-				
-				gui.add(this, 'delay', 1, 30);
-				gui.add(this, 'replayIndex', -10, 10);
-				
-				var gcontrols = {
-					control: 'orbit',
-				};
-				gui.add(gcontrols, 'control', ['orbit', 'deviceOrientation']).onChange(onControlChange);
-				
-				function onControlChange(value) {
-					controls.dispose();
-					if (value === 'orbit') {
-						controls = new THREE.OrbitControls(camera, renderer.domElement);
-					} else if (value === 'deviceOrientation') {
-						controls = new THREE.DeviceOrientationControls(camera);
-					}
-				}
-				
-				addRobot(robot1, 'A (Player)');
-				addRobot(robot2, 'B (Computer)');
-				
-				function addRobot(robot, name) {
-					var f = gui.addFolder(name);
-					f.add(robot, 'healthPercent', 0, 100).listen();
-					f.add(robot, 'impactType', ['left', 'right', 'top', 'smash']).listen();
-					f.open();
-				}
 			}
 			
 			function createScene() {
