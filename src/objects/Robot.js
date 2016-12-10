@@ -119,6 +119,12 @@ function Robot(bodyMesh, racketMesh) {
 	this.healthPercentDecreaseMax = function () {
 		return 10;
 	};
+	this.healthPercentIncrease = function (delta) {
+		return delta * 1;
+	};
+	this.healthPercentIncreaseMax = function () {
+		return (100 - this.healthPercent) * (2 / 3);
+	};
 	
 	this.readyPosition = null;
 	
@@ -308,6 +314,9 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		var positionDeltaPart = positionDeltaFull.clone().setLength(this.bodySpeed * delta * (this.healthPercent / 100));
 		var positionDelta = positionDeltaFull.length() < positionDeltaPart.length() ? positionDeltaFull : positionDeltaPart;
 		this.position.add(positionDelta);
+		
+		if (positionDelta.length() === 0)
+			this.healthPercent = THREE.Math.clamp(this.healthPercent + Math.min(this.healthPercentIncrease(delta), this.healthPercentIncreaseMax()), 0, 100);
 		
 		var bodyAngleDeltaFull = bodyAngle - this.body.rotation.y;
 		var bodyAngleDeltaPart = this.bodyAngularSpeed * delta * (bodyAngleDeltaFull < 0 ? -1 : 1);
