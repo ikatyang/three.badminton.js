@@ -113,8 +113,12 @@ function Robot(bodyMesh, racketMesh) {
 	this.netHeight = 1.55;
 	this.netHeightDelta = 0.2;
 	
-	this.healthPercentRatio = 0.001;
-	this.healthPercentMaxDecrease = 10;
+	this.healthPercentDecrease = function (strength) {
+		return strength * 0.001;
+	};
+	this.healthPercentDecreaseMax = function () {
+		return 10;
+	};
 	
 	this.readyPosition = null;
 	
@@ -286,7 +290,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			
 			this.impactCount = this.shuttlecock.impactCount;
 			
-			this.healthPercent = THREE.Math.clamp(this.healthPercent - Math.min(strength * this.healthPercentRatio, this.healthPercentMaxDecrease), 0, 100);
+			this.healthPercent = THREE.Math.clamp(this.healthPercent - Math.min(this.healthPercentDecrease(strength), this.healthPercentDecreaseMax()), 0, 100);
 			
 			this.impactElapsed = 0;
 			
