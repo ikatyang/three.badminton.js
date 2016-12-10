@@ -1112,8 +1112,15 @@
 				animated = false;
 				
 				court.updateMatrixWorld();
+				
+				var healthPercent1 = robot1.healthPercent;
+				var healthPercent2 = robot2.healthPercent;
+				
 				game.initRobot(robot1, court, 'A');
 				game.initRobot(robot2, court, 'B');
+				
+				robot1.healthPercent = healthPercent1;
+				robot2.healthPercent = healthPercent2;
 				
 				robot1.readyPosition = robot2.readyPosition = null;
 				readyPositions1 = [];
@@ -1233,6 +1240,7 @@
 			}
 			
 			function start() {
+				robot1.healthPercent = robot2.healthPercent = 100;
 				playerLastImpactType = null;
 				paused = false;
 				isOpening = false;
