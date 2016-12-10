@@ -351,10 +351,10 @@
 				};
 				scene.add(robot2);
 				
-				targetPoint1 = createTargetPoint('textures/light1.png', 'blue');
+				targetPoint1 = createTargetPoint('textures/light1.png', 'blue', 0xffe416);
 				scene.add(targetPoint1);
 				
-				targetPoint2 = createTargetPoint('textures/light2.png', 'red');
+				targetPoint2 = createTargetPoint('textures/light2.png', 'red', 0xbadbf3);
 				scene.add(targetPoint2);
 				
 				scoreboard = createScoreboard();
@@ -583,7 +583,7 @@
 				return scene;
 			}
 			
-			function createTargetPoint(texturePath, arrowColor) {
+			function createTargetPoint(texturePath, arrowColor, iconColor) {
 				
 				var cylinderRadius = 80 / Math.PI;
 				var cylinderHeight = 40;
@@ -617,6 +617,13 @@
 					if (arrow.position.y > positionY + positionDelta || arrow.position.y < positionY - positionDelta)
 						direction *= -1;
 				};
+				
+				var assistantIcon = new THREE.Mesh(
+					new THREE.RingGeometry(cylinderRadius - 10, cylinderRadius, 32),
+					new THREE.MeshBasicMaterial({ color: iconColor }));
+				assistantIcon.position.y = 2;
+				assistantIcon.rotation.x = -Math.PI / 2;
+				targetPoint.add(assistantIcon);
 				
 				return targetPoint;
 			}
