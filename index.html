@@ -351,14 +351,10 @@
 				};
 				scene.add(robot2);
 				
-				targetPoint1 = new THREE.Badminton.TargetPoint(20, 5, 
-					new THREE.MeshNormalMaterial(), 
-					new THREE.MeshNormalMaterial());
+				targetPoint1 = createTargetPoint('textures/light1.png', 'blue');
 				scene.add(targetPoint1);
 				
-				targetPoint2 = new THREE.Badminton.TargetPoint(20, 5, 
-					new THREE.MeshNormalMaterial(), 
-					new THREE.MeshNormalMaterial());
+				targetPoint2 = createTargetPoint('textures/light2.png', 'red');
 				scene.add(targetPoint2);
 				
 				scoreboard = createScoreboard();
@@ -611,6 +607,44 @@
 				scene.add(light);
 				
 				return scene;
+			}
+			
+			function createTargetPoint(texturePath, arrowColor) {
+				
+				var cylinderRadius = 80 / Math.PI;
+				var cylinderHeight = 40;
+				
+				var arrowWidth = cylinderRadius * 1.5;
+				var arrowHeight = cylinderRadius * 1.5;
+				
+				var targetPoint = new THREE.Object3D();
+				
+				var cylinder = new THREE.Mesh(
+					new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, cylinderHeight, 32, 1, true),
+					new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(texturePath), side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+				cylinder.position.y = cylinderHeight / 2;
+				targetPoint.add(cylinder);
+				
+				var arrow = new THREE.Mesh(
+					new THREE.Badminton.ArrowGeometry(arrowWidth, arrowHeight, 1, 1),
+					new THREE.MeshBasicMaterial({ color: arrowColor }));
+				arrow.position.y = cylinderHeight + arrowHeight / 2;
+				arrow.rotation.z = Math.PI;
+				targetPoint.add(arrow);
+				
+				var direction = -1;
+				var positionY = arrow.position.y;
+				var positionDelta = arrowHeight / 5;
+				var speed = arrowHeight / 1.5;
+				
+				targetPoint.update = function (delta, camera) {
+					this.lookAt(camera.position.clone().setY(this.localToWorld(new THREE.Vector3(0, 0, 0)).y));
+					arrow.position.y += direction * speed * delta;
+					if (arrow.position.y > positionY + positionDelta || arrow.position.y < positionY - positionDelta)
+						direction *= -1;
+				};
+				
+				return targetPoint;
 			}
 			
 			function createCourt() {
