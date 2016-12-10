@@ -564,6 +564,49 @@ function ScoreboardGeometry(width, height, depth) {
 ScoreboardGeometry.prototype = Object.create(THREE.Geometry.prototype);
 ScoreboardGeometry.prototype.constructor = ScoreboardGeometry;
 
+function ArrowGeometry(width, height, widthRatio, heightRatio) {
+	
+	THREE.Geometry.call(this);
+	
+	this.type = 'ArrowGeometry';
+	
+	widthRatio = (widthRatio !== undefined) ? widthRatio : 1;
+	heightRatio = (heightRatio !== undefined) ? heightRatio : 1;
+	
+	this.parameters = {
+		width: width,
+		height: height,
+		widthRatio: widthRatio,
+		heightRatio: heightRatio,
+	};
+	
+	var halfWidth = width / 2;
+	var halfHeight = height / 2;
+	
+	var topHeight = heightRatio / (heightRatio + 1) * height;
+	var innerHalfWidth = 1 / (widthRatio + 1) * halfWidth;
+	
+	this.vertices.push(
+		new THREE.Vector3(0, halfHeight, 0),
+		new THREE.Vector3(-halfWidth, halfHeight - topHeight, 0),
+		new THREE.Vector3(halfWidth, halfHeight - topHeight, 0),
+		new THREE.Vector3(-innerHalfWidth, halfHeight - topHeight, 0),
+		new THREE.Vector3(innerHalfWidth, halfHeight - topHeight, 0),
+		new THREE.Vector3(-innerHalfWidth, -halfHeight, 0),
+		new THREE.Vector3(innerHalfWidth, -halfHeight, 0));
+		
+	this.faces.push(
+		new THREE.Face3(0, 1, 2),
+		new THREE.Face3(6, 4, 3),
+		new THREE.Face3(3, 5, 6));
+	
+	this.computeFaceNormals();
+	this.computeVertexNormals();
+}
+
+ArrowGeometry.prototype = Object.create(THREE.Geometry.prototype);
+ArrowGeometry.prototype.constructor = ArrowGeometry;
+
 var pixel_vertex_shader = "varying vec2 vUv;\r\nvoid main() {\r\n\tgl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\r\n\tvUv = uv;\r\n}";
 
 var pixel_fragment_shader = "uniform sampler2D texture;\r\nuniform vec2 size;\r\nuniform vec2 pixelSize;\r\nvarying vec2 vUv;\r\n\r\nvoid main() {\r\n\t\r\n\tvec2 pixelRatio = pixelSize / size;\r\n\tgl_FragColor = vec4(texture2D(texture, pixelRatio * floor(vUv / pixelRatio)).rgb, 1.0); \r\n}";
@@ -1991,74 +2034,6 @@ Scoreboard.prototype = Object.assign(Object.create(THREE.Mesh.prototype), {
 	
 });
 
-function TargetPoint(radius, tube, torusMaterial, arrowMaterial) {
-	
-	THREE.Object3D.call(this);
-	
-	this.parameters = {
-		radius: radius,
-		tube: tube,
-	};
-	
-	var ring = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 12), torusMaterial);
-	ring.rotation.x = Math.PI / 2;
-	
-	this.add(ring);
-	
-	var geometry = new THREE.Geometry();
-	geometry.vertices.push(
-		new THREE.Vector3(-0.5, 2, 0),
-		new THREE.Vector3(0.5, 2, 0),
-		new THREE.Vector3(-0.5, 1, 0),
-		new THREE.Vector3(0.5, 1, 0),
-		new THREE.Vector3(-1, 1, 0),
-		new THREE.Vector3(1, 1, 0),
-		new THREE.Vector3(0, 0, 0));
-	geometry.faces.push(
-		new THREE.Face3(3, 0, 2),
-		new THREE.Face3(3, 1, 0),
-		new THREE.Face3(6, 5, 4));
-	geometry.computeBoundingSphere();
-	geometry.computeFaceNormals();
-	geometry.computeVertexNormals();
-	
-	var arrow = new THREE.Mesh(geometry, arrowMaterial);
-	arrow.scale.set(radius, radius, radius);
-	arrow.position.y = radius * 1.5;
-	this.add(arrow);
-	
-	this.ring = ring;
-	this.arrow = arrow;
-	
-	this.arrowDir = -1;
-	this.arrowMinY = radius;
-	this.arrowMaxY = radius * 2;
-	this.arrowSpeed = radius * 2;
-}
-
-TargetPoint.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
-
-	constructor: TargetPoint,
-	
-	update: function (delta, camera) {
-		this.lookAt(camera.position.clone().setY(this.localToWorld(new THREE.Vector3(0, 0, 0)).y));
-		if (this.arrowDir > 0) {
-			this.arrow.position.y += this.arrowSpeed * delta;
-			if (this.arrow.position.y > this.arrowMaxY) {
-				this.arrow.position.y = this.arrowMaxY;
-				this.arrowDir *= -1;
-			}
-		} else {
-			this.arrow.position.y -= this.arrowSpeed * delta;
-			if (this.arrow.position.y < this.arrowMinY) {
-				this.arrow.position.y = this.arrowMinY;
-				this.arrowDir *= -1;
-			}
-		}
-	},
-	
-});
-
 function NetGroup(netMesh, postMesh) {
 	
 	THREE.Object3D.call(this);
@@ -2501,6 +2476,7 @@ exports.NetGeometry = NetGeometry;
 exports.CourtGeometry = CourtGeometry;
 exports.RacketGeometry = RacketGeometry;
 exports.ScoreboardGeometry = ScoreboardGeometry;
+exports.ArrowGeometry = ArrowGeometry;
 exports.PixelMaterial = PixelMaterial;
 exports.NumberMaterial = NumberMaterial;
 exports.Shuttlecock = Shuttlecock;
@@ -2508,7 +2484,6 @@ exports.Robot = Robot;
 exports.Court = Court;
 exports.Scoreboard = Scoreboard;
 exports.ScoreboardCard = ScoreboardCard;
-exports.TargetPoint = TargetPoint;
 exports.NetGroup = NetGroup;
 exports.Game = Game;
 exports.Record = Record;
