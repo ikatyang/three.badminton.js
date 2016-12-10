@@ -148,6 +148,10 @@
 				color: yellow;
 			}
 			
+			#assistant .btn-continue {
+				margin-left: 0.5em;
+			}
+			
 			.panel {
 				min-width: 30%;
 			}
@@ -215,7 +219,8 @@
 		</div>
 		<div id='assistant' style='display: none;'>
 			<div class='top-left'>
-				<a href='javascript:pause()' class='btn btn-default btn-lg'><span class="glyphicon glyphicon-pause"></span> ESC</a>
+				<a href='javascript:pause()' class='btn btn-default btn-lg'><span class='glyphicon glyphicon-pause'></span> ESC</a>
+				<a href='javascript:gameContinue()' class='btn btn-default btn-lg btn-continue' style='display: none;'><span class='glyphicon glyphicon-play'></span> Continue</a>
 				<span id='pts'><span class='content'>0</span> pts / <span class='score'>1</span> score <span class='info'></span></span>
 			</div>
 			<div class='click-assistant' onclick='onAssistantClick(event)'></div>
@@ -403,6 +408,7 @@
 					if (isWinA || isWinB) {
 						startCountdown(function () {
 							$('#pause .btn-replay').hide();
+							$('#assistant .btn-continue').hide();
 						
 							var winGameA = scoreboard.frontCards[1].number;
 							var winGameB = scoreboard.frontCards[2].number;
@@ -430,6 +436,7 @@
 						
 						startCountdown(function () {
 							$('#pause .btn-replay').hide();
+							$('#assistant .btn-continue').hide();
 							next();
 							startCountdown(function () {
 								animated = true;
@@ -1153,6 +1160,8 @@
 			
 			function replay() {
 				
+				$('#assistant .btn-continue').show();
+				
 				paused = false;
 				animated = true;
 				
@@ -1168,10 +1177,11 @@
 			
 			function resume() {
 				paused = false;
-				if (replay.countEnding) {
-					replay.countEnding();
-					replay.countEnding = null;
-				}
+			}
+			
+			function gameContinue() {
+				replay.countEnding();
+				replay.countEnding = null;
 			}
 			
 			function formatNumber(number) {
