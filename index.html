@@ -461,7 +461,6 @@
 				document.body.appendChild(stats.domElement);
 				document.body.appendChild(renderer.domElement);
 				document.addEventListener('keyup', onDocumentKeyUp, false);
-				document.addEventListener('keypress', onDocumentKeyPress, false);
 				document.addEventListener('mouseup', onDocumentMouseUp, false);
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -480,31 +479,6 @@
 						return;
 					
 					paused = !paused;
-				}
-			}
-
-			function onDocumentKeyPress(event) {
-				
-				if (isOpening || paused)
-					return;
-				
-				switch (event.key) {
-					case 'w':
-					case 'W':
-						robot1.impactType = 'top';
-						break;
-					case 's':
-					case 'S':
-						robot1.impactType = 'smash';
-						break;
-					case 'a':
-					case 'A':
-						robot1.impactType = 'left';
-						break;
-					case 'd':
-					case 'D':
-						robot1.impactType = 'right';
-						break;
 				}
 			}
 			
