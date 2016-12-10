@@ -1003,7 +1003,7 @@
 				}
 				$('#pts .content').text(playerPts && formatNumber(playerPts));
 				$('#pts .score').text(playerScores);
-				$('#pts .info').text(!isCustomGame ? '' : '( bo' + (winGame * 2 - 1) + ' of ' + winScore + ')');
+				$('#pts .info').text(!isCustomGame ? '' : '( bo' + (winGame * 2 - 1) + ' of ' + winScore + ' )');
 				$('#assistant').toggle(!(isOpening || paused));
 				$('#pause').toggle(paused);
 				$('#start').toggle(isOpening);
