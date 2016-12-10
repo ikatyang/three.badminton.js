@@ -459,6 +459,8 @@
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
+				createGUI();
+				
 				stats = new Stats();
 				stats.domElement.setAttribute('id', 'stats');
 				
@@ -469,6 +471,17 @@
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
 				window.addEventListener('resize', onWindowResize, false);
+			}
+			
+			function createGUI() {
+				
+				var gui = new dat.GUI();
+				
+				gui.add(this, 'delay', 1, 30);
+				gui.add(this, 'replayIndex', -10, 10);
+				gui.add(targetPoint2, 'visible').name('TargetPoint2');
+				
+				gui.close();
 			}
 			
 			function onAssistantClick(event) {
