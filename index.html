@@ -678,7 +678,11 @@
 				
 				var impactAudio = new Audio('audios/impact.mp3');
 				var impactAudioChannel = THREE.Badminton.AudioChannel.support() ? new THREE.Badminton.AudioChannel(impactAudio) : null;
-				shuttlecock.onAfterImpact = function () {
+				shuttlecock.onAfterImpact = function (velocity, normal, attenuation, isGround) {
+					
+					if (isGround)
+						return;
+					
 					var offset = this.localToTarget(new THREE.Vector3(0, 0, 0), camera);
 					var volume = Math.max(Math.pow(1 - offset.length() / 2000, 1.3), 0);
 					if (volume > 0) {
