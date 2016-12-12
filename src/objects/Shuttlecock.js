@@ -181,6 +181,9 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			velocityXZ.negate();
 			
 		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
+		if (yAxis.y > 0)
+			flipAxis.negate();
+		
 		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
 			yAxis.clone().negate().angleTo(velocityXZ) - this.geometry.parameters.corkAngle);
 		
