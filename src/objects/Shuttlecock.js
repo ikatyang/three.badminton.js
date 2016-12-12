@@ -22,7 +22,14 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	this.airDensity = 1.1839;
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
 	
+	this.toppleVelocity = 100;
 	this.toppleAngularVelocity = Math.PI * 3;
+	
+	if (!this.mesh.geometry.boundingSphere)
+		this.mesh.geometry.computeBoundingSphere();
+	this.groundAttenuation = 0.8;
+	this.groundElapsed = 0;
+	this.groundElapsedDelta = 0.5;
 	
 	this.init();
 }
@@ -71,7 +78,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
-	impact: function (velocity, normal, attenuation, isCount) {
+	impact: function (velocity, normal, attenuation, isGround) {
 	
 		this.velocity.reflect(normal).multiplyScalar(1 - attenuation).add(velocity);
 		var yAxis = this.getYAxis();
@@ -89,10 +96,10 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var flipMatrix = new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle);
 		this.flipFrame.rotation.setFromRotationMatrix(flipMatrix);
 		
-		if (isCount !== false)
+		if (isGround !== true)
 			this.impactCount++;
 			
-		this.onAfterImpact();
+		this.onAfterImpact.apply(this, arguments);
 	},
 	
 	update: function (delta) {
@@ -139,10 +146,24 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			} else {
 				this.flipFrame.rotation.set(0, 0, 0);
 			}
-		}
 		
-		if (this.position.y < 0)
-			this.replaceState('active', 'toppling');
+			this.updateMatrixWorld();
+			this.groundElapsed += delta;
+			
+			var centerY = this.mesh.localToTarget(this.mesh.geometry.boundingSphere.center.clone(), this.parent).y;
+			var radius = this.mesh.geometry.boundingSphere.radius;
+			
+			if (centerY < radius) {
+				
+				if (this.groundElapsed > this.groundElapsedDelta) {
+					this.groundElapsed = 0;
+					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundAttenuation, true);
+				}
+				
+				if (centerY + this.velocity.y * this.groundElapsedDelta < radius)
+					this.replaceState('active', 'toppling');
+			}
+		}
 	},
 	
 	updateToppling: function (delta) {
@@ -166,9 +187,10 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
 		this.rotation.setFromRotationMatrix(flipMatrix.multiply(new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle)));
 		
-		this.position.y -= this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
+		var corkTopY = this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
+		this.position.y -= Math.sign(corkTopY) * Math.min(Math.abs(corkTopY), this.toppleVelocity * delta);
 		
-		if (flipAngle < 1e-4)
+		if (Math.abs(corkTopY) < 1e-4)
 			this.replaceState('toppling', 'toppled');
 	},
 	
