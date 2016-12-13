@@ -165,6 +165,7 @@
 					<a href='javascript:startGame(3, 21)' class='btn btn-default btn-block btn-lg' title='Best of 3 games of 21 points'>Start</a>
 					<a href='javascript:openCustomPanel()' class='btn btn-default btn-block btn-lg' title='Best of X games of Y points'>Custom</a>
 					<a href='javascript:openRankingPanel()' class='btn btn-default btn-block btn-lg'>Ranking</a>
+					<a href='javascript:openAboutPanel()' class='btn btn-default btn-block btn-lg'>About</a>
 				</div>
 			</div>
 			<div class='custom center-screen panel panel-primary' style='display: none;'>
@@ -196,6 +197,18 @@
 						<tbody></tbody>
 					</table>
 					<a href='javascript:closeRankingPanel()' class='btn btn-default'>Back</a>
+				</div>
+			</div>
+			<div class='about center-screen panel panel-primary' style='display: none;'>
+				<div class='panel-heading'>About</div>
+				<div class='panel-body text-center'>
+					<p>
+						This project was designed by
+						<a href='//github.com/ikatyang'>@ikatyang</a>,
+						<a href='//github.com/welinn'>@welinn</a>,
+						<a href='//github.com/l13013312333'>@l13013312333</a>
+					</p>
+					<a href='javascript:closeAboutPanel()' class='btn btn-default'>Back</a>
 				</div>
 			</div>
 		</div>
@@ -1199,6 +1212,16 @@
 			function closeCustomPanel() {
 				$('#start .main').show();
 				$('#start .panel.custom').hide();
+			}
+			
+			function openAboutPanel() {
+				$('#start .main').hide();
+				$('#start .panel.about').show();
+			}
+			
+			function closeAboutPanel() {
+				$('#start .main').show();
+				$('#start .panel.about').hide();
 			}
 			
 			function startGame(customX, customY) {
