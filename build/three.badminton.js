@@ -2352,13 +2352,13 @@ Record.prototype = {
 		'rotation',
 		'impactCount',
 		'impactElapsed',
-		'healthPercent',
 		'body.rotation.y',
 		'responsibleArea',
 	],
 	
 	KEYS_ROBOT_PLAY: [
 		'impactType',
+		'healthPercent',
 		'targetPosition',
 	],
 	
