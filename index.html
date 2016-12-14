@@ -1152,6 +1152,9 @@
 			
 			function replay() {
 				
+				replay.hp1 = replay.hp1 || robot1.healthPercent;
+				replay.hp2 = replay.hp2 || robot2.healthPercent;
+				
 				$('#assistant .btn-continue').show();
 				
 				paused = false;
@@ -1172,6 +1175,12 @@
 			}
 			
 			function gameContinue() {
+				
+				robot1.healthPercent = replay.hp1;
+				robot2.healthPercent = replay.hp2;
+				
+				replay.hp1 = replay.hp2 = null;
+				
 				replay.countEnding();
 				replay.countEnding = null;
 			}
@@ -1235,7 +1244,10 @@
 			}
 			
 			function start() {
+			
 				robot1.healthPercent = robot2.healthPercent = 100;
+				replay.hp1 = replay.hp2 = null;
+				
 				playerLastImpactType = null;
 				paused = false;
 				isOpening = false;
