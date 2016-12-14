@@ -907,26 +907,18 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		this.flipFrame.rotation.set(0, 0, 0);
 		this.flipAngle = 0;
 		
-		var yAxis = this.getYAxis();
+		var yAxis = new THREE.Vector3(0, 1, 0);
+		var yAxisNew = this.parent.localToTarget(this.velocity.clone().setY(0).normalize().setY(-Math.tan(this.geometry.parameters.corkAngle)), this, 'direction').normalize();
 		
-		var velocityXZ = this.velocity.clone().setY(0).normalize();
-		if (yAxis.clone().negate().angleTo(velocityXZ) > Math.PI / 2)
-			velocityXZ.negate();
-			
-		var flipAxis = this.parent.localToTarget(yAxis.clone().negate().cross(velocityXZ), this, 'direction').normalize();
-		if (yAxis.y > 0)
-			flipAxis.negate();
+		var flipAxis = yAxis.clone().cross(yAxisNew).normalize();
+		var flipAngle = Math.min(this.toppleAngularVelocity * delta, yAxis.angleTo(yAxisNew));
 		
-		var flipAngle = Math.min(this.toppleAngularVelocity * delta, 
-			yAxis.clone().negate().angleTo(velocityXZ) - this.geometry.parameters.corkAngle);
-		
-		var flipMatrix = new THREE.Matrix4().makeRotationFromEuler(this.rotation);
-		this.rotation.setFromRotationMatrix(flipMatrix.multiply(new THREE.Matrix4().makeRotationAxis(flipAxis, flipAngle)));
+		this.rotateOnAxis(flipAxis, flipAngle);
 		
 		var corkTopY = this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
 		this.position.y -= Math.sign(corkTopY) * Math.min(Math.abs(corkTopY), this.toppleVelocity * delta);
 		
-		if (Math.abs(corkTopY) < 1e-4)
+		if (Math.abs(flipAngle) < 5e-2 && Math.abs(corkTopY) < 1e-1)
 			this.replaceState('toppling', 'toppled');
 	},
 	
