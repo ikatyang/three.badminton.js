@@ -287,7 +287,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		link.updateMatrixWorld();
 		
 		this.impactElapsed += delta;
-		if (this.checkIntersect(link.racket, this.shuttlecock) && this.impactElapsed > this.impactDelta) {
+		if (this.checkIntersect(link.racket, this.shuttlecock.mesh) && this.impactElapsed > this.impactDelta) {
 		
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			var strength = impactSpeed * this.getRacketImpactLength();
@@ -329,13 +329,24 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		racket.updateMatrixWorld();
 		shuttlecock.updateMatrixWorld();
 		
-		if (shuttlecock.geometry.boundingSphere === null)
-			shuttlecock.geometry.computeBoundingSphere();
-		
 		if (racket.geometry.boundingBox === null)
 			racket.geometry.computeBoundingBox();
 			
 		var box = racket.geometry.boundingBox;
+		
+		var boxPlane = box.clone();
+		boxPlane.min.z = boxPlane.max.z = 0;
+		
+		var corkRadius = shuttlecock.geometry.parameters.corkRadius;
+		var corkCenter = shuttlecock.localToTarget(new THREE.Vector3(0, shuttlecock.geometry.parameters.massCenter - corkRadius, 0), racket);
+		var cork = new THREE.Sphere(corkCenter, corkRadius);
+		
+		if (boxPlane.intersectsSphere(cork))
+			return true;
+		
+		if (shuttlecock.geometry.boundingSphere === null)
+			shuttlecock.geometry.computeBoundingSphere();
+			
 		var sphere = shuttlecock.geometry.boundingSphere;
 		
 		var spherePosition = shuttlecock.localToTarget(sphere.center.clone(), this.parent);
