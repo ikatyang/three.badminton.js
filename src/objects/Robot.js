@@ -505,7 +505,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 							targetDist);
 						break;
 					}
-				}
+				}	
 				if(k === ft[i].length){
 					return [ft[i][k-1][1], ft[i][k-1][2]];
 				}
@@ -517,6 +517,8 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 					tmpMin[1], tmpMax[1], hitDist);
 			}
 		}
+		var kMax = ft[i-1].length - 1;	
+		return [ft[i-1][kMax][1], ft[i-1][kMax][2]];
 	},
 
 	calculate: function(minD, maxD, minS, maxS, maxA, minA, targetDist){
