@@ -356,13 +356,11 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		this.parent.localToTarget(lastSpherePosition, racket);
 		
 		var isIntersect = false;
-		
-		var spherePositionDelta = lastSpherePosition.clone().sub(spherePosition);
-		var mul = -spherePosition.z / spherePositionDelta.z;
-		if (Math.abs(mul) <= 1 || mul * this.lastCheckMul < 0) {
+		if (spherePosition.z * lastSpherePosition.z <= 0) {
+			var spherePositionDelta = lastSpherePosition.clone().sub(spherePosition);
+			var mul = -spherePosition.z / spherePositionDelta.z;
 			var circlePosition = spherePosition.clone().addScaledVector(spherePositionDelta, mul);
 			isIntersect = this.checkIntersectRectAndCircle(box.clone().translate(circlePosition.clone().negate()), sphere.radius);
-			this.lastCheckMul = mul;
 		}
 		return isIntersect;
 	},
