@@ -263,7 +263,6 @@
 			var countdown = false, counter = 0, countEnding = null, countText;
 			var delay = 1, replayIndex = -3;
 			var touchable, intersects, touchableTip;
-			var allRecordData;
 			var readyPositions1, readyPositions2;
 			var assistantCamera;
 			var playerPts, playerScores;
@@ -318,16 +317,11 @@
 					
 					playerLastImpactType = this.impactType;
 					
-					if (record.playing)
-						record.next();
-					else {
-						record.record();
-						
-						robot2.impactType = getRandomImpactType();
-						
-						var randomPosition = getRandomPosition(robot1.responsibleArea, 0.8);
-						robot2.targetPosition.copy(randomPosition);
-						targetPoint2.position.copy(randomPosition);
+					var randomPosition = getRandomPosition(robot1.responsibleArea, 0.8);
+					robot2.targetPosition.copy(randomPosition);
+					targetPoint2.position.copy(randomPosition);
+					
+					if (!isOpening) {
 						
 						if (this.impactType === 'smash')
 							playerPts += 500;
@@ -346,14 +340,18 @@
 				robot2.rotation.y = -Math.PI / 2;
 				robot2.onAfterImpact = function () {
 					
-					if (record.playing) {
-						record.next();
+					if (isOpening) {
+						
+						var randomPosition = getRandomPosition(robot2.responsibleArea, 0.8);
+						robot1.targetPosition.copy(randomPosition);
+						targetPoint1.position.copy(randomPosition);
+						
 					} else {
-						record.record();
 					
 						if (readyPositions2.length > 0 && this.position.clone().sub(readyPositions2[readyPositions2.length - 1]).length() > 400)
 							playerPts += 500;
 					}
+					
 					this.setResponsibleArea(court.localToTarget(court.getAreaSingleB(), this.parent));
 						
 					scene.remove(touchableTip);
@@ -384,9 +382,6 @@
 					
 					if (isOpening)
 						return startBackgroundReplay();
-					
-					if (record.playing)
-						return;
 					
 					if (this.lastWinner === 'A') {
 					
@@ -460,15 +455,25 @@
 					}
 				};
 				
-				record = new THREE.Badminton.Record(shuttle, robot1, robot2);
+				var recordObjects = [shuttle, shuttle.flipFrame];
+				(function () {
+					for (var i = 0; i < arguments.length; i++) {
+					
+						var robot = arguments[i];
+						recordObjects.push(robot);
+						recordObjects.push(robot.body);
+						
+						for (var j = 0; j < robot.links.length; j++) {
+							
+							var link = robot.links[j];
+							recordObjects.push(link.frameA);
+							recordObjects.push(link.frameB);
+						}
+					}
+				})(robot1, robot2);
+				record = new THREE.Badminton.Record(recordObjects, 10);
 				
-				next();
-				
-				$.getJSON('recordData.json', function (json) {
-					allRecordData = json;
-					if (isOpening)
-						startBackgroundReplay();
-				});
+				startBackgroundReplay();
 				
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
 				
@@ -948,7 +953,7 @@
 			
 			function onDocumentMouseUp(event) {
 				
-				if (isOpening || paused || record.playing)
+				if (isOpening || paused)
 					return;
 					
 				if (event.which === 1 && onDocumentMouseDown.clientX === event.clientX && onDocumentMouseDown.clientY === event.clientY) {
@@ -978,11 +983,17 @@
 				if (delta < 1) {
 					if (!paused) {
 						if (animated) {
-							shuttle.update(delta);
-							updateRobot(robot1, delta);
-							updateRobot(robot2, delta);
-							court.netGroup.checkCollision(shuttle);
-							game.checkScore(shuttle, court);
+							if (!record.playing) {
+								shuttle.update(delta);
+								updateRobot(robot1, delta);
+								updateRobot(robot2, delta);
+								court.netGroup.checkCollision(shuttle);
+								game.checkScore(shuttle, court);
+								if (!(shuttle.hasState('toppled') || shuttle.hasState('hung')))
+									record.record(delta);
+							} else {
+								record.update(delta);
+							}
 						}
 						if (countdown)
 							updateCountdown(realDelta);
@@ -1261,19 +1272,10 @@
 			}
 			
 			function startBackgroundReplay() {
-				game.init();
-				game.nextScore();
-				if (allRecordData) {
-					record.init(getRandomRecordData());
-					record.start(0);
-					animated = true;
-				}
-			}
-			
-			function getRandomRecordData() {
-				var names = Object.keys(allRecordData);
-				var index = Math.floor(Math.random() * names.length);
-				return allRecordData[names[index]];
+				game.init(Math.random() > 0.5 ? 'A' : 'B');
+				next();
+				robot1.healthPercent = robot2.healthPercent = 100;
+				animated = true;
 			}
 			
 			function startCountdown(ending, second, show, formatter) {
