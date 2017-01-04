@@ -1,122 +1,105 @@
-function Record(shuttlecock, robot1, robot2, data) {
+function Record(objects, maxLength) {
 	
-	this.shuttlecock = shuttlecock;
-	this.robot1 = robot1;
-	this.robot2 = robot2;
+	this.objects = objects;
+	this.maxLength = (maxLength !== undefined) ? maxLength : Infinity;
 	
-	this.init(data);
+	this.init();
 }
 
 Record.prototype = {
 
 	constructor: Record,
 	
-	init: function (data) {
-		
-		this.counter = 0;
+	init: function () {
+		this.data = [];
+		this.dataLength = 0;
 		this.playing = false;
+		this.elapsed = 0;
+	},
+	
+	record: function (delta) {
 		
-		this.data = data || [];
-		if (!data)
-			this.record();
-	},
-	
-	start: function (index) {
-		if (index < 0)
-			index = this.data.length - 1 + index;
-		this.counter = THREE.Math.clamp(index || 0, 0, this.data.length - 1);
-		if (this.counter < this.data.length) {
-			this.setData(this.robot1, this.data[this.counter].robot1.init);
-			this.setData(this.robot2, this.data[this.counter].robot2.init);
-			this.setData(this.shuttlecock, this.data[this.counter].shuttlecock.init);
-			this.next();
+		while (this.dataLength + delta > this.maxLength) {
+			this.data.shift();
+			this.dataLength -= this.data[0].delta;
 		}
-	},
-	
-	next: function () {
-		if (++this.counter < this.data.length) {
-			this.setData(this.robot1, this.data[this.counter].robot1.play);
-			this.setData(this.robot2, this.data[this.counter].robot2.play);
-		}
-		this.playing = (this.counter + 1 < this.data.length);
-	},
-	
-	record: function () {
-		this.data.push({
-			robot1: {
-				init: this.getData(this.robot1, this.KEYS_ROBOT_INIT),
-				play: this.getData(this.robot1, this.KEYS_ROBOT_PLAY),
-			},
-			robot2: {
-				init: this.getData(this.robot2, this.KEYS_ROBOT_INIT),
-				play: this.getData(this.robot2, this.KEYS_ROBOT_PLAY),
-			},
-			shuttlecock: {
-				init: this.getData(this.shuttlecock, this.KEYS_SHUTTLECOCK_INIT),
-			},
-		});
-	},
-	
-	getValue: function (object) {
-		switch (typeof object) {
-			case 'object':
-				if (typeof object.toArray === 'function')
-					return object.toArray();
-			default:
-				return object;
-		}
-	},
-	
-	getData: function (object, keys) {
-		var data = {};
-		for (var i = 0; i < keys.length; i++) {
-			var temp = object;
-			var key = keys[i];
-			key.split('.').forEach(function (name) {
-				temp = temp[name];
-			});
-			data[key] = this.getValue(temp);
-		}
-		return data;
-	},
-	
-	setData: function (object, data) {
-		for (var key in data) {
-			var temp = object;
-			var value = data[key];
-			key.split('.').forEach(function (name, index, array) {
-				if (index < array.length - 1)
-					temp = temp[name];
-				else if (typeof temp[name].fromArray === 'function')
-					temp[name].fromArray(value);
-				else
-					temp[name] = value;
+			
+		
+		var data = {
+			delta: delta,
+			objects: [],
+		};
+		
+		for (var i = 0; i < this.objects.length; i++) {
+			
+			var object = this.objects[i];
+			
+			data.objects.push({
+				position: object.position.clone(),
+				quaternion: object.quaternion.clone(),
 			});
 		}
+		
+		this.data.push(data);
+		
+		if (this.data.length > 1)
+			this.dataLength += delta;
 	},
 	
-	KEYS_ROBOT_INIT: [
-		'position',
-		'rotation',
-		'impactCount',
-		'impactElapsed',
-		'body.rotation.y',
-		'responsibleArea',
-	],
+	start: function (time) {
+		
+		if (time < 0)
+			time = this.dataLength + time;
+		
+		if (time < 0)
+			time = 0;
+		
+		if (time > this.dataLength)
+			return;
+		
+		this.elapsed = time;
+		this.playing = true;
+	},
 	
-	KEYS_ROBOT_PLAY: [
-		'impactType',
-		'healthPercent',
-		'targetPosition',
-	],
-	
-	KEYS_SHUTTLECOCK_INIT: [
-		'state',
-		'position',
-		'rotation',
-		'velocity',
-		'impactCount',
-	],
+	update: function (delta) {
+		
+		if (window.xxx)
+			debugger;
+		
+		this.elapsed += delta;
+		
+		if (this.elapsed >= this.dataLength) {
+			this.elapsed = this.dataLength;
+			this.playing = false;
+		}
+		
+		var data0 = null;
+		var data1 = this.data[0];
+		
+		var elapsed = 0;
+		for (var i = 1; i < this.data.length; i++) {
+			
+			data0 = data1;
+			data1 = this.data[i];
+			
+			elapsed += this.data[i].delta;
+			
+			if (this.elapsed <= elapsed)
+				break;
+		}
+		
+		var ratio = 1 - (elapsed - this.elapsed) / data1.delta;
+		
+		for (var i = 0; i < this.objects.length; i++) {
+			
+			var object = this.objects[i];
+			var objectData0 = data0.objects[i];
+			var objectData1 = data1.objects[i];
+			
+			THREE.Quaternion.slerp(objectData0.quaternion, objectData1.quaternion, object.quaternion, ratio);
+			object.position.lerpVectors(objectData0.position, objectData1.position, ratio);
+		}
+	},
 	
 };
 
