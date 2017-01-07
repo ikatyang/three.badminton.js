@@ -92,7 +92,7 @@ function Robot(bodyMesh, racketMesh) {
 	];
 	
 	this.topImpactAngle = -Math.PI / 15;
-	this.smashSpeed = Math.PI * 125;
+	this.smashSpeed = Math.PI * 100;
 	this.maxFlyHeight = Infinity;
 	
 	this.defaultImpactType = 'right';
