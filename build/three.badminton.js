@@ -762,7 +762,8 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 		this.mesh.geometry.computeBoundingSphere();
 	this.groundElapsed = 0;
 	this.groundElapsedDelta = 0.5;
-	this.groundRestitutionCoefficient = 0.05;
+	this.groundFrictionCoefficient = 0;
+	this.groundRestitutionCoefficient = 0.2;
 	
 	this.init();
 }
@@ -811,12 +812,18 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
-	impact: function (velocity, normal, restitutionCoefficient, isGround) {
+	impact: function (velocity, normal, restitutionCoefficient, frictionCoefficient, isGround) {
 		
 		var vertical = this.velocity.clone().projectOnVector(normal);
 		var horizontal = this.velocity.clone().projectOnPlane(normal);
 		
-		this.velocity.copy(horizontal).addScaledVector(vertical, -restitutionCoefficient).add(velocity);
+		var friction = horizontal.clone().negate().multiplyScalar(-vertical.length() * frictionCoefficient);
+		if (friction.length() > horizontal.length())
+			friction = horizontal.clone().negate();
+		
+		this.velocity.copy(velocity)
+			.add(horizontal).add(friction)
+			.addScaledVector(vertical, -restitutionCoefficient);
 		
 		var yAxis = this.getYAxis();
 		
@@ -892,9 +899,11 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			
 			if (centerY < radius) {
 				
+				this.addState('touched-ground');
+				
 				if (this.groundElapsed > this.groundElapsedDelta) {
 					this.groundElapsed = 0;
-					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, true);
+					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, this.groundFrictionCoefficient, true);
 				}
 				
 				if (centerY + this.velocity.y * this.groundElapsedDelta < radius)
@@ -1116,6 +1125,7 @@ function Robot(bodyMesh, racketMesh) {
 	
 	this.topImpactAngle = -Math.PI / 15;
 	this.smashSpeed = Math.PI * 100;
+	this.maxFlyHeight = Infinity;
 	
 	this.defaultImpactType = 'right';
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
@@ -1127,6 +1137,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(0, 0, 0));
 	
 	this.shuttlecock = null;
+	this.racketFrictionCoefficient = 0.1;
 	this.racketRestitutionCoefficient = 0.1;
 	
 	this.bodySpeed = 1000;
@@ -1234,6 +1245,11 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		};
 	},
 	
+	canSmash: function (impactPosition) {
+		impactPosition = impactPosition || this.getImpactParamsSmash().impactPosition;
+		return (impactPosition && impactPosition.y - this.parameters.bodySize.y < this.maxFlyHeight);
+	},
+	
 	getImpactParamsSmash: function () {
 		
 		var p0 = this.targetPosition;
@@ -1288,7 +1304,8 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			impactPosition.x >= this.responsibleArea.min.x &&
 			impactPosition.x <= this.responsibleArea.max.x &&
 			impactPosition.z >= this.responsibleArea.min.z &&
-			impactPosition.z <= this.responsibleArea.max.z) {
+			impactPosition.z <= this.responsibleArea.max.z &&
+			(this.impactType !== 'smash' || (this.impactType === 'smash' && this.canSmash(impactPosition)))) {
 			
 			var bodyDirection = this.parent.localToTarget(this.targetPosition.clone().sub(impactPosition).setY(0), this, 'direction');
 			bodyAngle = bodyDirection.angleTo(new THREE.Vector3(0, 0, 1)) * (bodyDirection.x < 0 ? -1 : 1);
@@ -1315,7 +1332,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			var strength = impactSpeed * this.getRacketImpactLength();
 			
-			this.shuttlecock.impact(normal.clone().multiplyScalar(strength), normal, this.racketRestitutionCoefficient);
+			this.shuttlecock.impact(normal.clone().multiplyScalar(strength), normal, this.racketRestitutionCoefficient, this.racketFrictionCoefficient);
 			
 			this.impactCount = this.shuttlecock.impactCount;
 			
@@ -2345,16 +2362,16 @@ Game.prototype = {
 		if (this.nthScore > this.scoreA + this.scoreB) {
 			
 			var isHung = shuttlecock.hasState('hung');
-			var isToppled = shuttlecock.hasState('toppled');
+			var isGround = shuttlecock.hasState('touched-ground');
 			
-			if (isHung || isToppled) {
+			if (isHung || isGround) {
 				
 				var isUnderNet = shuttlecock.hasState('under-net');
 				var isSameHitter = (shuttlecock.impactCount % 2 === 1);
 				
 				var isSameWinner;
 				
-				if (isHung || (isToppled && isUnderNet)) {
+				if (isHung || (isGround && isUnderNet)) {
 					
 					isSameWinner = !isSameHitter;
 					
