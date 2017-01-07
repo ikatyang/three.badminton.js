@@ -696,7 +696,7 @@
 				
 				var impactAudio = new Audio('audios/impact.mp3');
 				var impactAudioChannel = THREE.Badminton.AudioChannel.support() ? new THREE.Badminton.AudioChannel(impactAudio) : null;
-				shuttlecock.onAfterImpact = function (velocity, normal, attenuation, isGround) {
+				shuttlecock.onAfterImpact = function (velocity, normal, restitutionCoefficient, frictionCoefficient, isGround) {
 					
 					if (isGround)
 						return;
