@@ -29,6 +29,7 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 		this.mesh.geometry.computeBoundingSphere();
 	this.groundElapsed = 0;
 	this.groundElapsedDelta = 0.5;
+	this.groundFrictionCoefficient = 0;
 	this.groundRestitutionCoefficient = 0.2;
 	
 	this.init();
@@ -78,13 +79,17 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
-	impact: function (velocity, normal, restitutionCoefficient, isGround) {
+	impact: function (velocity, normal, restitutionCoefficient, frictionCoefficient, isGround) {
 		
 		var vertical = this.velocity.clone().projectOnVector(normal);
 		var horizontal = this.velocity.clone().projectOnPlane(normal);
 		
+		var friction = horizontal.clone().negate().multiplyScalar(-vertical.length() * frictionCoefficient);
+		if (friction.length() > horizontal.length())
+			friction = horizontal.clone().negate();
+		
 		this.velocity.copy(velocity)
-			.addScaledVector(horizontal, restitutionCoefficient)
+			.add(horizontal).add(friction)
 			.addScaledVector(vertical, -restitutionCoefficient);
 		
 		var yAxis = this.getYAxis();
@@ -163,7 +168,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 				
 				if (this.groundElapsed > this.groundElapsedDelta) {
 					this.groundElapsed = 0;
-					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, true);
+					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, this.groundFrictionCoefficient, true);
 				}
 				
 				if (centerY + this.velocity.y * this.groundElapsedDelta < radius)
