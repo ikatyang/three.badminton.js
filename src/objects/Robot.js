@@ -92,7 +92,8 @@ function Robot(bodyMesh, racketMesh) {
 	];
 	
 	this.topImpactAngle = -Math.PI / 15;
-	this.smashSpeed = Math.PI * 100;
+	this.smashSpeed = Math.PI * 125;
+	this.maxFlyHeight = Infinity;
 	
 	this.defaultImpactType = 'right';
 	this.targetPosition = new THREE.Vector3(0, 0, 0);
@@ -211,6 +212,11 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 		};
 	},
 	
+	canSmash: function (impactPosition) {
+		impactPosition = impactPosition || this.getImpactParamsSmash().impactPosition;
+		return (impactPosition && impactPosition.y - this.parameters.bodySize.y < this.maxFlyHeight);
+	},
+	
 	getImpactParamsSmash: function () {
 		
 		var p0 = this.targetPosition;
@@ -265,7 +271,8 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			impactPosition.x >= this.responsibleArea.min.x &&
 			impactPosition.x <= this.responsibleArea.max.x &&
 			impactPosition.z >= this.responsibleArea.min.z &&
-			impactPosition.z <= this.responsibleArea.max.z) {
+			impactPosition.z <= this.responsibleArea.max.z &&
+			(this.impactType !== 'smash' || (this.impactType === 'smash' && this.canSmash(impactPosition)))) {
 			
 			var bodyDirection = this.parent.localToTarget(this.targetPosition.clone().sub(impactPosition).setY(0), this, 'direction');
 			bodyAngle = bodyDirection.angleTo(new THREE.Vector3(0, 0, 1)) * (bodyDirection.x < 0 ? -1 : 1);
