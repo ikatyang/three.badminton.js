@@ -27,9 +27,9 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	
 	if (!this.mesh.geometry.boundingSphere)
 		this.mesh.geometry.computeBoundingSphere();
-	this.groundAttenuation = 0.8;
 	this.groundElapsed = 0;
 	this.groundElapsedDelta = 0.5;
+	this.groundRestitutionCoefficient = 0.05;
 	
 	this.init();
 }
@@ -78,9 +78,13 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
-	impact: function (velocity, normal, attenuation, isGround) {
-	
-		this.velocity.reflect(normal).multiplyScalar(1 - attenuation).add(velocity);
+	impact: function (velocity, normal, restitutionCoefficient, isGround) {
+		
+		var vertical = this.velocity.clone().projectOnVector(normal);
+		var horizontal = this.velocity.clone().projectOnPlane(normal);
+		
+		this.velocity.copy(horizontal).addScaledVector(vertical, -restitutionCoefficient).add(velocity);
+		
 		var yAxis = this.getYAxis();
 		
 		this.updateActive(0);
@@ -157,7 +161,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 				
 				if (this.groundElapsed > this.groundElapsedDelta) {
 					this.groundElapsed = 0;
-					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundAttenuation, true);
+					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, true);
 				}
 				
 				if (centerY + this.velocity.y * this.groundElapsedDelta < radius)
