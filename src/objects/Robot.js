@@ -104,7 +104,7 @@ function Robot(bodyMesh, racketMesh) {
 		new THREE.Vector3(0, 0, 0));
 	
 	this.shuttlecock = null;
-	this.racketAttenuation = 0.9;
+	this.racketRestitutionCoefficient = 0.1;
 	
 	this.bodySpeed = 1000;
 	this.bodyAngularSpeed = Math.PI * 2;
@@ -292,7 +292,7 @@ Robot.prototype = Object.assign(Object.create(THREE.Object3D.prototype), {
 			var normal = link.racket.localToTarget(new THREE.Vector3(0, 0, 1), this.parent, 'direction');
 			var strength = impactSpeed * this.getRacketImpactLength();
 			
-			this.shuttlecock.impact(normal.clone().multiplyScalar(strength), normal, this.racketAttenuation);
+			this.shuttlecock.impact(normal.clone().multiplyScalar(strength), normal, this.racketRestitutionCoefficient);
 			
 			this.impactCount = this.shuttlecock.impactCount;
 			
