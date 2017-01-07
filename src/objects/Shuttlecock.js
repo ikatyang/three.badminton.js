@@ -83,7 +83,9 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var vertical = this.velocity.clone().projectOnVector(normal);
 		var horizontal = this.velocity.clone().projectOnPlane(normal);
 		
-		this.velocity.copy(horizontal).addScaledVector(vertical, -restitutionCoefficient).add(velocity);
+		this.velocity.copy(velocity)
+			.addScaledVector(horizontal, restitutionCoefficient)
+			.addScaledVector(vertical, -restitutionCoefficient);
 		
 		var yAxis = this.getYAxis();
 		
