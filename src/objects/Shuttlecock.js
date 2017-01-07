@@ -29,7 +29,7 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 		this.mesh.geometry.computeBoundingSphere();
 	this.groundElapsed = 0;
 	this.groundElapsedDelta = 0.5;
-	this.groundRestitutionCoefficient = 0.05;
+	this.groundRestitutionCoefficient = 0.2;
 	
 	this.init();
 }
