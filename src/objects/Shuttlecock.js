@@ -166,6 +166,8 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			
 			if (centerY < radius) {
 				
+				this.addState('touched-ground');
+				
 				if (this.groundElapsed > this.groundElapsedDelta) {
 					this.groundElapsed = 0;
 					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, this.groundFrictionCoefficient, true);

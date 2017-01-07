@@ -70,16 +70,16 @@ Game.prototype = {
 		if (this.nthScore > this.scoreA + this.scoreB) {
 			
 			var isHung = shuttlecock.hasState('hung');
-			var isToppled = shuttlecock.hasState('toppled');
+			var isGround = shuttlecock.hasState('touched-ground');
 			
-			if (isHung || isToppled) {
+			if (isHung || isGround) {
 				
 				var isUnderNet = shuttlecock.hasState('under-net');
 				var isSameHitter = (shuttlecock.impactCount % 2 === 1);
 				
 				var isSameWinner;
 				
-				if (isHung || (isToppled && isUnderNet)) {
+				if (isHung || (isGround && isUnderNet)) {
 					
 					isSameWinner = !isSameHitter;
 					
