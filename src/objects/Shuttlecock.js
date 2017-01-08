@@ -23,7 +23,6 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
 	
 	this.toppleVelocity = 100;
-	this.toppleAngularVelocity = Math.PI * 3;
 	
 	if (!this.mesh.geometry.boundingSphere)
 		this.mesh.geometry.computeBoundingSphere();
@@ -79,6 +78,20 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		return this.flipFrame.localToTarget(new THREE.Vector3(0, 1, 0), this.parent, 'direction').normalize();
 	},
 	
+	getForceArm: function () {
+		
+		var params = this.geometry.parameters;
+		var corkCenter = this.localToTarget(new THREE.Vector3(0, params.massCenter - params.corkRadius, 0), this.parent);
+		
+		var impactPoint = corkCenter.clone().add(new THREE.Vector3(0, -params.corkRadius, 0));
+		var gravityCenter = this.localToTarget(new THREE.Vector3(0, 0, 0), this.parent);
+		
+		var yAxis = this.getYAxis();
+		var impactPointProj = impactPoint.clone().projectOnVector(yAxis);
+		
+		return impactPointProj.clone().sub(gravityCenter);
+	},
+	
 	impact: function (velocity, normal, restitutionCoefficient, frictionCoefficient, isGround) {
 		
 		var vertical = this.velocity.clone().projectOnVector(normal);
@@ -121,7 +134,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		this.lastDelta = delta;
 	},
 	
-	updateActive: function (delta) {
+	updateVelocity: function (delta) {
 		
 		var rho = this.airDensity;
 		var S = this.geometry.parameters.skirtCrossSectionalArea;
@@ -134,6 +147,11 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var force = this.gravity.clone().multiplyScalar(this.parameters.mass).add(Fv);
 		
 		this.velocity.addScaledVector(force, delta / this.parameters.mass);
+	},
+	
+	updateActive: function (delta) {
+		
+		this.updateVelocity(delta);
 		this.position.addScaledVector(this.velocity, delta);
 		
 		var xAxis = this.velocity.clone().cross(this.gravity).normalize();
@@ -181,6 +199,12 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 	
 	updateToppling: function (delta) {
 		
+		this.updateVelocity(delta);
+		
+		var forceArm = this.getForceArm();
+		var verticalVelocity = this.velocity.clone().projectOnPlane(forceArm);
+		var toppleAngularVelocity = verticalVelocity.length() / forceArm.length();
+		
 		this.rotation.setFromRotationMatrix(
 			new THREE.Matrix4().makeRotationFromEuler(this.rotation).multiply(
 				new THREE.Matrix4().makeRotationFromEuler(this.flipFrame.rotation)));
@@ -195,7 +219,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var flipAxis = yAxis.clone().cross(yAxisNew).normalize();
 		var flipAngle = yAxis.angleTo(yAxisNew);
 		
-		var flipAnglePart = Math.min(this.toppleAngularVelocity * delta, flipAngle);
+		var flipAnglePart = Math.min(toppleAngularVelocity * delta, flipAngle);
 		
 		this.rotateOnAxis(flipAxis, flipAnglePart);
 		
