@@ -187,13 +187,17 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		this.flipFrame.rotation.set(0, 0, 0);
 		this.flipAngle = 0;
 		
+		this.mesh.updateMatrixWorld();
+		
 		var yAxis = new THREE.Vector3(0, 1, 0);
 		var yAxisNew = this.parent.localToTarget(this.velocity.clone().setY(0).normalize().setY(-Math.tan(this.geometry.parameters.corkAngle)), this, 'direction').normalize();
 		
 		var flipAxis = yAxis.clone().cross(yAxisNew).normalize();
-		var flipAngle = Math.min(this.toppleAngularVelocity * delta, yAxis.angleTo(yAxisNew));
+		var flipAngle = yAxis.angleTo(yAxisNew);
 		
-		this.rotateOnAxis(flipAxis, flipAngle);
+		var flipAnglePart = Math.min(this.toppleAngularVelocity * delta, flipAngle);
+		
+		this.rotateOnAxis(flipAxis, flipAnglePart);
 		
 		var corkTopY = this.localToTarget(new THREE.Vector3(0, this.geometry.parameters.massToCorkTopLength, 0), this.parent).y;
 		this.position.y -= Math.sign(corkTopY) * Math.min(Math.abs(corkTopY), this.toppleVelocity * delta);
