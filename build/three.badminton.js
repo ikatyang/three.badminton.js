@@ -756,6 +756,7 @@ function Shuttlecock(shuttlecockGeometry, material, corkMass, skirtMass) {
 	this.gravity = new THREE.Vector3(0, -9.8, 0);
 	
 	this.toppleVelocity = 100;
+	this.toppleAngularVelocity = 0;
 	
 	if (!this.mesh.geometry.boundingSphere)
 		this.mesh.geometry.computeBoundingSphere();
@@ -924,8 +925,11 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 					this.impact(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), this.groundRestitutionCoefficient, this.groundFrictionCoefficient, true);
 				}
 				
-				if (centerY + this.velocity.y * this.groundElapsedDelta < radius)
+				if (centerY + this.velocity.y * this.groundElapsedDelta < radius) {
+					
+					this.toppleAngularVelocity = 0;
 					this.replaceState('active', 'toppling');
+				}
 			}
 		}
 	},
@@ -935,8 +939,9 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		this.updateVelocity(delta);
 		
 		var forceArm = this.getForceArm();
-		var verticalVelocity = this.velocity.clone().projectOnPlane(forceArm);
-		var toppleAngularVelocity = verticalVelocity.length() / forceArm.length();
+		var verticalForce = this.gravity.clone().projectOnPlane(forceArm);
+		var toppleAngularAcceleration = verticalForce.length() / this.parameters.mass / forceArm.length();
+		this.toppleAngularVelocity += toppleAngularAcceleration * delta;
 		
 		this.rotation.setFromRotationMatrix(
 			new THREE.Matrix4().makeRotationFromEuler(this.rotation).multiply(
@@ -952,7 +957,7 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		var flipAxis = yAxis.clone().cross(yAxisNew).normalize();
 		var flipAngle = yAxis.angleTo(yAxisNew);
 		
-		var flipAnglePart = Math.min(toppleAngularVelocity * delta, flipAngle);
+		var flipAnglePart = Math.min(this.toppleAngularVelocity * delta, flipAngle);
 		
 		this.rotateOnAxis(flipAxis, flipAnglePart);
 		
