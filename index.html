@@ -264,7 +264,7 @@
 			var delay = 1, replayIndex = -3;
 			var touchable, intersects, touchableTip;
 			var readyPositions1, readyPositions2;
-			var assistantCamera;
+			var assistantCamera, replayCamera;
 			var playerPts, playerScores;
 			var playerLastImpactType;
 			var winGame, winScore;
@@ -285,6 +285,10 @@
 				assistantCamera = new THREE.OrthographicCamera(-305, 305, 670, 0, 1, 1000);
 				assistantCamera.position.y = 500;
 				assistantCamera.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
+				scene.add(assistantCamera);
+				
+				replayCamera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
+				scene.add(replayCamera);
 				
 				clock = new THREE.Clock();
 				
@@ -1069,10 +1073,27 @@
 				renderer.render(scene, camera);
 				
 				if (!(isOpening || paused)) {
+				
 					setHeelthPercentVisible(false);
-					renderer.setScissor(window.innerWidth - 305, 0, 305, 335);
-					renderer.setViewport(window.innerWidth - 305, 0, 305, 335);
-					renderer.render(scene, assistantCamera);
+						
+					if (record.playing) {
+						
+						var center = shuttle.geometry.boundingSphere.center;
+						var shuttlePosition = shuttle.mesh.localToWorld(center.clone());
+						var cameraPosition = shuttle.mesh.localToWorld(center.clone().add(new THREE.Vector3(-50, 0, 0)));
+						replayCamera.position.copy(cameraPosition);
+						replayCamera.lookAt(shuttlePosition);
+						
+						renderer.setScissor(window.innerWidth - 300, 0, 300, 300);
+						renderer.setViewport(window.innerWidth - 300, 0, 300, 300);
+						renderer.render(scene, replayCamera);
+						
+					} else {
+						
+						renderer.setScissor(window.innerWidth - 305, 0, 305, 335);
+						renderer.setViewport(window.innerWidth - 305, 0, 305, 335);
+						renderer.render(scene, assistantCamera);
+					}
 				}
 			}
 			
