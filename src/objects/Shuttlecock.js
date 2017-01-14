@@ -72,6 +72,8 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		
 		this.lastDelta = 0;
 		this.impactCount = 0;
+		
+		this.groundElapsed = this.groundElapsedDelta;
 	},
 	
 	getYAxis: function () {
