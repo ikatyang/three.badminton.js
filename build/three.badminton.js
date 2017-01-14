@@ -805,6 +805,8 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 		
 		this.lastDelta = 0;
 		this.impactCount = 0;
+		
+		this.groundElapsed = this.groundElapsedDelta;
 	},
 	
 	getYAxis: function () {
@@ -913,8 +915,9 @@ Shuttlecock.prototype = Object.defineProperties(Object.assign(Object.create(THRE
 			this.updateMatrixWorld();
 			this.groundElapsed += delta;
 			
-			var centerY = this.mesh.localToTarget(this.mesh.geometry.boundingSphere.center.clone(), this.parent).y;
-			var radius = this.mesh.geometry.boundingSphere.radius;
+			var params = this.geometry.parameters;
+			var radius = params.corkRadius;
+			var centerY = this.mesh.localToTarget(new THREE.Vector3(0, params.massCenter - radius), this.parent).y;
 			
 			if (centerY < radius) {
 				
